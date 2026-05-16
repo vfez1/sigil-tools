@@ -42,6 +42,9 @@
       "private": true
     }
   ],
+  "url": "https://github.com/vfez1/sigil-tools",
+  "manifest": "https://raw.githubusercontent.com/vfez1/sigil-tools/main/module.json",
+  "download": "https://github.com/vfez1/sigil-tools/archive/refs/heads/main.zip",
   "relationships": {
     "requires": [
       {
