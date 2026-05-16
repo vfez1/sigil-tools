@@ -3,6 +3,8 @@ Hooks.once("ready", async () => {
     const log = (...args) => console.log(`[${MODULE_ID}]`, ...args);
     const warn = (...args) => console.warn(`[${MODULE_ID}]⚠️`, ...args);
     const error = (...args) => console.error(`[${MODULE_ID}]❌`, ...args);
+    // v14 renamed objectsEqual → equals; use whichever the host runtime provides.
+    const _equals = foundry.utils.equals ?? foundry.utils.objectsEqual;
 
     log("Hook: ready");
 
@@ -91,7 +93,7 @@ Hooks.once("ready", async () => {
 
                 const current = game.settings.get(namespace, key);
 
-                if (foundry.utils.objectsEqual(current, value)) continue;
+                if (_equals(current, value)) continue;
 
                 try {
                     await game.settings.set(namespace, key, value);
@@ -120,7 +122,7 @@ Hooks.once("ready", async () => {
                 uiConfig.fade.opacity = config.uiConfig.fadeOpacity;
                 uiConfig.chatNotifications = config.uiConfig.chatNotifications;
 
-                if (!foundry.utils.objectsEqual(uiConfig, current)) {
+                if (!_equals(uiConfig, current)) {
                     await game.settings.set("core", "uiConfig", uiConfig);
                     log("✅ UI config override complete.");
                 }

@@ -1083,10 +1083,14 @@ function _isClericCantrip(item, actor) {
 
 function _itemHasDruidSource(item) {
     const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object ?? {}, key);
+    // dnd5e 5.3 introduced sourceItem and deprecated the sourceClass getter.
+    // Use `in` to probe without triggering the deprecation accessor.
+    const systemSource = ("sourceItem" in (item.system ?? {}))
+        ? item.system.sourceItem
+        : (hasOwn(item.system, "sourceClass") ? item.system.sourceClass : undefined);
     const candidates = [
         item.system?.classIdentifier,
-        item.system?.sourceItem,
-        hasOwn(item.system, "sourceClass") ? item.system.sourceClass : undefined,
+        systemSource,
         item.system?.class,
         item.system?.spellList,
         item.system?.source?.class,
@@ -1105,10 +1109,14 @@ function _itemHasDruidSource(item) {
 
 function _itemHasClericSource(item) {
     const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object ?? {}, key);
+    // dnd5e 5.3 introduced sourceItem and deprecated the sourceClass getter.
+    // Use `in` to probe without triggering the deprecation accessor.
+    const systemSource = ("sourceItem" in (item.system ?? {}))
+        ? item.system.sourceItem
+        : (hasOwn(item.system, "sourceClass") ? item.system.sourceClass : undefined);
     const candidates = [
         item.system?.classIdentifier,
-        item.system?.sourceItem,
-        hasOwn(item.system, "sourceClass") ? item.system.sourceClass : undefined,
+        systemSource,
         item.system?.class,
         item.system?.spellList,
         item.system?.source?.class,
