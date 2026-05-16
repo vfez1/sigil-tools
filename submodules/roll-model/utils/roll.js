@@ -1081,16 +1081,23 @@ function _isClericCantrip(item, actor) {
     return _itemHasClericSource(item);
 }
 
+// dnd5e 5.3 introduced `system.sourceItem` and deprecated the `system.sourceClass` getter.
+// Feature-detect with `in` so we only touch the field the schema actually defines,
+// avoiding the deprecation log on v14/5.3 while still working on v13/5.2.
+// Flag-based fallbacks (`flags.dnd5e.sourceClass`) read the underlying flag object,
+// not the deprecated getter, so they remain safe on both versions.
+function _readSystemSpellSource(item) {
+    const system = item.system;
+    if (!system) return undefined;
+    if ("sourceItem" in system) return system.sourceItem;
+    const hasOwn = Object.prototype.hasOwnProperty.call(system, "sourceClass");
+    return hasOwn ? system.sourceClass : undefined;
+}
+
 function _itemHasDruidSource(item) {
-    const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object ?? {}, key);
-    // dnd5e 5.3 introduced sourceItem and deprecated the sourceClass getter.
-    // Use `in` to probe without triggering the deprecation accessor.
-    const systemSource = ("sourceItem" in (item.system ?? {}))
-        ? item.system.sourceItem
-        : (hasOwn(item.system, "sourceClass") ? item.system.sourceClass : undefined);
     const candidates = [
         item.system?.classIdentifier,
-        systemSource,
+        _readSystemSpellSource(item),
         item.system?.class,
         item.system?.spellList,
         item.system?.source?.class,
@@ -1108,15 +1115,9 @@ function _itemHasDruidSource(item) {
 }
 
 function _itemHasClericSource(item) {
-    const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object ?? {}, key);
-    // dnd5e 5.3 introduced sourceItem and deprecated the sourceClass getter.
-    // Use `in` to probe without triggering the deprecation accessor.
-    const systemSource = ("sourceItem" in (item.system ?? {}))
-        ? item.system.sourceItem
-        : (hasOwn(item.system, "sourceClass") ? item.system.sourceClass : undefined);
     const candidates = [
         item.system?.classIdentifier,
-        systemSource,
+        _readSystemSpellSource(item),
         item.system?.class,
         item.system?.spellList,
         item.system?.source?.class,

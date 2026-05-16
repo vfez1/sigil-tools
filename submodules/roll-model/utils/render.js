@@ -2,6 +2,12 @@ import { MODULE_NAME } from "../../shared/const.js";
 import { TEMPLATE } from "../config/templates.js";
 import { RollUtility } from "./roll.js";
 
+// `foundry.utils.duplicate` is being phased out toward `foundry.utils.deepClone`.
+// Both exist in v13 and v14 — prefer the survivor so this module stays working
+// if a future Foundry release removes `duplicate`. Also covers the bare `duplicate`
+// global removed in v14.
+const _duplicate = foundry.utils.deepClone ?? foundry.utils.duplicate;
+
 /**
  * Utility class to handle all rendering from provided fields into HTML data.
  */
@@ -41,7 +47,7 @@ async function _renderMultiRoll(data = {}) {
 
     for (let i = 0; i < d20Rolls.results.length; i++) {
         let tmpResults = [];
-        tmpResults.push((foundry.utils.deepClone ?? foundry.utils.duplicate)(d20Rolls.results[i]));
+        tmpResults.push(_duplicate(d20Rolls.results[i]));
 
         while (d20Rolls?.results[i]?.rerolled && !d20Rolls?.results[i]?.count) {
             if ((i + 1) >= d20Rolls.results.length) {
@@ -49,7 +55,7 @@ async function _renderMultiRoll(data = {}) {
             }
 
             i++;
-            tmpResults.push((foundry.utils.deepClone ?? foundry.utils.duplicate)(d20Rolls.results[i]));
+            tmpResults.push(_duplicate(d20Rolls.results[i]));
         }
 
         const critOptions = { 
