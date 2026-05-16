@@ -1,0 +1,64 @@
+{
+    "rm": {
+        "keybindings": {
+            "rollVersatile": {
+                "name": "Roll Versatile Damage",
+                "hint": "Hold this key while clicking an activity to roll versatile damage instead of base damage."
+            }
+        },
+        "settings": {
+            "preventMovementHistory.name": "Prevent Movement History",
+            "preventMovementHistory.hint": "Prevent tokens from recording movement history. Requires a reload.",
+            "enableWabuWildshapeEffectToggle.name": "Wabu: Auto-Toggle Wild Shape Effects",
+            "enableWabuWildshapeEffectToggle.hint": "When Wabu transforms (Wild Shape) or reverts, automatically toggle Natural Armor, Improved Circle Forms, and Lunar Transformation effects."
+        },
+        "choices": {
+            "rollModifierMode": {
+                "shiftAdv": "Shift ➔ Advantage, Ctrl/Cmd ➔ Disadvantage",
+                "ctrlAdv": "Ctrl/Cmd ➔ Advantage, Shift ➔ Disadvantage"
+            }
+        },
+        "sheet": {
+            "tab": {
+                "title": "Quick Roll",
+                "section": {
+                    "defaultRoll": "Default Roll Options",
+                    "alternateRoll": "Alternate Roll Options"
+                },
+                "subsection": {
+                    "main": "Main Content",
+                    "damage": "Damage Rolls"
+                }
+            },
+            "placeholder": {
+                "context": "Context",
+                "label": "Label"
+            }
+        },
+        "chat": {
+            "buttons": {
+                "rollCrit": "Click to roll critical damage.",
+                "rollAdvantage": "Click to roll with advantage.",
+                "rollDisadvantage": "Click to roll with disadvantage.",
+                "repeat": "Click to repeat the quick roll."
+            },
+            "prompts": {
+                "retroCrit": "Upgrade to Crit?",
+                "retroAdv": "Roll {target}?"
+            },
+            "hide": "???"
+        },
+        "messages": {
+            "error": {
+                "incorrectTargetState": "Cannot ugprade a roll to target state '{state}' because it is not a valid state (advantage or disadvantage).",
+                "rollIsNullOrUndefined": "The given roll is null or undefined.",
+                "termIsNullOrUndefined": "The given term is null or undefined.",
+                "applyDamageNoPermission": "You do not have permission to apply damage from this message.",
+                "applyDamageNoTokens": "You have no tokens selected or targeted to apply damage to."
+            },
+            "warning": {
+                "emptyDamageField": "One or more damage fields on this item are empty! To roll damage, ensure all damage fields are filled."
+            }
+        }
+    }
+}

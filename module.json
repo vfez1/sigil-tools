@@ -1,0 +1,69 @@
+{
+  "id": "sigil-tools",
+  "title": "Sigil Tools",
+  "description": "Internal tooling module. Contains three submodules: roll-model (D&D 5e roll overhaul), active-auras (aura effects engine), and override-settings (world/client settings automation).",
+  "version": "1.0.0",
+  "socket": true,
+  "compatibility": {
+    "minimum": "13",
+    "verified": "14",
+    "maximum": "14"
+  },
+  "authors": [
+    {
+      "name": "vfez",
+      "discord": "fez#1260"
+    }
+  ],
+  "esmodules": [
+    "submodules/roll-model/roll-model.js",
+    "submodules/roll-model/config/config.js"
+  ],
+  "scripts": [
+    "submodules/override-settings/override.js"
+  ],
+  "styles": [
+    "css/roll-model.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "packs": [
+    {
+      "label": "DDB Redux Spells",
+      "name": "ddb-redux-spells",
+      "path": "packs/ddb-redux-spells",
+      "type": "Item",
+      "system": "dnd5e",
+      "private": true
+    }
+  ],
+  "relationships": {
+    "requires": [
+      {
+        "id": "socketlib",
+        "type": "module"
+      },
+      {
+        "id": "lib-wrapper",
+        "type": "module",
+        "manifest": "https://github.com/ruipin/fvtt-lib-wrapper/releases/latest/download/module.json"
+      }
+    ],
+    "systems": [
+      {
+        "id": "dnd5e",
+        "type": "system",
+        "manifest": "https://raw.githubusercontent.com/foundryvtt/dnd5e/master/system.json",
+        "compatibility": {
+          "minimum": "5.0.0",
+          "verified": "5.2.5"
+        }
+      }
+    ]
+  }
+}

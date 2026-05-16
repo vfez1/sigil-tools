@@ -1,0 +1,6 @@
+*.bak
+*.lock
+*.code-workspace
+_vendor/
+tmp/
+.claude/
