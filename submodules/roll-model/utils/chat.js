@@ -1,4 +1,4 @@
-import { MODULE_NAME, MODULE_SHORT } from "../config/const.js";
+import { MODULE_NAME, MODULE_SHORT } from "../../shared/const.js";
 import { TEMPLATE } from "../config/templates.js";
 import { ActivityUtility } from "./activity.js";
 import { CoreUtility } from "./core.js";

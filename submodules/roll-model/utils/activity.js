@@ -1,4 +1,4 @@
-import { MODULE_SHORT } from "../config/const.js";
+import { MODULE_SHORT } from "../../shared/const.js";
 import { ChatUtility } from "./chat.js";
 import { CoreUtility } from "./core.js";
 import { ROLL_TYPE, RollUtility } from "./roll.js";

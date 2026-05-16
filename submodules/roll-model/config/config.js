@@ -1,4 +1,4 @@
-import { MODULE_SHORT } from "./const.js";
+import { MODULE_SHORT } from "../../shared/const.js";
 
 /**
  * A set of configuration details that are globally used throughout the module.

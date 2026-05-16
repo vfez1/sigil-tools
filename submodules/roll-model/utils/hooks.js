@@ -1,8 +1,8 @@
-import { MODULE_NAME, MODULE_SHORT, MODULE_TITLE } from "../config/const.js";
+import { MODULE_NAME, MODULE_SHORT, MODULE_TITLE } from "../../shared/const.js";
 import { ActivityUtility } from "./activity.js";
 import { ChatUtility } from "./chat.js";
 import { CoreUtility } from "./core.js";
-import { AlwaysHPWidget, HPManager, applyHPDismissPatch } from "./hp.js";
+import { AlwaysHPWidget, HPManager, applyHPDismissPatch } from "../../always-hp/always-hp.js";
 import { ROLL_TYPE, RollUtility } from "./roll.js";
 import { SETTING_NAMES, SettingsUtility } from "./settings.js";
 

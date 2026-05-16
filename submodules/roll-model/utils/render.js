@@ -1,4 +1,4 @@
-import { MODULE_NAME } from "../config/const.js";
+import { MODULE_NAME } from "../../shared/const.js";
 import { TEMPLATE } from "../config/templates.js";
 import { RollUtility } from "./roll.js";
 

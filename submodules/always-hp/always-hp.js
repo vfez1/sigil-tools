@@ -1,5 +1,5 @@
-import { MODULE_NAME, MODULE_SHORT } from "../config/const.js";
-import { CoreUtility } from "./core.js";
+import { MODULE_NAME, MODULE_SHORT } from "../shared/const.js";
+import { CoreUtility } from "../roll-model/utils/core.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 

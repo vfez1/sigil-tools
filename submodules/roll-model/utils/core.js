@@ -1,4 +1,4 @@
-import { MODULE_NAME } from "../config/const.js";
+import { MODULE_NAME } from "../../shared/const.js";
 
 /**
  * Utility class with core functions for general use.
