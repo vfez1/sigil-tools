@@ -33,7 +33,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     static PARTS = {
         main: {
             root: true,
-            template: "modules/roll-model/templates/rm-hp.html"
+            template: "modules/sigil-tools/templates/rm-hp.html"
         }
     };
 
@@ -55,7 +55,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
         const frame = await super._renderFrame(options);
 
         const header_html = await foundry.applications.handlebars.renderTemplate(
-            "modules/roll-model/templates/rm-hp-header.html", this
+            "modules/sigil-tools/templates/rm-hp-header.html", this
         );
 
         $('.window-header', frame)
