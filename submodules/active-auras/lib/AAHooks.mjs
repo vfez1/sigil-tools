@@ -100,7 +100,7 @@ export async function updateTokenHook(token, update, _flags, _id) {
 
   if ("y" in update || "x" in update || "elevation" in update) {
     // await token.object._animation;
-    if (token.object.movementAnimationPromise) {
+    if (token.object?.movementAnimationPromise) {
       await token.object.movementAnimationPromise;
     }
     const animationName = token.object?.animationName;
