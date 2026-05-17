@@ -32,16 +32,6 @@
       "path": "lang/en.json"
     }
   ],
-  "packs": [
-    {
-      "label": "DDB Redux Spells",
-      "name": "ddb-redux-spells",
-      "path": "packs/ddb-redux-spells",
-      "type": "Item",
-      "system": "dnd5e",
-      "private": true
-    }
-  ],
   "relationships": {
     "requires": [
       {
