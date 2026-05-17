@@ -3,4 +3,5 @@
 *.code-workspace
 _vendor/
 tmp/
+_temp/
 .claude/
