@@ -191,7 +191,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
         for (let a of actors) {
             if (!a || !(a instanceof Actor)) continue;
 
-            let tValue = foundry.utils.duplicate(value);
+            let tValue = (value?.toObject?.() ?? foundry.utils.deepClone(value));
 
             let resourceValue = this.getResourceValue(a, HP_RESOURCE.value);
 

@@ -419,7 +419,7 @@ export class ActiveAuras {
     //   })
     // }
 
-    let newEffectData = foundry.utils.duplicate(effectData);
+    let newEffectData = (effectData?.toObject?.() ?? foundry.utils.deepClone(effectData));
     newEffectData.name = effectName;
 
     if (newEffectData.flags.ActiveAuras.onlyOnce) {

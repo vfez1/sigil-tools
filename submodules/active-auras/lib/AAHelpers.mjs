@@ -608,8 +608,14 @@ export class AAHelpers {
     Logger.debug("applyTemplate", { template, effects, duration, disposition , args });
 
     for (let effect of effects) {
+      // Clone live DataModel docs via `.toObject()` (returns the `_source` shape);
+      // for plain JS data the chain short-circuits to `deepClone`. Never use
+      // `foundry.utils.duplicate` on a Document or `deepClone` directly on one --
+      // SetField fields like `statuses` survive as runtime `Set`s, then JSON-serialize
+      // to `{}` when written to flags/DB, silently breaking dnd5e features (e.g. the
+      // concentration getter which calls `effect.statuses.has(...)`).
       let data = {
-        data: foundry.utils.duplicate(effect),
+        data: (effect?.toObject?.() ?? foundry.utils.deepClone(effect)),
         parentActorId: false,
         parentActorLink: false,
         entityType: "template",
@@ -635,8 +641,9 @@ export class AAHelpers {
   static async applyDrawing(drawing, effects) {
     const templateEffectData = [];
     for (let effect of effects) {
+      // See applyTemplate for the rationale behind `.toObject?.() ?? deepClone(...)`.
       const newEffect = {
-        data: foundry.utils.duplicate(effect),
+        data: (effect?.toObject?.() ?? foundry.utils.deepClone(effect)),
         parentActorId: false,
         parentActorLink: false,
         entityType: "drawing",

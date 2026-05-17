@@ -2,11 +2,11 @@ import { MODULE_NAME } from "../../shared/const.js";
 import { TEMPLATE } from "../config/templates.js";
 import { RollUtility } from "./roll.js";
 
-// `foundry.utils.duplicate` is being phased out toward `foundry.utils.deepClone`.
-// Both exist in v13 and v14 — prefer the survivor so this module stays working
-// if a future Foundry release removes `duplicate`. Also covers the bare `duplicate`
-// global removed in v14.
-const _duplicate = foundry.utils.deepClone ?? foundry.utils.duplicate;
+// Clone helper for the plain dice-result objects pushed below.
+// `foundry.utils.deepClone` exists on v13 and v14 and is the canonical replacement
+// for `foundry.utils.duplicate` (which is being phased out). Callers in this module
+// only ever pass plain data, so no `.toObject()` guard is required here.
+const _duplicate = foundry.utils.deepClone;
 
 /**
  * Utility class to handle all rendering from provided fields into HTML data.

@@ -92,7 +92,7 @@ export async function deleteTokenHook() {
  * On token movement run MainAura
  */
 export async function updateTokenHook(token, update, _flags, _id) {
-  Logger.debug("updateTokenHookArgs", { token: foundry.utils.duplicate(token), update, _flags, _id, liveToken: token.object?._animation });
+  Logger.debug("updateTokenHookArgs", { token: (token?.toObject?.() ?? foundry.utils.deepClone(token)), update, _flags, _id, liveToken: token.object?._animation });
   if (canvas.scene === null) {
     Logger.debug("Active Auras disabled due to no canvas");
     return;
@@ -255,7 +255,18 @@ export async function canvasReadyHook(canvas) {
   } catch (err) { /* best-effort wait */ }
   // Re-check scene: a rapid scene-switch during the await above could leave
   // canvas.scene null, in which case the collation would no-op anyway.
-  if (canvas.scene) addToCollateSemaphore(canvas.scene.id, true, false, "ready");
+  //
+  // Pass removeAuras=true (not just checkAuras=true). Auras are scene-scoped to
+  // wherever the source token currently is, but the effects they apply live on
+  // actor-linked actors and therefore survive scene transitions. Without the
+  // removal pass on canvasReady, switching into a scene whose effectMap is empty
+  // (or doesn't include some prior aura origin) leaves stale ActiveAuras-applied
+  // effects on every actor that was previously in range -- e.g. Wabu's Aura of
+  // Protection persisting on Aveneus/Sheyla/Kami/Calcryx after the source token
+  // moved scenes or its aura was disabled. RemoveAppliedAuras keys cleanup off
+  // the current scene's effectMap origins, so it correctly preserves any aura
+  // whose source IS on this scene.
+  if (canvas.scene) addToCollateSemaphore(canvas.scene.id, true, true, "ready");
 }
 
 

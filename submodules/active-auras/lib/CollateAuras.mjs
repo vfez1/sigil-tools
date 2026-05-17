@@ -8,8 +8,9 @@ function generateTargetEffect(token, effect) {
   if (effect.disabled) return;
   if (effect.isSuppressed) return; // effect is suppressed for example because it is unequipped
   const parentActor = effect.parent?.actor ?? effect.parent;
+  // See AAHelpers.applyTemplate for the rationale behind `.toObject?.() ?? deepClone(...)`.
   const newEffect = {
-    data: foundry.utils.duplicate(effect),
+    data: (effect?.toObject?.() ?? foundry.utils.deepClone(effect)),
     parentActorLink: parentActor.prototypeToken.actorLink,
     parentActorId: parentActor.id,
     entityType: "token",
@@ -126,7 +127,7 @@ function RetrieveTemplateAuras(effectArray) {
     for (const testEffect of (template.document.flags?.ActiveAuras?.IsAura ?? [])) {
       if (testEffect.disabled) continue;
       if (testEffect.isSuppressed) continue; // effect is suppressed for example because it is unequipped
-      const newEffect = foundry.utils.duplicate(testEffect);
+      const newEffect = (testEffect?.toObject?.() ?? foundry.utils.deepClone(testEffect));
       const actor = AAHelpers.getActorFromAAEffectData(testEffect);
       const rollData = actor.getRollData();
       rollData["item.level"] = foundry.utils.getProperty(testEffect, "castLevel");
@@ -162,7 +163,7 @@ function RetrieveDrawingAuras(effectArray) {
     for (const testEffect of (drawing.document.flags?.ActiveAuras?.IsAura ?? [])) {
       if (testEffect.disabled) continue;
       if (testEffect.isSuppressed) continue;
-      const newEffect = foundry.utils.duplicate(testEffect);
+      const newEffect = (testEffect?.toObject?.() ?? foundry.utils.deepClone(testEffect));
       for (let change of (newEffect.data.changes ?? [])) {
         if (change.key.startsWith("macro.")) newEffect.data.flags.ActiveAuras.isMacro = true;
       }
