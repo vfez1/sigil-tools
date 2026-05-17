@@ -1,39 +1,20 @@
 const CONFIG_PATH = `/modules/sigil-tools/submodules/suppress-warnings/warnings.json`;
 const LOG_PREFIX = "[Sigil Tools | Suppress Warnings]";
 
-Hooks.once("init", async () => {
-    let config;
-    try {
-        const response = await fetch(CONFIG_PATH);
-        config = await response.json();
-    } catch (e) {
-        console.error(`${LOG_PREFIX} Failed to load warnings.json:`, e);
-        return;
-    }
+const config = loadConfigSync();
+const suppressions = (config.warnings ?? []).map(entry => ({
+    ...entry,
+    regex: entry.pattern ? new RegExp(entry.pattern) : new RegExp(escapeRegExp(entry.message))
+}));
 
-    const currentVersion = game.version;
-    const active = [];
-    const expired = [];
+// Mutable — expired entries are pruned once game.version is available on init
+let activeRegexes = suppressions.map(s => s.regex);
 
-    for (const entry of (config.warnings ?? [])) {
-        if (foundry.utils.isNewerVersion(entry.until, currentVersion)) {
-            active.push(entry);
-        } else {
-            expired.push(entry);
-        }
-    }
-
-    for (const entry of expired) {
-        console.warn(`${LOG_PREFIX} Suppression for "${entry.message}" expired (until: ${entry.until}, current: ${currentVersion}). Remove it from warnings.json.`);
-    }
-
-    if (active.length === 0) return;
-
-    const patterns = active.map(entry =>
-        entry.pattern ? new RegExp(entry.pattern) : new RegExp(escapeRegExp(entry.message))
-    );
-
-    const isSuppressed = (msg) => patterns.some(p => p.test(String(msg ?? "")));
+if (activeRegexes.length > 0) {
+    const isSuppressed = (msg) => {
+        const str = msg instanceof Error ? msg.message : String(msg ?? "");
+        return activeRegexes.some(p => p.test(str));
+    };
 
     const _warn = console.warn.bind(console);
     console.warn = function (...args) {
@@ -41,14 +22,38 @@ Hooks.once("init", async () => {
         _warn(...args);
     };
 
-    if (typeof foundry?.utils?.logCompatibilityWarning === "function") {
-        const _compat = foundry.utils.logCompatibilityWarning.bind(foundry.utils);
-        foundry.utils.logCompatibilityWarning = function (message, options) {
-            if (isSuppressed(message)) return;
-            _compat(message, options);
-        };
-    }
+    const _error = console.error.bind(console);
+    console.error = function (...args) {
+        if (isSuppressed(args[0])) return;
+        _error(...args);
+    };
+}
+
+// Prune expired suppressions and notify once game version is known
+Hooks.once("init", () => {
+    const currentVersion = game.version;
+    activeRegexes = suppressions
+        .filter(s => {
+            if (!foundry.utils.isNewerVersion(s.until, currentVersion)) {
+                console.warn(`${LOG_PREFIX} Suppression for "${s.message}" expired (until: ${s.until}, current: ${currentVersion}). Remove it from warnings.json.`);
+                return false;
+            }
+            return true;
+        })
+        .map(s => s.regex);
 });
+
+function loadConfigSync() {
+    try {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", CONFIG_PATH, false);
+        xhr.send();
+        if (xhr.status === 200) return JSON.parse(xhr.responseText);
+    } catch (e) {
+        console.error(`${LOG_PREFIX} Failed to load warnings.json:`, e);
+    }
+    return { warnings: [] };
+}
 
 function escapeRegExp(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

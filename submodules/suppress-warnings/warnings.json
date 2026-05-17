@@ -1,9 +1,14 @@
 {
-  "warnings": [
-    {
-      "message": "TokenDocument#hexagonalShape is deprecated in favor of TokenDocument#shape",
-      "until": "15.3",
-      "note": "Remove once Foundry drops the old property entirely"
-    }
-  ]
+    "warnings": [
+        {
+            "message": "TokenDocument#hexagonalShape is deprecated in favor of TokenDocument#shape",
+            "until": "14.0",
+            "note": "Recheck once 14.0 is released to see if this can be removed"
+        },
+        {
+            "message": "You are accessing the global \"Token\" which is now namespaced under foundry.canvas.placeables.Token",
+            "until": "14.0",
+            "note": "Recheck once 14.0 is released to see if this can be removed"
+        }
+    ]
 }
