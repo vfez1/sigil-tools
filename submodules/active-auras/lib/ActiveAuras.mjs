@@ -134,10 +134,15 @@ export class ActiveAuras {
     });
 
     // remove all effects first to prevent issues with DAE where it will attempt to remove a duplicate
+    const removeSeen = new Set();
     const removeResults = [];
     for (const update of effectMap) {
       if (update[1].add === false) {
-        removeResults.push(ActiveAuras.RemoveActiveEffects(update[1].token.id, update[1].effect.origin));
+        const key = `${update[1].token.id}|${update[1].effect.origin}`;
+        if (!removeSeen.has(key)) {
+          removeSeen.add(key);
+          removeResults.push(ActiveAuras.RemoveActiveEffects(update[1].token.id, update[1].effect.origin));
+        }
       }
     }
     await Promise.all(removeResults);
