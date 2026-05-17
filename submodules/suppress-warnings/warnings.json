@@ -1,0 +1,9 @@
+{
+  "warnings": [
+    {
+      "message": "TokenDocument#hexagonalShape is deprecated in favor of TokenDocument#shape",
+      "until": "15.3",
+      "note": "Remove once Foundry drops the old property entirely"
+    }
+  ]
+}
