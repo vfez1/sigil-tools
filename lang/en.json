@@ -4,9 +4,20 @@
             "rollVersatile": {
                 "name": "Roll Versatile Damage",
                 "hint": "Hold this key while clicking an activity to roll versatile damage instead of base damage."
+            },
+            "ackModeToggle": {
+                "name": "Toggle Acknowledged Mode",
+                "hint": "Pause chat auto-scroll and step through new messages one at a time."
+            }
+        },
+        "sceneControls": {
+            "acknowledgedMode": {
+                "title": "Acknowledged Mode"
             }
         },
         "settings": {
+            "acknowledgedMode.name": "Acknowledged Mode",
+            "acknowledgedMode.hint": "Show an Acknowledge button on damage chat cards (GM only). Clicking it marks the message with a green indicator visible to all players.",
             "preventMovementHistory.name": "Prevent Movement History",
             "preventMovementHistory.hint": "Prevent tokens from recording movement history. Requires a reload.",
             "enableWabuWildshapeEffectToggle.name": "Wabu: Auto-Toggle Wild Shape Effects",

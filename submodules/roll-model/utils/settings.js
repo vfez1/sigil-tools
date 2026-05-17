@@ -8,6 +8,7 @@ import { CoreUtility } from "./core.js";
 export const SETTING_NAMES = {
     PREVENT_MOVEMENT_HISTORY: "preventMovementHistory",
     WABU_WILDSHAPE_EFFECT_TOGGLE: "enableWabuWildshapeEffectToggle",
+    ACK_MODE: "acknowledgedMode",
 };
 
 /**
@@ -33,6 +34,15 @@ export class SettingsUtility {
             type: Boolean,
             default: true,
             requiresReload: true,
+        });
+
+        game.settings.register(MODULE_NAME, SETTING_NAMES.ACK_MODE, {
+            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ACK_MODE}.name`),
+            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ACK_MODE}.hint`),
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true,
         });
 
         // WILD SHAPE SETTINGS

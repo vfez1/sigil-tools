@@ -1,4 +1,5 @@
 import { MODULE_NAME, MODULE_SHORT, MODULE_TITLE } from "../../shared/const.js";
+import { AcknowledgedModeUtility } from "./ack.js";
 import { ActivityUtility } from "./activity.js";
 import { ChatUtility } from "./chat.js";
 import { CoreUtility } from "./core.js";
@@ -76,13 +77,14 @@ export class HooksUtility {
 
             HooksUtility.registerRollHooks();
             HooksUtility.registerChatHooks();
+            HooksUtility.registerSceneControlHooks();
         });
 
         Hooks.on(HOOKS_CORE.READY, () => {
             CONFIG[MODULE_SHORT].combinedDamageTypes = foundry.utils.mergeObject(
                 Object.fromEntries(Object.entries(CONFIG.DND5E.damageTypes).map(([k, v]) => [k, v.label])),
                 Object.fromEntries(Object.entries(CONFIG.DND5E.healingTypes).map(([k, v]) => [k, v.label])),
-                { recursive: false },
+                { recursive: false }
             );
 
             HooksUtility.registerHPHooks();
@@ -140,76 +142,78 @@ export class HooksUtility {
             return true;
         });
 
-            Hooks.on(HOOKS_DND5E.PRE_ROLL_ATTACK, (config, dialog, message) => {
-                if (!message.data?.flags || !message.data.flags[MODULE_SHORT]?.quickRoll) return true;
+        Hooks.on(HOOKS_DND5E.PRE_ROLL_ATTACK, (config, dialog, message) => {
+            if (!message.data?.flags || !message.data.flags[MODULE_SHORT]?.quickRoll) return true;
 
-                for (const roll of config.rolls) {
-                    roll.options.advantage ??= config.advantage;
-                    roll.options.disadvantage ??= config.disadvantage;
-                }
+            for (const roll of config.rolls) {
+                roll.options.advantage ??= config.advantage;
+                roll.options.disadvantage ??= config.disadvantage;
+            }
 
-                dialog.configure = false;
+            dialog.configure = false;
 
-                return true;
-            });
+            return true;
+        });
 
-            // Fires per-roll after _buildAttackConfig adds parts + data to the individual roll config.
-            // rollConfig.options is the same reference that becomes roll.options on the D20Roll,
-            // so writing bonusParts/bonusData here makes them available at render time.
-            Hooks.on(HOOKS_DND5E.POST_BUILD_ATTACK_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
-                RollUtility.captureAttackFormulaParts(outerConfig, rollConfig, index);
-            });
+        // Fires per-roll after _buildAttackConfig adds parts + data to the individual roll config.
+        // rollConfig.options is the same reference that becomes roll.options on the D20Roll,
+        // so writing bonusParts/bonusData here makes them available at render time.
+        Hooks.on(HOOKS_DND5E.POST_BUILD_ATTACK_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
+            RollUtility.captureAttackFormulaParts(outerConfig, rollConfig, index);
+        });
 
-            Hooks.on(HOOKS_DND5E.PRE_ROLL_DAMAGE, (config, dialog, message) => {
-                if (!message.data?.flags || !message.data.flags[MODULE_SHORT]?.quickRoll) return true;
+        Hooks.on(HOOKS_DND5E.PRE_ROLL_DAMAGE, (config, dialog, message) => {
+            if (!message.data?.flags || !message.data.flags[MODULE_SHORT]?.quickRoll) return true;
 
-                for (const roll of config.rolls) {
-                    roll.options ??= {};
-                    roll.options.isCritical ??= config.isCritical;
-                    RollUtility.captureFormulaParts(roll);
-                }
+            for (const roll of config.rolls) {
+                roll.options ??= {};
+                roll.options.isCritical ??= config.isCritical;
+                RollUtility.captureFormulaParts(roll);
+            }
 
-                dialog.configure = false;
+            dialog.configure = false;
 
-                return true;
-            });
+            return true;
+        });
 
-            Hooks.on(HOOKS_DND5E.POST_BUILD_DAMAGE_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
-                RollUtility.applyGWMDamageBonus(outerConfig, rollConfig, index);
-                RollUtility.applyElementalFuryPotentSpellcastingDamageBonus(outerConfig, rollConfig, index);
-                RollUtility.injectLunarRadianceType(outerConfig, rollConfig);
-                RollUtility.captureDamageFormulaParts(outerConfig, rollConfig, index);
-            });
+        Hooks.on(HOOKS_DND5E.POST_BUILD_DAMAGE_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
+            RollUtility.applyGWMDamageBonus(outerConfig, rollConfig, index);
+            RollUtility.applyElementalFuryPotentSpellcastingDamageBonus(outerConfig, rollConfig, index);
+            RollUtility.injectLunarRadianceType(outerConfig, rollConfig);
+            RollUtility.captureDamageFormulaParts(outerConfig, rollConfig, index);
+        });
 
-            Hooks.on(HOOKS_DND5E.POST_DAMAGE_ROLL_CONFIGURATION, (rolls, config, dialog, message) => {
-                RollUtility.captureDamageRollSources(rolls, config);
-            });
+        Hooks.on(HOOKS_DND5E.POST_DAMAGE_ROLL_CONFIGURATION, (rolls, config, dialog, message) => {
+            RollUtility.captureDamageRollSources(rolls, config);
+        });
 
-            Hooks.on(HOOKS_DND5E.REST_COMPLETED, async (actor, result, config) => {
-                if (_shouldRefreshRavenQueenInspiration(actor, config)) await actor.update({ "system.attributes.inspiration": true });
+        Hooks.on(HOOKS_DND5E.REST_COMPLETED, async (actor, result, config) => {
+            if (_shouldRefreshRavenQueenInspiration(actor, config)) await actor.update({ "system.attributes.inspiration": true });
 
-                if (_hasItem(actor, "Book of the Dead")) {
-                    const hp = actor.system.attributes.hp;
-                    const effectiveMax = hp.max + (hp.tempmax ?? 0);
-                    await actor.update({ "system.attributes.hp.value": Math.min(hp.value + 300, effectiveMax) });
-                }
-            });
-
-            Hooks.on(HOOKS_DND5E.ACTIVITY_CONSUMPTION, (activity, usageConfig, messageConfig, updates) => {
-                if (activity.hasOwnProperty(ROLL_TYPE.ATTACK) && updates.item.length > 0 && messageConfig.data) {
-                    const ammo = updates.item.find((i) => i["system.quantity"]);
-                    if (!ammo) return;
-                    messageConfig.data.flags[MODULE_SHORT].ammunition = ammo._id;
-                    ammo["system.quantity"]++;
-                }
-            });
-
-            // Ensures that the post use hook from RSR registers last so that it doesn't block other modules
-            setTimeout(() => {
-                Hooks.on(HOOKS_DND5E.POST_USE_ACTIVITY, (activity, usageConfig, results) => {
-                    return false;
+            if (_hasItem(actor, "Book of the Dead")) {
+                const hp = actor.system.attributes.hp;
+                const effectiveMax = hp.max + (hp.tempmax ?? 0);
+                await actor.update({
+                    "system.attributes.hp.value": Math.min(hp.value + 300, effectiveMax),
                 });
-            }, 15000);
+            }
+        });
+
+        Hooks.on(HOOKS_DND5E.ACTIVITY_CONSUMPTION, (activity, usageConfig, messageConfig, updates) => {
+            if (activity.hasOwnProperty(ROLL_TYPE.ATTACK) && updates.item.length > 0 && messageConfig.data) {
+                const ammo = updates.item.find((i) => i["system.quantity"]);
+                if (!ammo) return;
+                messageConfig.data.flags[MODULE_SHORT].ammunition = ammo._id;
+                ammo["system.quantity"]++;
+            }
+        });
+
+        // Ensures that the post use hook from RSR registers last so that it doesn't block other modules
+        setTimeout(() => {
+            Hooks.on(HOOKS_DND5E.POST_USE_ACTIVITY, (activity, usageConfig, results) => {
+                return false;
+            });
+        }, 15000);
     }
 
     /**
@@ -220,6 +224,34 @@ export class HooksUtility {
 
         Hooks.on(HOOKS_DND5E.RENDER_CHAT_MESSAGE, (message, html) => {
             ChatUtility.processChatMessage(message, html);
+            AcknowledgedModeUtility.onNewMessage(message, html);
+            AcknowledgedModeUtility.applyAcknowledgedStyle(message, html);
+        });
+
+        AcknowledgedModeUtility.registerApplyListener();
+        AcknowledgedModeUtility.registerSocketListener();
+    }
+
+    static registerSceneControlHooks() {
+        _logHookDebug("Registering scene control hooks");
+
+        Hooks.on("getSceneControlButtons", (controls) => {
+            const tokenControls = controls.tokens ?? controls.token;
+            if (!tokenControls?.tools) return;
+
+            if (AlwaysHPWidget.canLoad()) {
+                tokenControls.tools.toggledialog = {
+                    name: "toggledialog",
+                    title: "Toggle HP Widget",
+                    icon: "fas fa-briefcase-medical",
+                    toggle: true,
+                    active: game.user.getFlag(MODULE_NAME, "alwayshpShowDialog") !== false,
+                    onChange: async (toggled) => {
+                        await game.user.setFlag(MODULE_NAME, "alwayshpShowDialog", toggled);
+                        HPManager.toggleApp(toggled);
+                    },
+                };
+            }
         });
     }
 
@@ -237,27 +269,9 @@ export class HooksUtility {
             if (
                 canvas.tokens.controlled.length == 1 &&
                 canvas.tokens.controlled[0]?.actor?.id == actor.id &&
-                (foundry.utils.getProperty(data, "system.attributes.death") != undefined ||
-                    foundry.utils.getProperty(data, "system.attributes.hp.value"))
+                (foundry.utils.getProperty(data, "system.attributes.death") != undefined || foundry.utils.getProperty(data, "system.attributes.hp.value"))
             ) {
                 HPManager.refresh();
-            }
-        });
-
-        Hooks.on("getSceneControlButtons", (controls) => {
-            if (AlwaysHPWidget.canLoad()) {
-                let tokenControls = controls.tokens;
-                tokenControls.tools.toggledialog = {
-                    name: "toggledialog",
-                    title: "Toggle HP Widget",
-                    icon: "fas fa-briefcase-medical",
-                    toggle: true,
-                    active: game.user.getFlag(MODULE_NAME, "alwayshpShowDialog") !== false,
-                    onClick: async (toggled) => {
-                        await game.user.setFlag(MODULE_NAME, "alwayshpShowDialog", toggled);
-                        HPManager.toggleApp(toggled);
-                    },
-                };
             }
         });
     }
@@ -314,7 +328,7 @@ function _applyRollModePatch() {
     libWrapper.register(
         MODULE_NAME,
         "ChatMessage.prototype.applyRollMode",
-        function(rollMode) {
+        function (rollMode) {
             return this.applyMode(rollMode);
         },
         "OVERRIDE"
@@ -354,7 +368,7 @@ const WILDSHAPE_EFFECT_TARGETS = {
 
 async function _applyWildshapeEffectToggle(actor, isWildShaping, attunementActor) {
     const targets = Object.fromEntries(
-        Object.entries(WILDSHAPE_EFFECT_TARGETS).map(([name, disabledWhileShaped]) => [name, isWildShaping ? disabledWhileShaped : !disabledWhileShaped]),
+        Object.entries(WILDSHAPE_EFFECT_TARGETS).map(([name, disabledWhileShaped]) => [name, isWildShaping ? disabledWhileShaped : !disabledWhileShaped])
     );
 
     const candidates = [...actor.effects, ...[...actor.items].flatMap((i) => [...i.effects])];
@@ -371,7 +385,7 @@ async function _applyWildshapeEffectToggle(actor, isWildShaping, attunementActor
         for (const eff of matches) {
             const parentItem = eff.parent?.documentName === "Item" ? eff.parent : null;
             if (parentItem?.name.startsWith("Cloak of the Lunar Guardian")) {
-                const cloakOnOriginal = attunementActor?.items.find(i => i.name.startsWith("Cloak of the Lunar Guardian"));
+                const cloakOnOriginal = attunementActor?.items.find((i) => i.name.startsWith("Cloak of the Lunar Guardian"));
                 if (!cloakOnOriginal?.system?.attuned) {
                     log.push(`${eff.name} — skipped (not attuned)`);
                     continue;

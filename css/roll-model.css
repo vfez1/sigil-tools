@@ -1,290 +1,363 @@
+/* Acknowledged Mode */
+
+.rm-ack-banner {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 4px 8px;
+    background: var(--color-warm-2, #4a3728);
+    color: var(--color-light-1, #f0e6d3);
+    font-size: var(--font-size-11);
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border-light-2, #7a5c3c);
+    letter-spacing: 0.04em;
+}
+
+.rm-ack-footer {
+    position: relative;
+    z-index: 10;
+    padding: 6px 6px 4px;
+    pointer-events: auto;
+}
+
+.rm-ack-footer .rm-ack-btn {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 7px 0;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+    color: #c8e6c8;
+    background: linear-gradient(to bottom, #2d5e2d, #1b3b1b);
+    border: 1px solid #3d6b3d;
+    border-radius: 3px;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+.rm-ack-footer .rm-ack-btn:hover {
+    background: linear-gradient(to bottom, #3a7a3a, #275227);
+    border-color: #5aaa5a;
+    color: #e8f5e8;
+}
+
+.rm-acknowledged {
+    box-shadow: inset 5px 0 0 rgba(80, 170, 80, 0.9);
+}
+
+.rm-ack-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 5px 8px;
+    margin-bottom: 4px;
+    background: #2a5a2a;
+    color: #a8d8a8;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+}
+
+/* —— end Acknowledged Mode —— */
+
 .rm-multiroll {
-	display: flex;
+    display: flex;
 }
 
 .rm-multiroll .dice-total.ignored {
-	opacity: .4;
-	border: 1px solid #888888;
+    opacity: 0.4;
+    border: 1px solid #888888;
 }
 
 .rm-multiroll .die-icon {
-	background-image: url(../../../icons/svg/d20-grey.svg);
-	width: 22px;
-	line-height: 22px;
-	background-size: 22px;
-	background-repeat: no-repeat;
-	float: left;
-	font-weight: bold;
-	font-size: 13px;
-	text-align: center;
-	opacity: 0.95;
+    background-image: url(../../../icons/svg/d20-grey.svg);
+    width: 22px;
+    line-height: 22px;
+    background-size: 22px;
+    background-repeat: no-repeat;
+    float: left;
+    font-weight: bold;
+    font-size: 13px;
+    text-align: center;
+    opacity: 0.95;
 
-	position: absolute;
-	top: 50%;
-	right: 5px;
-	transform: translate(0, -50%);
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    transform: translate(0, -50%);
 }
 
 .rm-multiroll .success .die-icon,
 .rm-multiroll .critical .die-icon {
-	filter: sepia(0.5) hue-rotate(60deg);
+    filter: sepia(0.5) hue-rotate(60deg);
 }
 
 .rm-multiroll .failure .die-icon,
 .rm-multiroll .fumble .die-icon {
-	filter: sepia(0.5) hue-rotate(-60deg);
+    filter: sepia(0.5) hue-rotate(-60deg);
 }
 
 .dice-result .rm-multiroll .dice-total::before,
 .dice-result .rm-multiroll .dice-total::after {
-	display: none;
+    display: none;
 }
 
 .rm-header {
-	margin-bottom: 0.25rem;
+    margin-bottom: 0.25rem;
 }
 
 .rm-supplement {
-	font-size: var(--font-size-11);
-	color: var(--color-text-dark-5);
-	margin: 0.25rem 0 0;
-	text-align: center;
+    font-size: var(--font-size-11);
+    color: var(--color-text-dark-5);
+    margin: 0.25rem 0 0;
+    text-align: center;
 }
 
-.rm-supplement>strong {
-	color: var(--color-text-dark-primary);
-	text-transform: uppercase;
-	font-size: var(--font-size-10);
+.rm-supplement > strong {
+    color: var(--color-text-dark-primary);
+    text-transform: uppercase;
+    font-size: var(--font-size-10);
 }
 
 .rm-title {
-	font-family: var(--dnd5e-font-roboto);
-	font-weight: bold;
-	font-size: var(--font-size-13);
-	text-transform: uppercase;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.25rem;
-	margin-bottom: 0.1rem;
+    font-family: var(--dnd5e-font-roboto);
+    font-weight: bold;
+    font-size: var(--font-size-13);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    margin-bottom: 0.1rem;
 }
 
 .rm-subtitle {
-	font-family: var(--dnd5e-font-roboto);
-	font-style: italic;
-	font-size: var(--font-size-12);
-	display: flex;
-	align-items: center;
-	justify-content: center;
+    font-family: var(--dnd5e-font-roboto);
+    font-style: italic;
+    font-size: var(--font-size-12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .rm-context {
-	font-family: var(--dnd5e-font-roboto);
-	font-size: var(--font-size-11);
-	color: var(--color-text-dark-5);
-	text-align: center;
-	border: 1px solid var(--color-border-light-1);
-	border-radius: 3px;
-	background: var(--dnd5e-background-10);
-	padding: 0.125rem;
-	margin-top: 0.125rem;
-	margin-bottom: 0.125rem;
+    font-family: var(--dnd5e-font-roboto);
+    font-size: var(--font-size-11);
+    color: var(--color-text-dark-5);
+    text-align: center;
+    border: 1px solid var(--color-border-light-1);
+    border-radius: 3px;
+    background: var(--dnd5e-background-10);
+    padding: 0.125rem;
+    margin-top: 0.125rem;
+    margin-bottom: 0.125rem;
 }
 
 .rm-damage .dice-tooltip .tooltip-part {
-	position: relative;
+    position: relative;
 }
 
 .rm-concentration-buttons {
-	margin-top: 3px;
-	line-height: 24px;
+    margin-top: 3px;
+    line-height: 24px;
 }
 
 .rm-overlay {
-	text-align: center !important;
-	flex-grow: 1;
-	position: absolute;
-	left: 0;
-	right: 0;
-	top: 0;
-	bottom: 0;
-	padding: 0 30%;
+    text-align: center !important;
+    flex-grow: 1;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    padding: 0 30%;
 
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1;
 }
 
 .rm-overlay div {
-	width: 24px;
-	height: 24px;
-	font-size: var(--font-size-14);
-	line-height: 26px;
-	padding: 0;
-	color: var(--color-text-dark-5);
+    width: 24px;
+    height: 24px;
+    font-size: var(--font-size-14);
+    line-height: 26px;
+    padding: 0;
+    color: var(--color-text-dark-5);
 }
 
 .rm-overlay i:hover {
-	cursor: pointer;
-	text-shadow: 0 0 10px var(--color-shadow-primary);
+    cursor: pointer;
+    text-shadow: 0 0 10px var(--color-shadow-primary);
 }
 
 .rm-overlay-header {
-	left: auto;
-	justify-content: right;
+    left: auto;
+    justify-content: right;
 }
 
 .rm-overlay-header button {
-	width: 30px;
-	height: 30px;
-	font-size: 14px;
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
 }
 
 .dnd5e.item form .rm-item {
-	padding: 8px 8px 0;
-	overflow-y: auto;
+    padding: 8px 8px 0;
+    overflow-y: auto;
 }
 
 .dnd5e.sheet.item .rm-item input[type="text"],
 .dnd5e.sheet.item .rm-item input[type="number"],
 .dnd5e.sheet.item .rm-item select {
-	border: 1px solid #7a7971;
-	background: rgba(0, 0, 0, 0.05);
+    border: 1px solid #7a7971;
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .dnd5e.sheet.item .rm-item label.checkbox {
-	display: inline-table;
-	padding: 0px 8px;
+    display: inline-table;
+    padding: 0px 8px;
 }
 
 .rm-options-subsection {
-	align-items: center;
-	padding: 0 2px;
-	border-bottom: 0px;
+    align-items: center;
+    padding: 0 2px;
+    border-bottom: 0px;
 }
 
 .rm-options-title {
-	padding-left: 6px;
-	padding-top: 4px;
-	font-size: 12px;
+    padding-left: 6px;
+    padding-top: 4px;
+    font-size: 12px;
 }
 
 .rm-options-box {
-	background: rgba(0, 0, 0, 0.05);
-	border: 1px solid #999;
-	border-radius: 4px;
-	box-shadow: 0 0 2px #fff inset;
-	display: flex;
-	flex-flow: row wrap;
-	justify-content: space-between;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid #999;
+    border-radius: 4px;
+    box-shadow: 0 0 2px #fff inset;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
 }
 
 .rm-options-spacer {
-	padding-bottom: 8px;
+    padding-bottom: 8px;
 }
 
 .rm-type-selector {
-	display: flex;
-	gap: 3px;
-	justify-content: center;
-	padding: 2px 0;
-	flex-wrap: wrap;
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    padding: 2px 0;
+    flex-wrap: wrap;
 }
 
 .rm-type-pill {
-	font-family: var(--dnd5e-font-roboto);
-	font-size: var(--font-size-10);
-	padding: 1px 6px;
-	border: 1px solid var(--color-border-light-1);
-	border-radius: 10px;
-	cursor: pointer;
-	background: var(--dnd5e-background-10);
-	color: var(--color-text-dark-5);
-	text-transform: capitalize;
+    font-family: var(--dnd5e-font-roboto);
+    font-size: var(--font-size-10);
+    padding: 1px 6px;
+    border: 1px solid var(--color-border-light-1);
+    border-radius: 10px;
+    cursor: pointer;
+    background: var(--dnd5e-background-10);
+    color: var(--color-text-dark-5);
+    text-transform: capitalize;
 }
 
 .rm-type-pill:hover {
-	background: var(--dnd5e-background-15);
-	border-color: var(--color-border-dark-1);
+    background: var(--dnd5e-background-15);
+    border-color: var(--color-border-dark-1);
 }
 
 .rm-type-pill.active {
-	background: var(--dnd5e-color-gold);
-	color: var(--color-text-dark-primary);
-	border-color: var(--color-border-dark-1);
-	font-weight: bold;
+    background: var(--dnd5e-color-gold);
+    color: var(--color-text-dark-primary);
+    border-color: var(--color-border-dark-1);
+    font-weight: bold;
 }
 
 .rm-hide {
-	display: none !important;
+    display: none !important;
 }
 
 .rm-gwm-row {
-	flex: 0 0 100%;
-	display: flex;
-	justify-content: flex-end;
-	padding: 4px 2px 2px;
+    flex: 0 0 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px 2px 2px;
 }
 
 .rm-gwm-toggle {
-	display: inline-flex;
-	align-items: center;
-	font-family: var(--dnd5e-font-roboto);
-	font-size: var(--font-size-10);
-	padding: 1px 6px;
-	border: 1px solid var(--color-border-light-1);
-	border-radius: 10px;
-	background: var(--dnd5e-background-10);
-	color: var(--color-text-dark-5);
-	cursor: pointer;
-	user-select: none;
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--dnd5e-font-roboto);
+    font-size: var(--font-size-10);
+    padding: 1px 6px;
+    border: 1px solid var(--color-border-light-1);
+    border-radius: 10px;
+    background: var(--dnd5e-background-10);
+    color: var(--color-text-dark-5);
+    cursor: pointer;
+    user-select: none;
 }
 
 .rm-gwm-toggle:has(input:checked) {
-	background: #d8e8ce;
-	color: var(--color-text-dark-primary);
-	border-color: #6f8f5a;
-	font-weight: bold;
+    background: #d8e8ce;
+    color: var(--color-text-dark-primary);
+    border-color: #6f8f5a;
+    font-weight: bold;
 }
 
 .rm-gwm-toggle:hover {
-	background: var(--dnd5e-background-15);
-	border-color: var(--color-border-dark-1);
+    background: var(--dnd5e-background-15);
+    border-color: var(--color-border-dark-1);
 }
 
 .rm-gwm-toggle input {
-	display: none;
+    display: none;
 }
 
 .rm-celestial-revelation {
-	display: inline-flex;
-	align-items: center;
-	font-family: var(--dnd5e-font-roboto);
-	font-size: var(--font-size-10);
-	padding: 1px 6px;
-	border: 1px solid var(--color-border-light-1);
-	border-radius: 10px;
-	background: var(--dnd5e-background-10);
-	color: var(--color-text-dark-5);
-	cursor: pointer;
-	user-select: none;
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--dnd5e-font-roboto);
+    font-size: var(--font-size-10);
+    padding: 1px 6px;
+    border: 1px solid var(--color-border-light-1);
+    border-radius: 10px;
+    background: var(--dnd5e-background-10);
+    color: var(--color-text-dark-5);
+    cursor: pointer;
+    user-select: none;
 }
 
 .rm-celestial-revelation:has(input:checked) {
-	background: #c8e8f4;
-	color: #1a4a60;
-	border-color: #7ab4cc;
-	font-weight: bold;
+    background: #c8e8f4;
+    color: #1a4a60;
+    border-color: #7ab4cc;
+    font-weight: bold;
 }
 
 .rm-celestial-revelation:hover {
-	background: var(--dnd5e-background-15);
-	border-color: var(--color-border-dark-1);
+    background: var(--dnd5e-background-15);
+    border-color: var(--color-border-dark-1);
 }
 
 .rm-celestial-revelation input {
-	display: none;
+    display: none;
 }
 
 /* ===== Always-HP Widget ===== */
@@ -335,7 +408,7 @@
     width: 12px;
     height: 12px;
     border: 1px solid #808080;
-    background-color: #C0C0C0;
+    background-color: #c0c0c0;
     border-radius: 100%;
     display: inline-block;
 }
