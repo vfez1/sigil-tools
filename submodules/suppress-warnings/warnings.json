@@ -1,14 +1,10 @@
 {
     "warnings": [
         {
-            "message": "TokenDocument#hexagonalShape is deprecated in favor of TokenDocument#shape",
+            "_example": true,
+            "message": "Some deprecated API message text — supports substring matching",
             "until": "15.0",
-            "note": "Fixed at source in submodules/grid-aware-auras/dist/module.js — kept here as a safety net in case another module triggers it."
-        },
-        {
-            "message": "You are accessing the global \"Token\" which is now namespaced under foundry.canvas.placeables.Token",
-            "until": "15.0",
-            "note": "Fires at runtime through console.warn — suppressed successfully by this system."
+            "note": "Why this is suppressed and where the warning originates."
         }
     ]
 }

@@ -2,7 +2,7 @@ const CONFIG_PATH = `/modules/sigil-tools/submodules/suppress-warnings/warnings.
 const LOG_PREFIX = "[Sigil Tools | Suppress Warnings]";
 
 const config = loadConfigSync();
-const suppressions = (config.warnings ?? []).map(entry => ({
+const suppressions = (config.warnings ?? []).filter(entry => !entry._example).map(entry => ({
     ...entry,
     regex: entry.pattern ? new RegExp(entry.pattern) : new RegExp(escapeRegExp(entry.message))
 }));
