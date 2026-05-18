@@ -5,6 +5,11 @@
             "message": "Some deprecated API message text — supports substring matching",
             "until": "15.0",
             "note": "Why this is suppressed and where the warning originates."
+        },
+        {
+            "message": "You are accessing the global \"Token\" which is now namespaced under foundry.canvas.placeables.Token",
+            "until": "15.0",
+            "note": "Fired by third-party modules (e.g. levels, betterroofs, tokenflip) calling libWrapper.register with Token.prototype.* targets. Not fixable on our end."
         }
     ]
 }
