@@ -47,6 +47,9 @@ export class HooksUtility {
             _logHookDebug(`Initialising ${MODULE_TITLE}`);
 
             SettingsUtility.registerSettings();
+
+            if (!SettingsUtility.getSettingValue(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
+
             _applyTokenMovementHistoryPrevention();
             _applyRollModePatch();
             applyHPDismissPatch();
@@ -81,6 +84,8 @@ export class HooksUtility {
         });
 
         Hooks.on(HOOKS_CORE.READY, () => {
+            if (!SettingsUtility.getSettingValue(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
+
             CONFIG[MODULE_SHORT].combinedDamageTypes = foundry.utils.mergeObject(
                 Object.fromEntries(Object.entries(CONFIG.DND5E.damageTypes).map(([k, v]) => [k, v.label])),
                 Object.fromEntries(Object.entries(CONFIG.DND5E.healingTypes).map(([k, v]) => [k, v.label])),

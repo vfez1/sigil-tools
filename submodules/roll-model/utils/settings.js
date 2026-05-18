@@ -9,6 +9,10 @@ export const SETTING_NAMES = {
     PREVENT_MOVEMENT_HISTORY: "preventMovementHistory",
     WABU_WILDSHAPE_EFFECT_TOGGLE: "enableWabuWildshapeEffectToggle",
     ACK_MODE: "acknowledgedMode",
+    ENABLE_ROLL_MODEL: "enableRollModel",
+    ENABLE_ACTIVE_AURAS: "enableActiveAuras",
+    ENABLE_OVERRIDE_SETTINGS: "enableOverrideSettings",
+    ENABLE_SUPPRESS_WARNINGS: "enableSuppressWarnings",
 };
 
 /**
@@ -19,6 +23,46 @@ export class SettingsUtility {
      * Registers all necessary module settings.
      */
     static registerSettings() {
+        game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_ROLL_MODEL, {
+            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_ROLL_MODEL}.name`),
+            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_ROLL_MODEL}.hint`),
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true,
+            requiresReload: true,
+        });
+
+        game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_ACTIVE_AURAS, {
+            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_ACTIVE_AURAS}.name`),
+            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_ACTIVE_AURAS}.hint`),
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true,
+            requiresReload: true,
+        });
+
+        game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_OVERRIDE_SETTINGS, {
+            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_OVERRIDE_SETTINGS}.name`),
+            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_OVERRIDE_SETTINGS}.hint`),
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true,
+            requiresReload: true,
+        });
+
+        game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_SUPPRESS_WARNINGS, {
+            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_SUPPRESS_WARNINGS}.name`),
+            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_SUPPRESS_WARNINGS}.hint`),
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true,
+            requiresReload: true,
+        });
+
         game.keybindings.register(MODULE_NAME, "rollVersatile", {
             name: CoreUtility.localize(`${MODULE_SHORT}.keybindings.rollVersatile.name`),
             hint: CoreUtility.localize(`${MODULE_SHORT}.keybindings.rollVersatile.hint`),

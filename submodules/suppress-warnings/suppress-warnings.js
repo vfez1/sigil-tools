@@ -12,6 +12,9 @@ let activeRegexes = suppressions.map(s => s.regex);
 
 if (activeRegexes.length > 0) {
     const isSuppressed = (msg) => {
+        try {
+            if (!game.settings.get("sigil-tools", "enableSuppressWarnings")) return false;
+        } catch {}
         const str = msg instanceof Error ? msg.message : String(msg ?? "");
         return activeRegexes.some(p => p.test(str));
     };

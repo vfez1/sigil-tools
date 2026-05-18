@@ -6,6 +6,8 @@ Hooks.once("ready", async () => {
     // v14 renamed objectsEqual → equals; use whichever the host runtime provides.
     const _equals = foundry.utils.equals ?? foundry.utils.objectsEqual;
 
+    if (!game.settings.get(MODULE_ID, "enableOverrideSettings")) return;
+
     log("Hook: ready");
 
     try {

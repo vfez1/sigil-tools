@@ -16,8 +16,16 @@
             }
         },
         "settings": {
+            "enableRollModel.name": "Enable: Roll Model",
+            "enableRollModel.hint": "Enable the Roll Model submodule (D&D 5e roll overhaul, multi-roll display, damage buttons). Requires a reload.",
+            "enableActiveAuras.name": "Enable: Active Auras",
+            "enableActiveAuras.hint": "Enable the Active Auras submodule (automatically applies effects to tokens within aura range). Requires a reload.",
+            "enableOverrideSettings.name": "Enable: Override Settings",
+            "enableOverrideSettings.hint": "Enable the Override Settings submodule (auto-applies world and client settings from settings.json on load). Requires a reload.",
+            "enableSuppressWarnings.name": "Enable: Suppress Warnings",
+            "enableSuppressWarnings.hint": "Enable the Suppress Warnings submodule (filters configured console warnings and errors). Requires a reload.",
             "acknowledgedMode.name": "Acknowledged Mode",
-            "acknowledgedMode.hint": "Show an Acknowledge button on damage chat cards (GM only). Clicking it marks the message with a green indicator visible to all players.",
+            "acknowledgedMode.hint": "Track damage acknowledgment on chat cards from player-owned actors. The GM can manually acknowledge a card; players applying damage also stamp the card with the affected target names. Both show a green badge visible to all.",
             "preventMovementHistory.name": "Prevent Movement History",
             "preventMovementHistory.hint": "Prevent tokens from recording movement history. Requires a reload.",
             "enableWabuWildshapeEffectToggle.name": "Wabu: Auto-Toggle Wild Shape Effects",
