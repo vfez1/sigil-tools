@@ -354,6 +354,47 @@ function _applyTokenMovementHistoryPrevention() {
     }
 
     CONFIG.Token.documentClass = RollModelTokenDocument;
+
+    let _turnStartMarker = null;
+
+    function _drawTurnStartMarker(combatant) {
+        _clearTurnStartMarker();
+        const token = combatant?.token;
+        if (!token || !canvas.primary) return;
+
+        const size = canvas.grid.size;
+        const w = Math.max(1, token.width) * size;
+        const h = Math.max(1, token.height) * size;
+
+        const g = new PIXI.Graphics();
+        g.beginFill(0x44aaff, 0.25);
+        g.lineStyle(3, 0x44aaff, 1.0);
+        g.drawRect(0, 0, w, h);
+        g.endFill();
+        g.x = token.x;
+        g.y = token.y;
+        g.elevation = token.elevation ?? 0;
+        g.sortLayer = 300;
+
+        canvas.primary.addChild(g);
+        _turnStartMarker = g;
+    }
+
+    function _clearTurnStartMarker() {
+        if (_turnStartMarker) {
+            canvas.primary?.removeChild(_turnStartMarker);
+            _turnStartMarker.destroy();
+            _turnStartMarker = null;
+        }
+    }
+
+    Hooks.on("updateCombat", (combat, changes) => {
+        if (!("turn" in changes) && !("round" in changes)) return;
+        _drawTurnStartMarker(combat.combatant);
+    });
+
+    Hooks.on("deleteCombat", () => _clearTurnStartMarker());
+    Hooks.on("canvasTearDown", () => _clearTurnStartMarker());
 }
 
 function _getPreventMovementHistorySetting() {
