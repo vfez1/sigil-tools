@@ -3,19 +3,12 @@ import { initHooks, readyHooks, socketLibReadyHooks } from "./hooks.mjs";
 import { AAHelpers } from "./lib/AAHelpers.mjs";
 import { AAMeasure } from "./lib/AAMeasure.mjs";
 import { ActiveAuras } from "./lib/ActiveAuras.mjs";
-
-function _isAAEnabled() {
-    try {
-        return game.settings.get("sigil-tools", "enableActiveAuras") !== false;
-    } catch {
-        return true;
-    }
-}
+import { isEnabled } from "../shared/enable.js";
 
 Hooks.on("init", initHooks);
-Hooks.once("socketlib.ready", () => { if (_isAAEnabled()) socketLibReadyHooks(); });
-Hooks.on("ready", () => { if (_isAAEnabled()) readyHooks(); });
-Hooks.on("renderActiveEffectConfig", (...args) => { if (_isAAEnabled()) extendEffectsForm(...args); });
+Hooks.once("socketlib.ready", () => { if (isEnabled("enableActiveAuras")) socketLibReadyHooks(); });
+Hooks.on("ready", () => { if (isEnabled("enableActiveAuras")) readyHooks(); });
+Hooks.on("renderActiveEffectConfig", (...args) => { if (isEnabled("enableActiveAuras")) extendEffectsForm(...args); });
 
 window.AAHelpers = AAHelpers;
 window.AAhelpers = AAHelpers;

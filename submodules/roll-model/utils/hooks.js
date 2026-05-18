@@ -1,4 +1,5 @@
 import { MODULE_NAME, MODULE_SHORT, MODULE_TITLE } from "../../shared/const.js";
+import { isEnabled } from "../../shared/enable.js";
 import { AcknowledgedModeUtility } from "./ack.js";
 import { ActivityUtility } from "./activity.js";
 import { ChatUtility } from "./chat.js";
@@ -48,7 +49,7 @@ export class HooksUtility {
 
             SettingsUtility.registerSettings();
 
-            if (!SettingsUtility.getSettingValue(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
+            if (!isEnabled(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
 
             _applyTokenMovementHistoryPrevention();
             _applyRollModePatch();
@@ -84,7 +85,7 @@ export class HooksUtility {
         });
 
         Hooks.on(HOOKS_CORE.READY, () => {
-            if (!SettingsUtility.getSettingValue(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
+            if (!isEnabled(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
 
             CONFIG[MODULE_SHORT].combinedDamageTypes = foundry.utils.mergeObject(
                 Object.fromEntries(Object.entries(CONFIG.DND5E.damageTypes).map(([k, v]) => [k, v.label])),
