@@ -24,6 +24,8 @@
             "enableOverrideSettings.hint": "Enable the Override Settings submodule (auto-applies world and client settings from settings.json on load). Requires a reload.",
             "enableSuppressWarnings.name": "Enable: Suppress Warnings",
             "enableSuppressWarnings.hint": "Enable the Suppress Warnings submodule (filters configured console warnings and errors). Requires a reload.",
+            "enableGridAwareAuras.name": "Enable: Grid-Aware Auras",
+            "enableGridAwareAuras.hint": "Enable the Grid-Aware Auras submodule (draw grid-accurate aura shapes on tokens with configurable effects and automation). Requires a reload.",
             "acknowledgedMode.name": "Acknowledged Mode",
             "acknowledgedMode.hint": "Track damage acknowledgment on chat cards from player-owned actors. The GM can manually acknowledge a card; players applying damage also stamp the card with the affected target names. Both show a green badge visible to all.",
             "preventMovementHistory.name": "Prevent Movement History",

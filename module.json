@@ -2,7 +2,7 @@
     "id": "sigil-tools",
     "title": "Sigil Tools",
     "description": "Internal tooling module. Contains three submodules: roll-model (D&D 5e roll overhaul), active-auras (aura effects engine), and override-settings (world/client settings automation).",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "socket": true,
     "compatibility": {
         "minimum": "13",
@@ -16,13 +16,23 @@
         }
     ],
     "esmodules": ["submodules/roll-model/roll-model.js", "submodules/roll-model/config/config.js"],
-    "scripts": ["submodules/suppress-warnings/suppress-warnings.js", "submodules/override-settings/override.js"],
-    "styles": ["css/roll-model.css"],
+    "scripts": [
+        "submodules/suppress-warnings/suppress-warnings.js",
+        "submodules/override-settings/override.js",
+        "submodules/grid-aware-auras/loader.js",
+        "submodules/grid-aware-auras/dist/module.js"
+    ],
+    "styles": ["css/roll-model.css", "submodules/grid-aware-auras/dist/module.css"],
     "languages": [
         {
             "lang": "en",
             "name": "English",
             "path": "lang/en.json"
+        },
+        {
+            "lang": "en",
+            "name": "English",
+            "path": "submodules/grid-aware-auras/lang/en.json"
         }
     ],
     "relationships": {

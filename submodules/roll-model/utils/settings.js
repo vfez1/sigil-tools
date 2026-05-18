@@ -13,6 +13,7 @@ export const SETTING_NAMES = {
     ENABLE_ACTIVE_AURAS: "enableActiveAuras",
     ENABLE_OVERRIDE_SETTINGS: "enableOverrideSettings",
     ENABLE_SUPPRESS_WARNINGS: "enableSuppressWarnings",
+    ENABLE_GRID_AWARE_AURAS: "enableGridAwareAuras",
 };
 
 /**
@@ -56,6 +57,16 @@ export class SettingsUtility {
         game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_SUPPRESS_WARNINGS, {
             name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_SUPPRESS_WARNINGS}.name`),
             hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_SUPPRESS_WARNINGS}.hint`),
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true,
+            requiresReload: true,
+        });
+
+        game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_GRID_AWARE_AURAS, {
+            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_GRID_AWARE_AURAS}.name`),
+            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_GRID_AWARE_AURAS}.hint`),
             scope: "world",
             config: true,
             type: Boolean,

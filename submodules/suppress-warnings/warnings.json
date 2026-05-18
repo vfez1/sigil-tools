@@ -3,24 +3,12 @@
         {
             "message": "TokenDocument#hexagonalShape is deprecated in favor of TokenDocument#shape",
             "until": "15.0",
-            "note": "Fires at runtime through console.warn — suppressed successfully by this system."
+            "note": "Fixed at source in submodules/grid-aware-auras/dist/module.js — kept here as a safety net in case another module triggers it."
         },
         {
             "message": "You are accessing the global \"Token\" which is now namespaced under foundry.canvas.placeables.Token",
             "until": "15.0",
             "note": "Fires at runtime through console.warn — suppressed successfully by this system."
-        },
-        {
-            "message": "CONST.TOKEN_HEXAGONAL_SHAPES is deprecated in favor of CONST.TOKEN_SHAPES",
-            "until": "15.0",
-            "cannot_suppress": true,
-            "note": "CANNOT BE SUPPRESSED. Fires from a Proxy get trap inside foundry.mjs at ES module parse time (hexagonal-aura-geometry.mjs:15). foundry.mjs captures console.error by reference before any module script runs, so our console.error patch never intercepts it. The property is also non-configurable (configurable: false on a Proxy value), so the getter cannot be replaced. Fix requires the grid-aware-auras module to update to CONST.TOKEN_SHAPES."
-        },
-        {
-            "message": "You are accessing the global \"CanvasLayer\" which is now namespaced under foundry.canvas.layers.CanvasLayer",
-            "until": "15.0",
-            "cannot_suppress": true,
-            "note": "CANNOT BE SUPPRESSED. Fires from a non-configurable getter on globalThis inside foundry.mjs at ES module parse time (aura-layer.mjs:11). foundry.mjs captures console.error by reference before any module script runs, so our console.error patch never intercepts it. The getter is also marked configurable: false, so it cannot be replaced with Object.defineProperty. Fix requires the grid-aware-auras module to update to foundry.canvas.layers.CanvasLayer."
         }
     ]
 }
