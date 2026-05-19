@@ -13,6 +13,9 @@ Automatically applies active effects to tokens within a defined aura radius. Int
 ### Grid Aware Auras
 Adds configurable aura geometry, rendering, and automation that respects grid shape and token movement.
 
+### Effect Macro
+Adds macro triggers to active effects and related dnd5e workflows.
+
 ### Override Settings
 Applies a fixed set of world/client settings and keybindings on load, driven by `submodules/override-settings/settings.json`.
 

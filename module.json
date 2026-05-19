@@ -1,8 +1,8 @@
 {
     "id": "sigil-tools",
     "title": "Sigil Tools",
-    "description": "Internal tooling module. Contains submodules for roll-model, active-auras, override-settings, and campaign-specific automation.",
-    "version": "1.0.9",
+    "description": "Internal tooling module. Contains submodules for roll-model, active-auras, grid-aware-auras, effectmacro, override-settings, and campaign-specific automation.",
+    "version": "1.0.10",
     "socket": true,
     "compatibility": {
         "minimum": "13",
@@ -15,7 +15,11 @@
             "discord": "fez#1260"
         }
     ],
-    "esmodules": ["submodules/roll-model/roll-model.js", "submodules/roll-model/config/config.js"],
+    "esmodules": [
+        "submodules/roll-model/roll-model.js",
+        "submodules/roll-model/config/config.js",
+        "submodules/effectmacro/scripts/module.mjs"
+    ],
     "scripts": [
         "submodules/suppress-warnings/suppress-warnings.js",
         "submodules/override-settings/override.js",
@@ -23,7 +27,11 @@
         "submodules/grid-aware-auras/loader.js",
         "submodules/grid-aware-auras/dist/module.js"
     ],
-    "styles": ["css/roll-model.css", "submodules/grid-aware-auras/dist/module.css"],
+    "styles": [
+        "css/roll-model.css",
+        "submodules/grid-aware-auras/dist/module.css",
+        "submodules/effectmacro/styles/styles.css"
+    ],
     "languages": [
         {
             "lang": "en",
@@ -34,6 +42,11 @@
             "lang": "en",
             "name": "English",
             "path": "submodules/grid-aware-auras/lang/en.json"
+        },
+        {
+            "lang": "en",
+            "name": "English",
+            "path": "submodules/effectmacro/lang/en.json"
         }
     ],
     "relationships": {

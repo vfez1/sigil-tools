@@ -1,0 +1,30 @@
+<fieldset class="effectmacro">
+  <legend>{{localize "EFFECTMACRO.ModuleTitle"}}</legend>
+
+  {{#if used.length}}
+  <p class="hint">{{localize "EFFECTMACRO.effectSheet.used"}}</p>
+  {{#each used}}
+  <div class="form-group used">
+    <label>{{label}}</label>
+    <div class="form-fields">
+      <button type="button" class="icon fa-solid fa-edit" data-action="macro-edit" data-key="{{value}}"></button>
+      <button type="button" class="icon fa-solid fa-trash" data-action="macro-delete" data-key="{{value}}"></button>
+    </div>
+  </div>
+  {{/each}}
+  {{/if}}
+
+  {{#if options.length}}
+  <div class="form-group">
+    <label>{{localize "EFFECTMACRO.AddAnother"}}</label>
+    <div class="form-fields">
+      <select class="unused-option">
+        {{selectOptions options localize=false}}
+      </select>
+      <button type="button" data-action="macro-add" class="icon fa-solid fa-plus"></button>
+    </div>
+    <p class="hint">{{localize "EFFECTMACRO.effectSheet.unused"}}</p>
+  </div>
+  {{/if}}
+
+</fieldset>

@@ -1,0 +1,10 @@
+fieldset.effectmacro {
+  .form-group.used {
+    label {
+      flex: 2;
+    }
+    .form-fields {
+      flex: 1;
+    }
+  }
+}
