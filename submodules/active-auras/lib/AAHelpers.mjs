@@ -417,6 +417,7 @@ export class AAHelpers {
 
   static async RemoveAppliedAuras() {
     const MapObject = CONFIG.AA.Map.get(canvas.scene.id);
+    if (!MapObject) return;
     const EffectsArray = MapObject.effects.map((i) => i.data.origin);
 
     Logger.debug("RemoveAppliedAuras", { MapKey: canvas.scene.id, MapObject, EffectsArray });
