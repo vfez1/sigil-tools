@@ -10,8 +10,14 @@ Overhauls D&D 5e rolls with quality-of-life improvements: quick rolls, multi-rol
 ### Active Auras
 Automatically applies active effects to tokens within a defined aura radius. Integrates with the Roll Model item sheet to configure aura flags per active effect.
 
+### Grid Aware Auras
+Adds configurable aura geometry, rendering, and automation that respects grid shape and token movement.
+
 ### Override Settings
 Applies a fixed set of world/client settings and keybindings on load, driven by `submodules/override-settings/settings.json`.
+
+### Dev Scene Loader
+Loads the `Iedcaru` scene when the `Dev` user logs in.
 
 ## Dependencies
 
