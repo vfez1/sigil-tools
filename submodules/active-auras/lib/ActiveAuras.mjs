@@ -388,6 +388,7 @@ export class ActiveAuras {
    */
   static async CreateActiveEffect(tokenID, effectData) {
     const token = canvas.tokens.get(tokenID);
+    if (!token) return;
 
     const rename = foundry.utils.getProperty(effectData, "flags.ActiveAuras.nameOverride");
     const effectName = (rename && rename.trim() !== "") ? rename : `${effectData.name} (In Aura)`;
