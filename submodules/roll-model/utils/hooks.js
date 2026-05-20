@@ -327,8 +327,8 @@ function _portentDieHtml(entry, index) {
     const border = used ? "#444" : color;
     return `<span class="portent-die${used ? " portent-die--used" : ""}"
         data-portent-index="${index}"
-        title="${used ? `${value} — used` : `${value} — click to use`}"
-        style="display:inline-block;background:${bg};color:${color};border:1px solid ${border};border-radius:4px;padding:1px 8px;font-size:1em;font-weight:bold;margin:0 2px;opacity:${used ? "0.4" : "1"};cursor:${used ? "default" : "pointer"}">${value}</span>`;
+        title="${used ? `${value} — used` : value}"
+        style="display:inline-block;background:${bg};color:${color};border:1px solid ${border};border-radius:4px;padding:1px 8px;font-size:1em;font-weight:bold;margin:0 2px;opacity:${used ? "0.4" : "1"};cursor:default">${value}</span>`;
 }
 
 function _portentSectionHtml(rolls, featName, featImg) {
@@ -399,16 +399,19 @@ async function _postPortentChatCard(actor) {
     ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
         content: `<div class="dnd5e2 chat-card">${_portentSectionHtml(rolls, featName, featImg)}</div>`,
-        flags: { [MODULE_NAME]: { portentActorId: actor.id } },
+        flags: { [MODULE_NAME]: { portentActorId: actor.id, portentStandalone: true } },
     });
 }
 
 function _attachPortentClickHandlers(message, html) {
     const actorId = message.flags?.[MODULE_NAME]?.portentActorId;
     if (!actorId) return;
+    if (!message.flags?.[MODULE_NAME]?.portentStandalone) return;
 
     const root = html instanceof HTMLElement ? html : html[0];
     root.querySelectorAll(".portent-die:not(.portent-die--used)").forEach((el) => {
+        el.style.cursor = "pointer";
+        el.title = `${el.title} — click to use`;
         el.addEventListener("click", async () => {
             const actor = game.actors.get(actorId);
             if (!actor?.isOwner) return;
