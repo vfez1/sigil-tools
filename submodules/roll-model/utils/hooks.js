@@ -83,6 +83,7 @@ export class HooksUtility {
             HooksUtility.registerRollHooks();
             HooksUtility.registerChatHooks();
             HooksUtility.registerSceneControlHooks();
+            HooksUtility.registerActorSheetHooks();
         });
 
         Hooks.on(HOOKS_CORE.READY, () => {
@@ -204,6 +205,8 @@ export class HooksUtility {
                     "system.attributes.hp.value": Math.min(hp.value + 300, effectiveMax),
                 });
             }
+
+            await _rollPortentDice(actor, config);
         });
 
         Hooks.on(HOOKS_DND5E.ACTIVITY_CONSUMPTION, (activity, usageConfig, messageConfig, updates) => {
@@ -233,6 +236,7 @@ export class HooksUtility {
             ChatUtility.processChatMessage(message, html);
             AcknowledgedModeUtility.onNewMessage(message, html);
             AcknowledgedModeUtility.applyAcknowledgedStyle(message, html);
+            _attachPortentClickHandlers(message, html);
         });
 
         AcknowledgedModeUtility.registerApplyListener();
@@ -283,6 +287,12 @@ export class HooksUtility {
         });
     }
 
+    static registerActorSheetHooks() {
+        Hooks.on("renderCharacterActorSheet", (app, html) => {
+            _renderPortentRollsOnSheet(app.actor, html);
+        });
+    }
+
     static registerWildshapeHooks() {
         _logHookDebug("Registering wild shape effect hooks");
 
@@ -307,6 +317,164 @@ export class HooksUtility {
 
 function _logHookDebug(_message) {
     return;
+}
+
+function _portentDieHtml(entry, index) {
+    const value = typeof entry === "number" ? entry : entry.value;
+    const used = typeof entry === "number" ? false : entry.used;
+    const color = used ? "#555" : value === 20 ? "#ffd700" : value === 1 ? "#e05050" : "#88aaff";
+    const bg = used ? "#111" : "#1a1a2e";
+    const border = used ? "#444" : color;
+    return `<span class="portent-die${used ? " portent-die--used" : ""}"
+        data-portent-index="${index}"
+        title="${used ? `${value} — used` : `${value} — click to use`}"
+        style="display:inline-block;background:${bg};color:${color};border:1px solid ${border};border-radius:4px;padding:1px 8px;font-size:1em;font-weight:bold;margin:0 2px;opacity:${used ? "0.4" : "1"};cursor:${used ? "default" : "pointer"}">${value}</span>`;
+}
+
+function _portentSectionHtml(rolls, featName, featImg) {
+    const dieTags = rolls.map((e, i) => _portentDieHtml(e, i)).join("");
+    return `<section class="card-section">
+        <div class="card-row" style="display:flex;align-items:center;gap:8px;padding:4px 8px 2px">
+            <img src="${featImg}" width="36" height="36" style="border:none;border-radius:4px;flex-shrink:0"/>
+            <div class="name-stacked">
+                <span class="title">${featName}</span>
+                <span class="subtitle">Long Rest — foretelling rolls</span>
+            </div>
+        </div>
+        <div style="display:flex;gap:4px;padding:4px 8px 8px">${dieTags}</div>
+    </section>`;
+}
+
+async function _rollPortentDice(actor, config) {
+    if (config?.type !== "long") return;
+    if (actor?.type !== "character") return;
+    if (!_canRefreshActorInspiration(actor)) return;
+
+    const hasGreaterPortent = _hasItem(actor, "Greater Portent");
+    const hasPortent = hasGreaterPortent || _hasItem(actor, "Portent");
+    if (!hasPortent) return;
+
+    const diceCount = hasGreaterPortent ? 3 : 2;
+    const roll = new Roll(`${diceCount}d20`);
+    await roll.evaluate();
+
+    const rolls = roll.dice[0].results.map((r) => ({ value: r.result, used: false }));
+    await actor.setFlag(MODULE_NAME, "portentRolls", rolls);
+
+    const featName = hasGreaterPortent ? "Greater Portent" : "Portent";
+    const featImg = hasGreaterPortent
+        ? "icons/magic/perception/orb-crystal-ball-scrying-blue.webp"
+        : "icons/magic/perception/orb-eye-scrying.webp";
+
+    const portentSection = _portentSectionHtml(rolls, featName, featImg);
+
+    const restMessage = game.messages.contents.slice().reverse().find((m) => m.speaker?.actor === actor.id);
+    if (restMessage) {
+        const doc = new DOMParser().parseFromString(restMessage.content, "text/html");
+        const card = doc.querySelector(".chat-card") ?? doc.body;
+        card.insertAdjacentHTML("beforeend", portentSection);
+        await restMessage.update({
+            content: doc.body.innerHTML,
+            flags: { [MODULE_NAME]: { portentActorId: actor.id } },
+        });
+    } else {
+        ChatMessage.create({
+            speaker: ChatMessage.getSpeaker({ actor }),
+            content: `<div class="dnd5e2 chat-card">${portentSection}</div>`,
+            flags: { [MODULE_NAME]: { portentActorId: actor.id } },
+        });
+    }
+}
+
+async function _postPortentChatCard(actor) {
+    const rolls = actor.getFlag(MODULE_NAME, "portentRolls");
+    if (!rolls?.length) return;
+
+    const hasGreaterPortent = _hasItem(actor, "Greater Portent");
+    const featName = hasGreaterPortent ? "Greater Portent" : "Portent";
+    const featImg = hasGreaterPortent
+        ? "icons/magic/perception/orb-crystal-ball-scrying-blue.webp"
+        : "icons/magic/perception/orb-eye-scrying.webp";
+
+    ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor }),
+        content: `<div class="dnd5e2 chat-card">${_portentSectionHtml(rolls, featName, featImg)}</div>`,
+        flags: { [MODULE_NAME]: { portentActorId: actor.id } },
+    });
+}
+
+function _attachPortentClickHandlers(message, html) {
+    const actorId = message.flags?.[MODULE_NAME]?.portentActorId;
+    if (!actorId) return;
+
+    const root = html instanceof HTMLElement ? html : html[0];
+    root.querySelectorAll(".portent-die:not(.portent-die--used)").forEach((el) => {
+        el.addEventListener("click", async () => {
+            const actor = game.actors.get(actorId);
+            if (!actor?.isOwner) return;
+
+            const idx = parseInt(el.dataset.portentIndex);
+            const rolls = foundry.utils.deepClone(actor.getFlag(MODULE_NAME, "portentRolls") ?? []);
+            if (!rolls[idx] || rolls[idx].used) return;
+
+            rolls[idx].used = true;
+            await actor.setFlag(MODULE_NAME, "portentRolls", rolls);
+
+            const doc = new DOMParser().parseFromString(message.content, "text/html");
+            const dieEl = doc.querySelector(`[data-portent-index="${idx}"]`);
+            if (dieEl) {
+                const val = rolls[idx].value;
+                dieEl.className = "portent-die portent-die--used";
+                dieEl.style.cssText = `display:inline-block;background:#111;color:#555;border:1px solid #444;border-radius:4px;padding:1px 8px;font-size:1em;font-weight:bold;margin:0 2px;opacity:0.4;cursor:default`;
+                dieEl.title = `${val} — used`;
+            }
+            await message.update({ content: doc.body.innerHTML });
+        });
+    });
+}
+
+function _renderPortentRollsOnSheet(actor, html) {
+    if (!actor) return;
+    const portentRolls = actor.getFlag(MODULE_NAME, "portentRolls");
+    if (!portentRolls?.length) return;
+
+    const portentItem =
+        actor.items.find((i) => i.name === "Greater Portent") ?? actor.items.find((i) => i.name === "Portent");
+    if (!portentItem) return;
+
+    const root = html instanceof HTMLElement ? html : html[0];
+    if (!root) return;
+
+    const itemRow = root.querySelector(`[data-item-id="${portentItem.id}"], [data-entry-id="${portentItem.id}"]`);
+    if (!itemRow) return;
+
+    const nameEl = itemRow.querySelector(".item-name .title, .item-name, .name .title, .name, h3");
+    if (!nameEl) return;
+
+    itemRow.querySelector(".portent-rolls-display")?.remove();
+
+    const wrapper = document.createElement("span");
+    wrapper.className = "portent-rolls-display";
+    wrapper.title = "Click to show portent rolls";
+    wrapper.style.cssText = "display:inline-flex;gap:3px;margin-left:8px;align-items:center;vertical-align:middle;cursor:pointer;";
+    wrapper.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        _postPortentChatCard(actor);
+    });
+
+    for (const entry of portentRolls) {
+        const value = typeof entry === "number" ? entry : entry.value;
+        const used = typeof entry === "number" ? false : entry.used;
+        const color = used ? "#555" : value === 20 ? "#ffd700" : value === 1 ? "#e05050" : "#88aaff";
+        const pip = document.createElement("span");
+        pip.title = used ? `${value} — used` : `${value}`;
+        pip.textContent = value;
+        pip.style.cssText = `display:inline-block;background:${used ? "#111" : "#1a1a2e"};color:${color};border:1px solid ${used ? "#444" : color};border-radius:3px;padding:0 5px;font-size:0.75em;font-weight:bold;line-height:1.7;opacity:${used ? "0.4" : "1"};`;
+        wrapper.appendChild(pip);
+    }
+
+    nameEl.appendChild(wrapper);
 }
 
 function _shouldRefreshRavenQueenInspiration(actor, config) {
