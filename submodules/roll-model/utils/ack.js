@@ -2,17 +2,7 @@ import { MODULE_NAME } from "../../shared/const.js";
 import { SETTING_NAMES, SettingsUtility } from "./settings.js";
 
 export class AcknowledgedModeUtility {
-    static onNewMessage(message, html) {
-        if (!game.user.isGM) return;
-        if (!SettingsUtility.getSettingValue(SETTING_NAMES.ACK_MODE)) return;
-        if (message.getFlag(MODULE_NAME, "acknowledged")) return;
-        if (message.getFlag(MODULE_NAME, "appliedTo")) return;
-        const hasDamage = message.rolls?.some((r) => r instanceof CONFIG.Dice.DamageRoll);
-        if (!hasDamage) return;
-        const actor = _getMessageActor(message);
-        if (!actor?.hasPlayerOwner) return;
-        _injectAckButton(message.id, $(html));
-    }
+    static onNewMessage(_message, _html) {}
 
     static applyAcknowledgedStyle(message, html) {
         const appliedTo = message.getFlag(MODULE_NAME, "appliedTo");
@@ -79,33 +69,4 @@ async function _mergeAppliedTo(message, newNames) {
     await message.setFlag(MODULE_NAME, "appliedTo", merged);
 }
 
-function _getMessageActor(message) {
-    if (message.speaker?.scene && message.speaker?.token) {
-        const scene = game.scenes.get(message.speaker.scene);
-        const tokenDoc = scene?.tokens.get(message.speaker.token);
-        if (tokenDoc?.actor) return tokenDoc.actor;
-    }
-    if (message.speaker?.actor) return game.actors.get(message.speaker.actor);
-    return null;
-}
 
-async function _acknowledge(messageId) {
-    document.querySelector(`[data-message-id="${messageId}"]`)?.querySelector(".rm-ack-footer")?.remove();
-
-    const message = game.messages.get(messageId);
-    if (message) await message.setFlag(MODULE_NAME, "acknowledged", game.user.name);
-}
-
-function _injectAckButton(messageId, html) {
-    const footer = $(`<div class="rm-ack-footer">
-        <button class="rm-ack-btn" type="button">
-            <i class="fas fa-check"></i> Acknowledge
-        </button>
-    </div>`);
-    footer.find(".rm-ack-btn").on("pointerdown", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        _acknowledge(messageId);
-    });
-    html.append(footer);
-}
