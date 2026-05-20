@@ -162,7 +162,18 @@ function allUserHooks() {
 }
 
 async function setAAGM() {
-  const activeGM = game.users.find((user) => user.isGM && user.active);
+  // Pick the canonical "primary GM" with deterministic ordering, so every
+  // connected client computes the same answer. Foundry's `game.users.activeGM`
+  // getter (v13+) returns the active user with the lowest id; if it isn't
+  // available we replicate that contract with an explicit sort. Using
+  // `game.users.find(...)` here was the source of a long-standing bug: two
+  // GMs connecting in different orders could each end up seeing themselves
+  // as the first active GM, leaving both with `CONFIG.AA.GM === true` and
+  // running MainAura/CreateActiveEffect in parallel -- producing duplicate
+  // aura effects (most visibly on the aura caster, where the source-effect
+  // dedup short-circuit also failed).
+  const activeGM = game.users.activeGM
+    ?? game.users.filter((u) => u.isGM && u.active).sort((a, b) => a.id.localeCompare(b.id))[0];
   CONFIG.AA.GM = game.user.isGM && activeGM?.id === game.user.id;
 }
 
@@ -173,6 +184,13 @@ export async function readyHooks() {
   configureApi();
 
   await setAAGM();
+
+  // Re-evaluate the primary AAGM whenever a user connects or disconnects so a
+  // GM joining mid-session can't leave two clients both believing they hold
+  // the AAGM role. Without this, the first GM to connect keeps CONFIG.AA.GM
+  // true forever, and any later-joining GM that sorts earlier than them in
+  // the user collection independently also computes CONFIG.AA.GM true.
+  Hooks.on("userConnected", () => setAAGM());
 
   CONFIG.AA.Semaphore = new foundry.utils.Semaphore(1);
 

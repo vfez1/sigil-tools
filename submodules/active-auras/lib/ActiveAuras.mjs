@@ -393,10 +393,21 @@ export class ActiveAuras {
     const rename = foundry.utils.getProperty(effectData, "flags.ActiveAuras.nameOverride");
     const effectName = (rename && rename.trim() !== "") ? rename : `${effectData.name} (In Aura)`;
 
+    // Find an existing APPLIED duplicate. We must explicitly filter on
+    // `flags.ActiveAuras.applied === true` because for the aura-source token,
+    // `allApplicableEffects()` also surfaces the transferred source effect
+    // (`flags.ActiveAuras.isAura === true`), and the previous logic short-
+    // circuited via that source match -- leaving any already-applied duplicate
+    // unseen and letting a second create proceed. That manifested whenever the
+    // source token was also a target of its own aura (e.g. Aura of Protection's
+    // caster standing within their own aura), especially under the parallel
+    // MainAura race that happens when two GMs (full + assistant) are both
+    // connected.
     const duplicateEffect = Array.from(token.document.actor.allApplicableEffects()).find((e) =>
-      AAHelpers.originsMatch(e.origin, effectData.origin) && e.name === effectName
+      AAHelpers.originsMatch(e.origin, effectData.origin)
+      && e.name === effectName
+      && e.flags?.ActiveAuras?.applied === true
     );
-    if (foundry.utils.getProperty(duplicateEffect, "flags.ActiveAuras.isAura")) return;
     if (duplicateEffect) {
       // console.warn(`${token.name} ${tokenID} Duplicate Effect found for ${effectData.name}`, {
       //   duplicateEffect,

@@ -471,8 +471,16 @@ export class AAHelpers {
   }
 
   static async UserCollateAuras(sceneID, checkAuras, removeAuras, source) {
-    CONFIG.AA.GM = game.users.find((u) => u.isGM && u.active);
-    await CONFIG.AA.Socket.executeAsUser("userCollate", CONFIG.AA.GM.id, sceneID, checkAuras, removeAuras, source);
+    // Compute the active GM into a local; do NOT overwrite CONFIG.AA.GM. The
+    // previous code assigned a User object here, which silently corrupted the
+    // boolean GM-gate that `CollateAuras` and `MainAura` rely on. Any client
+    // that invoked applyDrawing would thereafter pass `if (!CONFIG.AA.GM)`
+    // checks unconditionally (a User object is truthy), turning every later
+    // hook into a duplicate-aura source.
+    const activeGM = game.users.activeGM
+      ?? game.users.filter((u) => u.isGM && u.active).sort((a, b) => a.id.localeCompare(b.id))[0];
+    if (!activeGM) return;
+    await CONFIG.AA.Socket.executeAsUser("userCollate", activeGM.id, sceneID, checkAuras, removeAuras, source);
   }
 
   /**
