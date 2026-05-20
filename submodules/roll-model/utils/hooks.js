@@ -52,6 +52,7 @@ export class HooksUtility {
             if (!isEnabled(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
 
             _applyTokenMovementHistoryPrevention();
+            _applyTurnStartMarker();
             _applyRollModePatch();
             applyHPDismissPatch();
 
@@ -522,13 +523,19 @@ function _applyTokenMovementHistoryPrevention() {
     }
 
     CONFIG.Token.documentClass = RollModelTokenDocument;
+}
 
-    let _turnStartMarker = null;
+function _applyTurnStartMarker() {
+    const mode = SettingsUtility.getSettingValue(SETTING_NAMES.SHOW_TURN_START_MARKER);
+    if (mode === "disabled") return;
 
-    function _drawTurnStartMarker(combatant) {
-        _clearTurnStartMarker();
+    let _marker = null;
+
+    function _draw(combatant) {
+        _clear();
         const token = combatant?.token;
         if (!token || !canvas.primary) return;
+        if (mode === "pcs" && combatant.actor?.type !== "character") return;
 
         const size = canvas.grid.size;
         const w = Math.max(1, token.width) * size;
@@ -545,24 +552,24 @@ function _applyTokenMovementHistoryPrevention() {
         g.sortLayer = 300;
 
         canvas.primary.addChild(g);
-        _turnStartMarker = g;
+        _marker = g;
     }
 
-    function _clearTurnStartMarker() {
-        if (_turnStartMarker) {
-            canvas.primary?.removeChild(_turnStartMarker);
-            _turnStartMarker.destroy();
-            _turnStartMarker = null;
+    function _clear() {
+        if (_marker) {
+            canvas.primary?.removeChild(_marker);
+            _marker.destroy();
+            _marker = null;
         }
     }
 
     Hooks.on("updateCombat", (combat, changes) => {
         if (!("turn" in changes) && !("round" in changes)) return;
-        _drawTurnStartMarker(combat.combatant);
+        _draw(combat.combatant);
     });
 
-    Hooks.on("deleteCombat", () => _clearTurnStartMarker());
-    Hooks.on("canvasTearDown", () => _clearTurnStartMarker());
+    Hooks.on("deleteCombat", () => _clear());
+    Hooks.on("canvasTearDown", () => _clear());
 }
 
 function _getPreventMovementHistorySetting() {

@@ -7,6 +7,7 @@ import { CoreUtility } from "./core.js";
  */
 export const SETTING_NAMES = {
     PREVENT_MOVEMENT_HISTORY: "preventMovementHistory",
+    SHOW_TURN_START_MARKER: "showTurnStartMarker",
     WABU_WILDSHAPE_EFFECT_TOGGLE: "enableWabuWildshapeEffectToggle",
     ACK_MODE: "acknowledgedMode",
     ENABLE_ROLL_MODEL: "enableRollModel",
@@ -14,6 +15,7 @@ export const SETTING_NAMES = {
     ENABLE_OVERRIDE_SETTINGS: "enableOverrideSettings",
     ENABLE_SUPPRESS_WARNINGS: "enableSuppressWarnings",
     ENABLE_GRID_AWARE_AURAS: "enableGridAwareAuras",
+    ENABLE_EFFECT_MACRO: "enableEffectMacro",
 };
 
 /**
@@ -74,6 +76,16 @@ export class SettingsUtility {
             requiresReload: true,
         });
 
+        game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_EFFECT_MACRO, {
+            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_EFFECT_MACRO}.name`),
+            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_EFFECT_MACRO}.hint`),
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true,
+            requiresReload: true,
+        });
+
         game.keybindings.register(MODULE_NAME, "rollVersatile", {
             name: CoreUtility.localize(`${MODULE_SHORT}.keybindings.rollVersatile.name`),
             hint: CoreUtility.localize(`${MODULE_SHORT}.keybindings.rollVersatile.hint`),
@@ -89,6 +101,20 @@ export class SettingsUtility {
             type: Boolean,
             default: true,
             requiresReload: true,
+        });
+
+        game.settings.register(MODULE_NAME, SETTING_NAMES.SHOW_TURN_START_MARKER, {
+            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.SHOW_TURN_START_MARKER}.name`),
+            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.SHOW_TURN_START_MARKER}.hint`),
+            scope: "world",
+            config: true,
+            type: String,
+            default: "pcs",
+            choices: {
+                pcs: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.SHOW_TURN_START_MARKER}.pcs`),
+                all: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.SHOW_TURN_START_MARKER}.all`),
+                disabled: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.SHOW_TURN_START_MARKER}.disabled`),
+            },
         });
 
         game.settings.register(MODULE_NAME, SETTING_NAMES.ACK_MODE, {
