@@ -179,6 +179,18 @@ export function updateActiveEffectHook(effect, _update) {
   if (effect.flags?.ActiveAuras?.isAura) {
     Logger.debug("updateAE, collate auras true true");
     addToCollateSemaphore(canvas.scene.id, true, true, "updateActiveEffect");
+    // After the per-scene CollateAuras reconciles the current scene's tokens,
+    // also reconcile applied effects on actors whose canvas instance lives on
+    // OTHER scenes the activeGM has visited. Without this, toggling an aura
+    // off while viewing a different scene than where it was applied leaves
+    // the applied effect(s) lingering on actor-linked records of the originating
+    // scene -- visible to e.g. an assistant GM still watching that scene.
+    // Gated on Map.size > 1 so single-scene sessions pay nothing; in multi-
+    // scene sessions the cost is O(actors * effects-per-actor), bounded and
+    // typically sub-millisecond.
+    if (CONFIG.AA.Map.size > 1) {
+      CONFIG.AA.Semaphore.add(AAHelpers.RemoveStaleAurasGlobally);
+    }
   }
 }
 

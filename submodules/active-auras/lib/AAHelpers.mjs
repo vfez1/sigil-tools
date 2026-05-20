@@ -426,21 +426,84 @@ export class AAHelpers {
       const tokenEffects = Array.from(removeToken?.actor?.allApplicableEffects() ?? []);
       if (tokenEffects.length > 0) {
         for (let testEffect of tokenEffects) {
-          if (!EffectsArray.some((o) => AAHelpers.originsMatch(o, testEffect.origin)) && testEffect?.flags?.ActiveAuras?.applied) {
-            try {
-              Logger.debug("RemoveAppliedAuras", { removeToken, testEffect });
-              await removeToken.actor.deleteEmbeddedDocuments("ActiveEffect", [testEffect._id]);
-            } catch (err) {
-              Logger.error("ERROR CAUGHT in RemoveAppliedAuras", err);
-            } finally {
-              Logger.info(
-                aaLocalize("ACTIVEAURAS.RemoveLog", {
-                  effectDataName: testEffect.name,
-                  tokenName: removeToken.name,
-                })
-              );
-            }
+          if (testEffect?.flags?.ActiveAuras?.applied !== true) continue;
+          // Scene-aware filter: only consider for removal effects that were
+          // applied in THIS scene. Effects tagged with a different scene
+          // belong to a cross-scene actor-linked aura (e.g. Wabu's aura applied
+          // in Shadowfell, visible on Hades-side actor-linked Sheyla) and must
+          // not be stripped just because the activeGM is now viewing a scene
+          // without the source token. Global cleanup runs separately via
+          // RemoveStaleAurasGlobally when the aura state actually changes.
+          // Legacy effects (no appliedSceneId tag) default to current-scene
+          // semantics so they still get cleaned up after upgrade.
+          const tag = testEffect.flags.ActiveAuras.appliedSceneId;
+          if (tag && tag !== canvas.scene.id) continue;
+          if (EffectsArray.some((o) => AAHelpers.originsMatch(o, testEffect.origin))) continue;
+          try {
+            Logger.debug("RemoveAppliedAuras", { removeToken, testEffect });
+            await removeToken.actor.deleteEmbeddedDocuments("ActiveEffect", [testEffect._id]);
+          } catch (err) {
+            Logger.error("ERROR CAUGHT in RemoveAppliedAuras", err);
+          } finally {
+            Logger.info(
+              aaLocalize("ACTIVEAURAS.RemoveLog", {
+                effectDataName: testEffect.name,
+                tokenName: removeToken.name,
+              })
+            );
           }
+        }
+      }
+    }
+  }
+
+  /**
+   * Remove "stale" applied aura effects across ALL known scenes. An effect is
+   * stale when its `origin` no longer corresponds to a live aura in any tracked
+   * scene's effectMap. This is the cross-scene counterpart to RemoveAppliedAuras
+   * and is used when the aura state itself changes (e.g. the source effect is
+   * disabled while the activeGM is viewing a different scene than where the
+   * aura had previously been applied). Without this, scene-tagged applied
+   * effects would persist on actors forever once the activeGM moves away from
+   * the scene that originally applied them.
+   *
+   * Cheap: O(actors * effects-per-actor), bounded by `game.actors` size.
+   * Caller is responsible for gating on `CONFIG.AA.Map.size > 1` so that
+   * single-scene sessions pay no cost.
+   */
+  static async RemoveStaleAurasGlobally() {
+    if (!CONFIG.AA.GM) return;
+
+    // Union of all live aura origins across every scene the activeGM has visited
+    // this session. An applied effect whose origin isn't in this set means its
+    // source aura has been disabled, deleted, or moved out of range everywhere.
+    const liveOrigins = new Set();
+    for (const [, sceneMap] of CONFIG.AA.Map) {
+      for (const e of sceneMap.effects ?? []) {
+        if (e.data?.origin) liveOrigins.add(e.data.origin);
+      }
+    }
+    const liveOriginsArr = [...liveOrigins];
+
+    Logger.debug("RemoveStaleAurasGlobally", { liveOrigins: liveOriginsArr });
+
+    // Iterate base actors (covers actor-linked tokens regardless of which scene
+    // their canvas instance is on). Unlinked-token actors aren't iterated here
+    // because they're scene-bound and reconciled by the regular per-scene
+    // cleanup whenever the activeGM views their scene.
+    for (const actor of game.actors) {
+      const stale = [];
+      for (const eff of actor.effects ?? []) {
+        if (eff.flags?.ActiveAuras?.applied !== true) continue;
+        const matched = liveOriginsArr.some((o) => AAHelpers.originsMatch(o, eff.origin));
+        if (!matched) stale.push(eff.id);
+      }
+      if (stale.length) {
+        try {
+          Logger.debug("RemoveStaleAurasGlobally deleting", { actor: actor.name, stale });
+          await actor.deleteEmbeddedDocuments("ActiveEffect", stale);
+        } catch (err) {
+          Logger.error("ERROR CAUGHT in RemoveStaleAurasGlobally", err);
         }
       }
     }
