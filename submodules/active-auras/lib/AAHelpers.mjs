@@ -468,8 +468,8 @@ export class AAHelpers {
    * the scene that originally applied them.
    *
    * Cheap: O(actors * effects-per-actor), bounded by `game.actors` size.
-   * Caller is responsible for gating on `CONFIG.AA.Map.size > 1` so that
-   * single-scene sessions pay no cost.
+   * Safe to call unconditionally -- when `CONFIG.AA.Map.size === 1` the
+   * iteration runs but finds nothing to remove (sub-millisecond no-op).
    */
   static async RemoveStaleAurasGlobally() {
     if (!CONFIG.AA.GM) return;
@@ -506,6 +506,127 @@ export class AAHelpers {
           Logger.error("ERROR CAUGHT in RemoveStaleAurasGlobally", err);
         }
       }
+    }
+  }
+
+  /**
+   * Cross-scene reconciliation for an aura SOURCE on a specific scene. Used in
+   * two contexts:
+   *
+   * 1) On source token movement: when Wabu moves on his current scene, any
+   *    applied effects emitted by this token's auras that live on OTHER scenes'
+   *    actor records are conceptually stale (Foundry treats the actor-linked
+   *    Wabu tokens as independent placeables, but for "one source, one logical
+   *    aura" semantics the user expects a move to invalidate the aura
+   *    everywhere).
+   *
+   * 2) On scene activation: when activeGM enters a scene, the source tokens
+   *    on that scene effectively "claim" their auras' current state. Applied
+   *    effects from those auras that are tagged with a different scene are
+   *    stale across the broader campaign and won't be reconciled by MainAura
+   *    (which only operates on the active scene's tokens).
+   *
+   * To avoid stripping legitimately-live effects, this helper SKIPS any actor
+   * that has a token on the trigger scene. Those actors are covered by the
+   * per-scene MainAura/RemoveAppliedAuras flow which uses live PIXI distance
+   * checks; removing here would risk wiping a dual-present actor-linked
+   * effect that MainAura's dedup just no-op'd through. Only actors with no
+   * token on the trigger scene are at risk of holding stale cross-scene
+   * effects with no other reconciliation path, so those are the only ones
+   * cleaned up here.
+   *
+   * Re-application is lazy: when activeGM next views the orphaned actor's
+   * scene, canvasReady runs MainAura there and reapplies if appropriate.
+   *
+   * @param {string} sourceTokenId - id of the aura-source token on the trigger scene
+   * @param {string} sceneId       - id of the trigger scene
+   */
+  static async RemoveCrossSceneSourceAuras(sourceTokenId, sceneId) {
+    if (!CONFIG.AA.GM) return;
+    const sceneMap = CONFIG.AA.Map.get(sceneId);
+    if (!sceneMap?.effects?.length) return;
+
+    // The set of aura origins this token emits on its scene. A single token can
+    // emit multiple auras (e.g. Aura of Protection plus Aura of Courage), so
+    // we collect them all.
+    const sourceOrigins = sceneMap.effects
+      .filter((e) => e.entityId === sourceTokenId)
+      .map((e) => e.data?.origin)
+      .filter((o) => !!o);
+    if (!sourceOrigins.length) return;
+
+    // Build the set of actor ids that have a token on the trigger scene. We
+    // skip these actors because per-scene MainAura/RemoveAppliedAuras already
+    // owns their reconciliation -- touching them here would risk stripping a
+    // dual-present actor-linked effect whose tag happens to be from a prior
+    // scene visit but is still in range of the current scene's source token.
+    //
+    // IMPORTANT: read tokens from the Scene document (`game.scenes.get(sceneId).tokens`),
+    // NOT from `canvas.tokens.placeables`. This helper runs asynchronously
+    // through the Semaphore, so `canvas.scene` may have changed between
+    // scheduling and execution (e.g. activeGM switched scenes during the
+    // ~2s a movement-triggered MainAura takes). The Scene document's token
+    // collection is always available in memory regardless of which scene is
+    // currently rendered on the canvas, so it gives the correct trigger-scene
+    // membership unconditionally.
+    const presentActorIds = new Set();
+    const triggerScene = game.scenes.get(sceneId);
+    for (const tokenDoc of triggerScene?.tokens ?? []) {
+      if (tokenDoc.actor?.id) presentActorIds.add(tokenDoc.actor.id);
+    }
+
+    Logger.debug("RemoveCrossSceneSourceAuras", {
+      sourceTokenId, sceneId, sourceOrigins, presentActorCount: presentActorIds.size,
+    });
+
+    for (const actor of game.actors) {
+      if (presentActorIds.has(actor.id)) continue;
+      const stale = [];
+      for (const eff of actor.effects ?? []) {
+        if (eff.flags?.ActiveAuras?.applied !== true) continue;
+        const tag = eff.flags.ActiveAuras.appliedSceneId;
+        // Skip trigger-scene effects -- MainAura will reconcile them with live
+        // distance checks. Skip untagged legacy effects too (they default to
+        // trigger-scene semantics).
+        if (!tag || tag === sceneId) continue;
+        // Only consider effects originating from one of this token's auras.
+        if (!sourceOrigins.some((o) => AAHelpers.originsMatch(o, eff.origin))) continue;
+        stale.push(eff.id);
+      }
+      if (stale.length) {
+        try {
+          Logger.debug("RemoveCrossSceneSourceAuras deleting", { actor: actor.name, stale });
+          await actor.deleteEmbeddedDocuments("ActiveEffect", stale);
+        } catch (err) {
+          Logger.error("ERROR CAUGHT in RemoveCrossSceneSourceAuras", err);
+        }
+      }
+    }
+  }
+
+  /**
+   * Fan-out helper for scene activation: run RemoveCrossSceneSourceAuras for
+   * every unique aura source token on the given scene. Used by canvasReady so
+   * that entering a scene reconciles all of its sources' cross-scene
+   * applications in one semaphore step (rather than queuing N tasks at the
+   * call site, which couples the call site to effectMap shape).
+   *
+   * Expects to run AFTER the scene's CollateAuras has populated the effectMap.
+   *
+   * @param {string} sceneId - id of the scene whose sources should sweep
+   */
+  static async RemoveCrossSceneAurasForScene(sceneId) {
+    if (!CONFIG.AA.GM) return;
+    const sceneMap = CONFIG.AA.Map.get(sceneId);
+    if (!sceneMap?.effects?.length) return;
+    const sourceTokenIds = new Set(
+      sceneMap.effects.map((e) => e.entityId).filter((id) => !!id)
+    );
+    Logger.debug("RemoveCrossSceneAurasForScene", {
+      sceneId, sourceTokenIds: [...sourceTokenIds],
+    });
+    for (const tokenId of sourceTokenIds) {
+      await AAHelpers.RemoveCrossSceneSourceAuras(tokenId, sceneId);
     }
   }
 

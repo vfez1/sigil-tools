@@ -531,5 +531,21 @@ export class ActiveAuras {
     // the other's not-yet-committed effect, so both create — producing
     // stacked duplicates on the same actor.
     await CONFIG.AA.Semaphore.add(ActiveAuras.MainAura, token, "movement update", token.parent.id);
+
+    // If the moved token is itself an aura source, also scrub this source's
+    // previously-applied effects on actors whose effect was tagged with a
+    // different scene. Without this, map-2-only NPCs that were buffed when
+    // activeGM last visited map 2 retain their buffs forever once activeGM
+    // moves the map-1 instance of the same actor-linked source -- producing
+    // the "Asst GM sees stale effects on map 2 even after I move Wabu in
+    // map 1" symptom. Re-application is lazy: it happens via canvasReady
+    // the next time activeGM views that scene.
+    // Gated only on IsAuraToken (non-source movement is a no-op). The
+    // previous Map.size > 1 gate is dropped: when only one scene has been
+    // visited, the helper iterates but finds no cross-scene-tagged effects,
+    // which is a sub-millisecond no-op and not worth a special case.
+    if (AAHelpers.IsAuraToken(token.id, token.parent.id)) {
+      CONFIG.AA.Semaphore.add(AAHelpers.RemoveCrossSceneSourceAuras, token.id, token.parent.id);
+    }
   }
 }

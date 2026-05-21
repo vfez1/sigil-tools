@@ -185,12 +185,12 @@ export function updateActiveEffectHook(effect, _update) {
     // off while viewing a different scene than where it was applied leaves
     // the applied effect(s) lingering on actor-linked records of the originating
     // scene -- visible to e.g. an assistant GM still watching that scene.
-    // Gated on Map.size > 1 so single-scene sessions pay nothing; in multi-
-    // scene sessions the cost is O(actors * effects-per-actor), bounded and
-    // typically sub-millisecond.
-    if (CONFIG.AA.Map.size > 1) {
-      CONFIG.AA.Semaphore.add(AAHelpers.RemoveStaleAurasGlobally);
-    }
+    // Unguarded by CONFIG.AA.Map.size: the helper is a no-op when there are no
+    // stale effects (sub-millisecond predicate iteration over game.actors), and
+    // running it unconditionally catches a small but real edge case where a
+    // freshly-dragged token brings pre-existing applied effects whose origin
+    // doesn't match anything live this session.
+    CONFIG.AA.Semaphore.add(AAHelpers.RemoveStaleAurasGlobally);
   }
 }
 
@@ -278,7 +278,23 @@ export async function canvasReadyHook(canvas) {
   // moved scenes or its aura was disabled. RemoveAppliedAuras keys cleanup off
   // the current scene's effectMap origins, so it correctly preserves any aura
   // whose source IS on this scene.
-  if (canvas.scene) addToCollateSemaphore(canvas.scene.id, true, true, "ready");
+  if (canvas.scene) {
+    addToCollateSemaphore(canvas.scene.id, true, true, "ready");
+    // After per-scene CollateAuras settles, also reconcile cross-scene applied
+    // effects emitted by sources on the entering scene. Same semantic as the
+    // movementUpdate cleanup: sources on the active scene "claim" their auras,
+    // so applications tagged with another scene -- on actors that aren't here
+    // -- are stale until that other scene is revisited. Smart preservation in
+    // RemoveCrossSceneSourceAuras skips actors with a token on this scene so
+    // dual-present actor-linked effects aren't wrongly stripped when MainAura's
+    // dedup left them with an old scene tag.
+    // Unguarded: when only one scene has been visited so far this session,
+    // the helper iterates but finds no cross-scene-tagged effects to remove
+    // (sub-millisecond no-op). Running unconditionally also catches stale
+    // effects that survived from a prior session and would otherwise need to
+    // wait for the next scene transition or the readyHooks orphan sweep.
+    CONFIG.AA.Semaphore.add(AAHelpers.RemoveCrossSceneAurasForScene, canvas.scene.id);
+  }
 }
 
 
