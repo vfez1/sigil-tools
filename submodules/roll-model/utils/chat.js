@@ -78,7 +78,31 @@ export class ChatUtility {
         }
 
         ui.chat.scrollBottom();
+        ChatUtility._watchMessageScroll(message.id);
     }
+
+    // Watches a specific message element for size changes after a new roll and fires
+    // a corrective scrollBottom once the element stabilizes (damage-application Lit
+    // render and dnd5e tray injection both happen async after our hook).
+    // Disconnects after first stable state — not intended to track later interactions.
+    static _watchMessageScroll(messageId) {
+        const msgEl = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!msgEl) { console.log("[sigil-tools/scroll] msgEl not found for", messageId); return; }
+        console.log("[sigil-tools/scroll] watching msgEl, initial height:", msgEl.offsetHeight);
+        let stableTimer;
+        const observer = new ResizeObserver(() => {
+            clearTimeout(stableTimer);
+            console.log("[sigil-tools/scroll] resize —", msgEl.offsetHeight, "tray:", msgEl.querySelector("damage-application")?.offsetHeight);
+            stableTimer = setTimeout(() => {
+                observer.disconnect();
+                console.log("[sigil-tools/scroll] stable — scrollBottom, msgEl:", msgEl.offsetHeight);
+                ui.chat.scrollBottom();
+            }, 50);
+        });
+        observer.observe(msgEl);
+        setTimeout(() => observer.disconnect(), 2000);
+    }
+
 
     /**
      * Updates a given chat message, saving changes to the database.
@@ -854,25 +878,7 @@ async function _injectDamageApplicationTray(message, html) {
     }
     damageApplication.toggleAttribute("open", open);
 
-    // Append to the message content — the component handles its own rendering
+    // Append to the message content — the component handles its own rendering.
+    // Scroll is handled by the ResizeObserver in processChatMessage.
     html.find(".message-content")?.append(damageApplication);
-
-    // damage-application is a Lit web component that renders asynchronously.
-    // Wait 2 frames for the initial render, then watch for further expansion
-    // (the panel renders its header first, then its full content) and fire a
-    // corrective scrollBottom once the height stabilizes.
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    if (open) {
-        let stableTimer;
-        const observer = new ResizeObserver(() => {
-            clearTimeout(stableTimer);
-            stableTimer = setTimeout(() => {
-                observer.disconnect();
-                ui.chat.scrollBottom();
-            }, 50);
-        });
-        observer.observe(damageApplication);
-        setTimeout(() => observer.disconnect(), 2000);
-    }
 }
