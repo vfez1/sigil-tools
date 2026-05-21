@@ -77,8 +77,24 @@ export class ChatUtility {
             await $(html).removeClass("rm-hide");
         }
 
+        ChatUtility._chatPinnedToBottom = true;
         ui.chat.scrollBottom();
         ChatUtility._watchMessageScroll(message.id);
+    }
+
+    // Registers a scroll listener on the chat log to track whether the user is pinned
+    // to the bottom. Call once on ready. Drives _watchMessageScroll and controlToken scroll.
+    static setupScrollListener() {
+        const rawEl = ui.chat?.element;
+        const root = rawEl instanceof HTMLElement ? rawEl : rawEl?.[0];
+        if (!root) return;
+        // Capture phase catches scroll on any scrollable child; e.target is the actual scrolling element
+        root.addEventListener("scroll", (e) => {
+            const t = e.target;
+            const dist = t.scrollHeight - t.scrollTop - t.clientHeight;
+            if (dist <= 20) ChatUtility._chatPinnedToBottom = true;
+            else if (dist > 100) ChatUtility._chatPinnedToBottom = false;
+        }, { passive: true, capture: true });
     }
 
     // Watches a specific message element for size changes after a new roll and fires
@@ -86,21 +102,21 @@ export class ChatUtility {
     // render and dnd5e tray injection both happen async after our hook).
     // Disconnects after first stable state — not intended to track later interactions.
     static _watchMessageScroll(messageId) {
+        if (ChatUtility._watchedMessages?.has(messageId)) return;
+        (ChatUtility._watchedMessages ??= new Set()).add(messageId);
         const msgEl = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (!msgEl) { console.log("[sigil-tools/scroll] msgEl not found for", messageId); return; }
-        console.log("[sigil-tools/scroll] watching msgEl, initial height:", msgEl.offsetHeight);
+        if (!msgEl) { ChatUtility._watchedMessages.delete(messageId); return; }
         let stableTimer;
         const observer = new ResizeObserver(() => {
             clearTimeout(stableTimer);
-            console.log("[sigil-tools/scroll] resize —", msgEl.offsetHeight, "tray:", msgEl.querySelector("damage-application")?.offsetHeight);
             stableTimer = setTimeout(() => {
                 observer.disconnect();
-                console.log("[sigil-tools/scroll] stable — scrollBottom, msgEl:", msgEl.offsetHeight);
-                ui.chat.scrollBottom();
+                ChatUtility._watchedMessages?.delete(messageId);
+                if (ChatUtility._chatPinnedToBottom) ui.chat.scrollBottom?.();
             }, 50);
         });
         observer.observe(msgEl);
-        setTimeout(() => observer.disconnect(), 2000);
+        setTimeout(() => { observer.disconnect(); ChatUtility._watchedMessages?.delete(messageId); }, 2000);
     }
 
 

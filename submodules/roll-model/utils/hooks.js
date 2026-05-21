@@ -272,8 +272,16 @@ export class HooksUtility {
         const showDialog = game.user.getFlag(MODULE_NAME, "alwayshpShowDialog") !== false;
         if (showDialog && AlwaysHPWidget.canLoad()) HPManager.toggleApp(true);
 
+        ChatUtility.setupScrollListener();
+
         Hooks.on("controlToken", () => {
             HPManager.refresh();
+            if (!ChatUtility._chatPinnedToBottom) return;
+            clearTimeout(ChatUtility._controlTokenTimer);
+            ChatUtility._controlTokenTimer = setTimeout(() => {
+                if (!ChatUtility._chatPinnedToBottom) return;
+                ui.chat.scrollBottom?.();
+            }, 200);
         });
 
         Hooks.on("updateActor", (actor, data) => {
