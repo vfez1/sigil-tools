@@ -856,4 +856,23 @@ async function _injectDamageApplicationTray(message, html) {
 
     // Append to the message content — the component handles its own rendering
     html.find(".message-content")?.append(damageApplication);
+
+    // damage-application is a Lit web component that renders asynchronously.
+    // Wait 2 frames for the initial render, then watch for further expansion
+    // (the panel renders its header first, then its full content) and fire a
+    // corrective scrollBottom once the height stabilizes.
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    if (open) {
+        let stableTimer;
+        const observer = new ResizeObserver(() => {
+            clearTimeout(stableTimer);
+            stableTimer = setTimeout(() => {
+                observer.disconnect();
+                ui.chat.scrollBottom();
+            }, 50);
+        });
+        observer.observe(damageApplication);
+        setTimeout(() => observer.disconnect(), 2000);
+    }
 }
