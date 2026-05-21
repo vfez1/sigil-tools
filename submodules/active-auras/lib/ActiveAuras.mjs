@@ -477,6 +477,14 @@ export class ActiveAuras {
       newEffectData.flags.dae?.specialDuration?.push(newEffectData.flags.ActiveAuras.time);
     }
 
+    // Stamp the scene this effect was applied in so RemoveAppliedAuras can be
+    // scene-aware. Without this tag, the canvasReady cleanup would strip
+    // cross-scene actor-linked auras whenever the activeGM switches to a scene
+    // that doesn't host the source token -- producing visible flicker on every
+    // scene change for shared-actor parties (e.g. a multi-plane combat where
+    // Wabu's aura is applied in Shadowfell while saves are rolled in Hades).
+    newEffectData.flags.ActiveAuras.appliedSceneId = canvas.scene.id;
+
     await token.actor.createEmbeddedDocuments("ActiveEffect", [newEffectData]);
     Logger.debug(aaLocalize("ACTIVEAURAS.ApplyLog", {
       effectDataName: newEffectData.name,
@@ -523,5 +531,21 @@ export class ActiveAuras {
     // the other's not-yet-committed effect, so both create — producing
     // stacked duplicates on the same actor.
     await CONFIG.AA.Semaphore.add(ActiveAuras.MainAura, token, "movement update", token.parent.id);
+
+    // If the moved token is itself an aura source, also scrub this source's
+    // previously-applied effects on actors whose effect was tagged with a
+    // different scene. Without this, map-2-only NPCs that were buffed when
+    // activeGM last visited map 2 retain their buffs forever once activeGM
+    // moves the map-1 instance of the same actor-linked source -- producing
+    // the "Asst GM sees stale effects on map 2 even after I move Wabu in
+    // map 1" symptom. Re-application is lazy: it happens via canvasReady
+    // the next time activeGM views that scene.
+    // Gated only on IsAuraToken (non-source movement is a no-op). The
+    // previous Map.size > 1 gate is dropped: when only one scene has been
+    // visited, the helper iterates but finds no cross-scene-tagged effects,
+    // which is a sub-millisecond no-op and not worth a special case.
+    if (AAHelpers.IsAuraToken(token.id, token.parent.id)) {
+      CONFIG.AA.Semaphore.add(AAHelpers.RemoveCrossSceneSourceAuras, token.id, token.parent.id);
+    }
   }
 }
