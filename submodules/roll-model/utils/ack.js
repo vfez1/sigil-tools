@@ -42,11 +42,7 @@ export class AcknowledgedModeUtility {
                         // Resolve to a TokenDocument regardless of whether the UUID is a Token or Actor
                         const token = doc.documentName === "Token" ? doc
                             : canvas.scene?.tokens?.find(tk => tk.actorId === doc.id);
-                        if (token) {
-                            if (token.hidden) return null;
-                            const inCombat = game.combats?.some(c => c.active && c.combatants?.some(cb => cb.tokenId === token.id));
-                            if (!inCombat) return null;
-                        }
+                        if (token?.hidden) return null;
                         return doc.name;
                     }).filter(Boolean)
                     : [];
