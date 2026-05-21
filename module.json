@@ -2,7 +2,7 @@
     "id": "sigil-tools",
     "title": "Sigil Tools",
     "description": "Internal tooling module. Contains submodules for roll-model, active-auras, grid-aware-auras, effectmacro, override-settings, and campaign-specific automation.",
-    "version": "1.0.13",
+    "version": "1.0.14",
     "socket": true,
     "compatibility": {
         "minimum": "13",
