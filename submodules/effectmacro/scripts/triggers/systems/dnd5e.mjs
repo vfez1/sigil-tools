@@ -92,7 +92,7 @@ async function rollAttack(rolls, data) {
  * @param {object} data     Roll configuration data.
  */
 async function rollDamage(rolls, data) {
-  const actor = data.subject?.item?.actor;
+  const actor = data?.subject?.item?.actor;
   if (!actor) return;
   return _executeAppliedEffects(actor, "dnd5e.rollDamage", { rolls, data });
 }

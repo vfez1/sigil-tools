@@ -16,8 +16,13 @@ export class AcknowledgedModeUtility {
         const label = appliedTo ? `Applied to ${Array.isArray(appliedTo) ? appliedTo.join(", ") : appliedTo}` : `Applied by ${acknowledged}`;
 
         const badge = $(`<div class="rm-ack-badge"><i class="fas fa-check"></i> ${label}</div>`);
-        const card = $html.find(".dnd5e2.chat-card, .chat-card").first();
-        (card.length ? card : $html).prepend(badge);
+        const messageContent = $html.find(".message-content").first();
+        if (messageContent.length) {
+            messageContent.prepend(badge);
+        } else {
+            const header = $html.find(".message-header").first();
+            header.length ? badge.insertAfter(header) : $html.prepend(badge);
+        }
     }
 
     static registerApplyListener() {

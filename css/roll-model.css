@@ -54,19 +54,23 @@
 }
 
 .rm-ack-badge {
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     gap: 5px;
     padding: 5px 8px;
     margin-bottom: 4px;
-    background: #2a5a2a;
-    color: #a8d8a8;
+    background: #2a5a2a !important;
+    background-image: none !important;
+    color: #a8d8a8 !important;
     font-size: 10px;
     font-weight: bold;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     border-radius: 2px;
+    border: 1px solid #3d7a3d;
+    text-shadow: none !important;
+    box-shadow: none !important;
 }
 
 /* —— end Acknowledged Mode —— */

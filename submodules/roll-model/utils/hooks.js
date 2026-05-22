@@ -241,6 +241,7 @@ export class HooksUtility {
 
         AcknowledgedModeUtility.registerApplyListener();
         AcknowledgedModeUtility.registerSocketListener();
+
     }
 
     static registerSceneControlHooks() {
