@@ -28,7 +28,9 @@ export default async function renderActiveEffectConfig(config, html, data) {
     }
   });
   const tab = html.querySelector("section[data-tab='details']");
-  tab.appendChild(div.firstElementChild);
+  const existing = tab.querySelector("fieldset.effectmacro");
+  if (existing) existing.replaceWith(div.firstElementChild);
+  else tab.appendChild(div.firstElementChild);
 }
 
 /* -------------------------------------------------- */
