@@ -36,8 +36,9 @@
             <div class="cf-effect-row">
                 <input type="text" name="wabu-effect-name" value="{{name}}" placeholder="Effect name" />
                 <select name="wabu-effect-disabled">
-                    <option value="true" {{#if disabledWhileShaped}}selected{{/if}}>Disable</option>
-                    <option value="false" {{#unless disabledWhileShaped}}selected{{/unless}}>Enable</option>
+                    <option value="true" {{#if modeDisable}}selected{{/if}}>Disable</option>
+                    <option value="false" {{#if modeEnable}}selected{{/if}}>Enable</option>
+                    <option value="always-on" {{#if modeAlwaysOn}}selected{{/if}}>Always On</option>
                 </select>
                 <input type="text" name="wabu-effect-attuned" value="{{attuned}}" placeholder="Item name (optional)" />
                 <button type="button" data-action="removeEffect" title="Remove"><i class="fas fa-trash"></i></button>

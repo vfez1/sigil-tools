@@ -55,8 +55,7 @@
 
 .rm-ack-badge {
     display: flex !important;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
     gap: 5px;
     padding: 5px 8px;
     margin-bottom: 4px;
@@ -65,12 +64,60 @@
     color: #a8d8a8 !important;
     font-size: 10px;
     font-weight: bold;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
     border-radius: 2px;
     border: 1px solid #3d7a3d;
     text-shadow: none !important;
     box-shadow: none !important;
+}
+
+.rm-ack-badge .rm-ack-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rm-ack-badge .rm-ack-prefix {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.rm-ack-badge .rm-ack-names {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.rm-ack-badge .rm-ack-name {
+    font-size: 11px;
+    font-weight: normal;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.rm-ack-badge .rm-ack-damage {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 0 4px;
+    background: rgba(168, 216, 168, 0.15);
+    border: 1px solid #3d7a3d;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+/* Already-applied state on the damage tray Apply button */
+damage-application button.rm-already-applied,
+damage-application button[data-action="applyDamage"].rm-already-applied {
+    opacity: 0.55;
+    background: linear-gradient(to bottom, #1e3d1e, #122612) !important;
+    border-color: #3d6b3d !important;
+    color: #8aba8a !important;
+}
+
+damage-application button.rm-already-applied::before {
+    content: "✓ ";
+    font-weight: bold;
 }
 
 /* —— end Acknowledged Mode —— */

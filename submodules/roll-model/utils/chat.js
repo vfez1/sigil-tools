@@ -893,8 +893,5 @@ async function _injectDamageApplicationTray(message, html) {
             break;
     }
     damageApplication.toggleAttribute("open", open);
-
-    // Append to the message content — the component handles its own rendering.
-    // Scroll is handled by the ResizeObserver in processChatMessage.
     html.find(".message-content")?.append(damageApplication);
 }

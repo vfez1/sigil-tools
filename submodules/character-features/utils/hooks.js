@@ -41,7 +41,7 @@ async function _applyWildshapeEffectToggle(actor, isWildShaping, attunementActor
 
     for (const effectConfig of effectConfigs) {
         const { name, disabledWhileShaped, attuned } = effectConfig;
-        const disabled = isWildShaping ? disabledWhileShaped : !disabledWhileShaped;
+        const disabled = disabledWhileShaped === "always-on" ? false : isWildShaping ? disabledWhileShaped : !disabledWhileShaped;
 
         const matches = candidates.filter((e) => e.name === name);
         if (!matches.length) {

@@ -41,7 +41,12 @@ export class CharacterSetupApp extends HandlebarsApplicationMixin(ApplicationV2)
             wabu: {
                 enabled: config.wabu?.enabled ?? true,
                 actorName: config.wabu?.actorName ?? "Wabu",
-                wildshape: config.wabu?.wildshape ?? [],
+                wildshape: (config.wabu?.wildshape ?? []).map((e) => ({
+                    ...e,
+                    modeDisable: e.disabledWhileShaped === true,
+                    modeEnable: e.disabledWhileShaped === false,
+                    modeAlwaysOn: e.disabledWhileShaped === "always-on",
+                })),
                 cssClass: active === "wabu" ? "active" : "",
             },
         };
@@ -59,13 +64,14 @@ export class CharacterSetupApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     static _effectRowHtml(effect = {}) {
         const name = effect.name ?? "";
-        const disabled = effect.disabledWhileShaped !== false;
+        const raw = effect.disabledWhileShaped ?? true;
         const attuned = effect.attuned ?? "";
         return `<div class="cf-effect-row">
             <input type="text" name="wabu-effect-name" value="${name}" placeholder="Effect name" />
             <select name="wabu-effect-disabled">
-                <option value="true" ${disabled ? "selected" : ""}>Disable</option>
-                <option value="false" ${!disabled ? "selected" : ""}>Enable</option>
+                <option value="true" ${raw === true ? "selected" : ""}>Disable</option>
+                <option value="false" ${raw === false ? "selected" : ""}>Enable</option>
+                <option value="always-on" ${raw === "always-on" ? "selected" : ""}>Always On</option>
             </select>
             <input type="text" name="wabu-effect-attuned" value="${attuned}" placeholder="Item name (optional)" />
             <button type="button" data-action="removeEffect" title="Remove"><i class="fas fa-trash"></i></button>
@@ -93,7 +99,9 @@ function _collectEffects(data, key) {
 
     return names
         .map((name, i) => {
-            const effect = { name: name.trim(), disabledWhileShaped: String(disableds[i]) === "true" };
+            const raw = String(disableds[i]);
+            const disabledWhileShaped = raw === "always-on" ? "always-on" : raw === "true";
+            const effect = { name: name.trim(), disabledWhileShaped };
             const attuned = attuneds[i]?.trim();
             if (attuned) effect.attuned = attuned;
             return effect;

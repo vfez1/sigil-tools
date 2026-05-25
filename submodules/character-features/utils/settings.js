@@ -20,11 +20,12 @@ export const DEFAULT_CONFIG = {
 
 export function getConfig() {
     try {
-        return foundry.utils.mergeObject(
-            foundry.utils.deepClone(DEFAULT_CONFIG),
-            game.settings.get(MODULE_NAME, CF_SETTING_NAMES.CHARACTER_CONFIG) ?? {},
-            { insertKeys: true, overwrite: true }
-        );
+        const saved = game.settings.get(MODULE_NAME, CF_SETTING_NAMES.CHARACTER_CONFIG) ?? {};
+        const result = foundry.utils.deepClone(saved);
+        for (const [key, def] of Object.entries(DEFAULT_CONFIG)) {
+            if (!(key in result)) result[key] = foundry.utils.deepClone(def);
+        }
+        return result;
     } catch {
         return foundry.utils.deepClone(DEFAULT_CONFIG);
     }

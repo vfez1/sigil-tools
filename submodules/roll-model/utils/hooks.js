@@ -232,6 +232,20 @@ export class HooksUtility {
             AcknowledgedModeUtility.onNewMessage(message, html);
             AcknowledgedModeUtility.applyAcknowledgedStyle(message, html);
             _attachPortentClickHandlers(message, html);
+
+            // dnd5e's _trayStates saves open=false from the unprocessed initial render
+            // and restores it on re-render via ??, overriding the "manual"/"never" setting.
+            // Force the tray open after the processed re-render.
+            if (message.flags?.[MODULE_SHORT]?.processed) {
+                const setting = game.settings.get("dnd5e", "autoCollapseChatTrays");
+                if (setting === "manual" || setting === "never") {
+                    const root = html instanceof HTMLElement ? html : html[0];
+                    const da = root?.querySelector("damage-application");
+                    if (da && !da.hasAttribute("open")) {
+                        da.toggleAttribute("open", true);
+                    }
+                }
+            }
         });
 
         AcknowledgedModeUtility.registerApplyListener();

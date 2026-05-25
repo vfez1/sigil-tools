@@ -1,79 +1,58 @@
 {
-  "core": {
-    "leftClickRelease": true,
-    "chatBubblesPan": false,
-    "visionAnimation": true,
-    "lightAnimation": true,
-    "showToolclips": false,
-    "tokenDragPreview": false,
-    "tokenAutoRotate": false
-  },
-  "dnd5e": {
-    "gridAlignedSquareTemplates": true,
-    "autoCollapseItemCards": false,
-    "autoCollapseChatTrays": "older",
-    "allowPolymorphing": true,
-    "allowSummoning": true,
-    "defaultSkills": [
-      "acr",
-      "ani",
-      "arc",
-      "ath",
-      "dec",
-      "his",
-      "ins",
-      "itm",
-      "inv",
-      "med",
-      "nat",
-      "prc",
-      "prf",
-      "per",
-      "rel",
-      "slt",
-      "ste",
-      "sur"
-    ]
-  },
-  "combat-tracker-dock": {
-    "overflowStyle": "scroll",
-    "carouselStyle": "1",
-    "portraitSize": "70px"
-  },
-  "uiConfig": {
-    "fadeOpacity": 0.9,
-    "chatNotifications": "pip"
-  },
-  "keybindings": {
-    "dnd5e.dragCopy": [],
-    "dnd5e.dragMove": [],
-    "dnd5e.skipDialogNormal": [
-      {
-        "key": "AltLeft",
-        "modifiers": [
-          "Control"
+    "core": {
+        "leftClickRelease": true,
+        "chatBubblesPan": false,
+        "visionAnimation": true,
+        "lightAnimation": true,
+        "showToolclips": false,
+        "tokenDragPreview": false,
+        "tokenAutoRotate": false
+    },
+    "dnd5e": {
+        "gridAlignedSquareTemplates": true,
+        "autoCollapseItemCards": false,
+        "autoCollapseChatTrays": "manual",
+        "allowPolymorphing": true,
+        "allowSummoning": true,
+        "defaultSkills": ["acr", "ani", "arc", "ath", "dec", "his", "ins", "itm", "inv", "med", "nat", "prc", "prf", "per", "rel", "slt", "ste", "sur"]
+    },
+    "combat-tracker-dock": {
+        "overflowStyle": "scroll",
+        "carouselStyle": "1",
+        "portraitSize": "70px"
+    },
+    "uiConfig": {
+        "fadeOpacity": 0.9,
+        "chatNotifications": "pip"
+    },
+    "keybindings": {
+        "dnd5e.dragCopy": [],
+        "dnd5e.dragMove": [],
+        "dnd5e.skipDialogNormal": [
+            {
+                "key": "AltLeft",
+                "modifiers": ["Control"]
+            }
+        ],
+        "dnd5e.skipDialogAdvantage": [
+            {
+                "key": "ShiftLeft",
+                "modifiers": []
+            },
+            {
+                "key": "ShiftRight",
+                "modifiers": []
+            }
+        ],
+        "dnd5e.skipDialogDisadvantage": [
+            {
+                "key": "ControlLeft",
+                "modifiers": []
+            },
+            {
+                "key": "ControlRight",
+                "modifiers": []
+            }
         ]
-      }
-    ],
-    "dnd5e.skipDialogAdvantage": [
-      {
-        "key": "ShiftLeft",
-        "modifiers": []
-      },
-      {
-        "key": "ShiftRight",
-        "modifiers": []
-      }
-    ],
-    "dnd5e.skipDialogDisadvantage": [
-      {
-        "key": "ControlLeft",
-        "modifiers": []
-      },
-      {
-        "key": "ControlRight",
-        "modifiers": []
-      }
-    ]
-  }
+    }
 }
