@@ -38,12 +38,20 @@ Hooks.on("renderSettingsConfig", function(app, html) {
     const firstGaaGroup = section.querySelector('button[data-action="openSubmenu"][data-key="sigil-tools.presets"]')?.closest(".form-group");
     insertHeader(firstGaaGroup, "fas fa-hexagon", "Grid-Aware Auras");
 
-    // — Active Auras —
+    // — Character Features — button lands mid-GAA in the DOM, so move it to just before Active Auras
+    const cfGroup = section.querySelector('button[data-action="openSubmenu"][data-key="sigil-tools.characterFeaturesSetup"]')?.closest(".form-group");
     const firstAAGroup = section.querySelector('[name="sigil-tools.measurement"]')?.closest(".form-group");
+    if (cfGroup && firstAAGroup) {
+        const cfHr = document.createElement("hr");
+        cfHr.style.cssText = HR_STYLE;
+        firstAAGroup.before(cfHr, makeHeader("fas fa-user", "Character Features"), cfGroup);
+    }
+
+    // — Active Auras —
     insertHeader(firstAAGroup, "fas fa-circle-dashed", "Active Auras");
 
     // — Submodules (enable toggles) — moved to bottom
-    const toggleKeys = ["enableRollModel", "enableActiveAuras", "enableOverrideSettings", "enableSuppressWarnings", "enableGridAwareAuras"];
+    const toggleKeys = ["enableRollModel", "enableActiveAuras", "enableOverrideSettings", "enableSuppressWarnings", "enableGridAwareAuras", "enableEffectMacro", "enableCharacterFeatures"];
     const toggleGroups = toggleKeys
         .map(k => section.querySelector(`[name="sigil-tools.${k}"]`)?.closest(".form-group"))
         .filter(Boolean);

@@ -8,7 +8,6 @@ import { CoreUtility } from "./core.js";
 export const SETTING_NAMES = {
     PREVENT_MOVEMENT_HISTORY: "preventMovementHistory",
     SHOW_TURN_START_MARKER: "showTurnStartMarker",
-    WABU_WILDSHAPE_EFFECT_TOGGLE: "enableWabuWildshapeEffectToggle",
     ACK_MODE: "acknowledgedMode",
     ENABLE_ROLL_MODEL: "enableRollModel",
     ENABLE_ACTIVE_AURAS: "enableActiveAuras",
@@ -16,6 +15,7 @@ export const SETTING_NAMES = {
     ENABLE_SUPPRESS_WARNINGS: "enableSuppressWarnings",
     ENABLE_GRID_AWARE_AURAS: "enableGridAwareAuras",
     ENABLE_EFFECT_MACRO: "enableEffectMacro",
+    ENABLE_CHARACTER_FEATURES: "enableCharacterFeatures",
 };
 
 /**
@@ -86,6 +86,16 @@ export class SettingsUtility {
             requiresReload: true,
         });
 
+        game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_CHARACTER_FEATURES, {
+            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_CHARACTER_FEATURES}.name`),
+            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_CHARACTER_FEATURES}.hint`),
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true,
+            requiresReload: true,
+        });
+
         game.keybindings.register(MODULE_NAME, "rollVersatile", {
             name: CoreUtility.localize(`${MODULE_SHORT}.keybindings.rollVersatile.name`),
             hint: CoreUtility.localize(`${MODULE_SHORT}.keybindings.rollVersatile.hint`),
@@ -126,15 +136,6 @@ export class SettingsUtility {
             default: true,
         });
 
-        // WILD SHAPE SETTINGS
-        game.settings.register(MODULE_NAME, SETTING_NAMES.WABU_WILDSHAPE_EFFECT_TOGGLE, {
-            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.WABU_WILDSHAPE_EFFECT_TOGGLE}.name`),
-            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.WABU_WILDSHAPE_EFFECT_TOGGLE}.hint`),
-            scope: "world",
-            config: true,
-            type: Boolean,
-            default: true,
-        });
     }
 
     /**

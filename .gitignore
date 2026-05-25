@@ -4,4 +4,4 @@
 _vendor/
 tmp/
 _temp/
-.claude/
+.claude/settings.local.json

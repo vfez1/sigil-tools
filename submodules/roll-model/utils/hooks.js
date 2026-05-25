@@ -11,7 +11,6 @@ import { SETTING_NAMES, SettingsUtility } from "./settings.js";
 export const HOOKS_CORE = {
     INIT: "init",
     READY: "ready",
-    CREATE_ACTOR: "createActor",
 };
 
 export const HOOKS_DND5E = {
@@ -32,8 +31,6 @@ export const HOOKS_DND5E = {
     RENDER_CHAT_MESSAGE: "dnd5e.renderChatMessage",
     RENDER_ITEM_SHEET: "renderItemSheet5e",
     RENDER_ACTOR_SHEET: "renderActorSheet5e",
-    TRANSFORM_ACTOR_V2: "dnd5e.transformActorV2",
-    REVERT_ORIGINAL_FORM: "dnd5e.revertOriginalForm",
 };
 
 /**
@@ -96,8 +93,6 @@ export class HooksUtility {
             );
 
             HooksUtility.registerHPHooks();
-            HooksUtility.registerWildshapeHooks();
-
             _logHookDebug(`Loaded ${MODULE_TITLE}`);
         });
     }
@@ -302,26 +297,6 @@ export class HooksUtility {
         });
     }
 
-    static registerWildshapeHooks() {
-        _logHookDebug("Registering wild shape effect hooks");
-
-        // Beast form actor is created after transformActorV2 fires, so we hook createActor instead.
-        Hooks.on(HOOKS_CORE.CREATE_ACTOR, (actor, options, userId) => {
-            if (!SettingsUtility.getSettingValue(SETTING_NAMES.WABU_WILDSHAPE_EFFECT_TOGGLE)) return;
-            if (!actor.getFlag("dnd5e", "isPolymorphed")) return;
-            const originalId = actor.getFlag("dnd5e", "originalActor");
-            const original = originalId ? game.actors.get(originalId) : null;
-            _applyWildshapeEffectToggle(actor, true, original);
-        });
-
-        Hooks.on(HOOKS_DND5E.REVERT_ORIGINAL_FORM, (actor, options) => {
-            if (!SettingsUtility.getSettingValue(SETTING_NAMES.WABU_WILDSHAPE_EFFECT_TOGGLE)) return;
-            const originalId = actor.getFlag("dnd5e", "originalActor");
-            const original = originalId ? game.actors.get(originalId) : null;
-            if (!original) return;
-            _applyWildshapeEffectToggle(original, false, original);
-        });
-    }
 }
 
 function _logHookDebug(_message) {
@@ -592,55 +567,3 @@ function _getPreventMovementHistorySetting() {
     }
 }
 
-// Effect names and whether they should be disabled (true) or enabled (false) while wild shaped.
-const WILDSHAPE_EFFECT_TARGETS = {
-    Dueling: true,
-    "Natural Armor (Toggle OFF when Wild Shaped)": true,
-    "Improved Circle Forms (Toggle ON when Wild Shaped)": false,
-    "Lunar Transformation (Toggle ON when Attuned & Wild Shaped)": false,
-};
-
-async function _applyWildshapeEffectToggle(actor, isWildShaping, attunementActor) {
-    const targets = Object.fromEntries(
-        Object.entries(WILDSHAPE_EFFECT_TARGETS).map(([name, disabledWhileShaped]) => [name, isWildShaping ? disabledWhileShaped : !disabledWhileShaped])
-    );
-
-    const candidates = [...actor.effects, ...[...actor.items].flatMap((i) => [...i.effects])];
-
-    const updatesByParent = new Map();
-    const log = [];
-
-    for (const [name, disabled] of Object.entries(targets)) {
-        const matches = candidates.filter((e) => e.name === name);
-        if (!matches.length) {
-            log.push(`Not found: <em>${name}</em>`);
-            continue;
-        }
-        for (const eff of matches) {
-            const parentItem = eff.parent?.documentName === "Item" ? eff.parent : null;
-            if (parentItem?.name.startsWith("Cloak of the Lunar Guardian")) {
-                const cloakOnOriginal = attunementActor?.items.find((i) => i.name.startsWith("Cloak of the Lunar Guardian"));
-                if (!cloakOnOriginal?.system?.attuned) {
-                    log.push(`${eff.name} — skipped (not attuned)`);
-                    continue;
-                }
-            }
-            if (eff.disabled === disabled) {
-                log.push(`${eff.name} — already ${disabled ? "off" : "on"}`);
-                continue;
-            }
-            if (!updatesByParent.has(eff.parent)) updatesByParent.set(eff.parent, []);
-            updatesByParent.get(eff.parent).push({ _id: eff.id, disabled });
-            log.push(`${eff.name} → <strong>${disabled ? "off" : "on"}</strong>`);
-        }
-    }
-
-    for (const [parent, updates] of updatesByParent) {
-        await parent.updateEmbeddedDocuments("ActiveEffect", updates);
-    }
-
-    ChatMessage.create({
-        speaker: ChatMessage.getSpeaker({ actor }),
-        content: `<strong>${actor.name} — ${isWildShaping ? "Wild Shape" : "Restore form"}</strong><br>${log.join("<br>")}`,
-    });
-}

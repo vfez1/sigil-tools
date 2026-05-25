@@ -1,0 +1,58 @@
+<div class="character-setup-wrapper">
+    <nav class="tabs" data-group="characters">
+        {{#each characters}}
+        <a class="item {{cssClass}}" data-action="changeTab" data-group="characters" data-tab="{{id}}">
+            <i class="{{icon}}"></i> {{label}}
+        </a>
+        {{/each}}
+    </nav>
+
+    <section class="tab cf-tab-body {{wabu.cssClass}}" data-tab="wabu" data-group="characters">
+        <div class="form-group">
+            <label>Enabled</label>
+            <input type="checkbox" name="wabu-enabled" {{#if wabu.enabled}}checked{{/if}} />
+            <p class="hint">Automatically toggle effects when this character wild shapes or reverts.</p>
+        </div>
+
+        <div class="form-group">
+            <label>Actor Name</label>
+            <input type="text" name="wabu-actorName" value="{{wabu.actorName}}" placeholder="Exact actor name" />
+            <p class="hint">The name of the actor in Foundry this configuration applies to (case-insensitive).</p>
+        </div>
+
+        <div class="form-group stacked">
+            <label>Wild Shape Effects <i class="fas fa-circle-question cf-help-icon" data-tooltip="Effect names must match exactly as shown in the Active Effects list (case-sensitive).&#10;&#10;While Shaped:&#10;• Disable — turns the effect off when wild shaped&#10;• Enable — turns it on when wild shaped&#10;&#10;Requires Attunement: the toggle only fires if the original actor has the named item attuned." data-tooltip-direction="RIGHT"></i></label>
+            <p class="hint">Effects that automatically toggle on wild shape and revert.</p>
+        </div>
+
+        <div class="cf-effect-list">
+            <div class="cf-effect-cols">
+                <span>Effect Name</span>
+                <span>While Shaped</span>
+                <span>Requires Attunement</span>
+                <span></span>
+            </div>
+            {{#each wabu.wildshape}}
+            <div class="cf-effect-row">
+                <input type="text" name="wabu-effect-name" value="{{name}}" placeholder="Effect name" />
+                <select name="wabu-effect-disabled">
+                    <option value="true" {{#if disabledWhileShaped}}selected{{/if}}>Disable</option>
+                    <option value="false" {{#unless disabledWhileShaped}}selected{{/unless}}>Enable</option>
+                </select>
+                <input type="text" name="wabu-effect-attuned" value="{{attuned}}" placeholder="Item name (optional)" />
+                <button type="button" data-action="removeEffect" title="Remove"><i class="fas fa-trash"></i></button>
+            </div>
+            {{/each}}
+        </div>
+
+        <div class="form-group">
+            <button type="button" data-action="addEffect">
+                <i class="fas fa-plus"></i> Add Effect
+            </button>
+        </div>
+    </section>
+
+    <footer class="sheet-footer">
+        <button type="submit"><i class="fas fa-save"></i> Save Changes</button>
+    </footer>
+</div>

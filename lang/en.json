@@ -37,8 +37,8 @@
             "showTurnStartMarker.pcs": "Player Characters Only",
             "showTurnStartMarker.all": "All Tokens",
             "showTurnStartMarker.disabled": "Disabled",
-            "enableWabuWildshapeEffectToggle.name": "Wabu: Auto-Toggle Wild Shape Effects",
-            "enableWabuWildshapeEffectToggle.hint": "When Wabu transforms (Wild Shape) or reverts, automatically toggle Natural Armor, Improved Circle Forms, and Lunar Transformation effects."
+            "enableCharacterFeatures.name": "Enable: Character Features",
+            "enableCharacterFeatures.hint": "Enable the Character Features submodule (PC-specific automation such as wild shape effect toggling). Requires a reload."
         },
         "choices": {
             "rollModifierMode": {
