@@ -74,6 +74,8 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    flex: 1;
+    min-width: 0;
 }
 
 .rm-ack-badge .rm-ack-prefix {
@@ -82,13 +84,14 @@
 }
 
 .rm-ack-badge .rm-ack-names {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
+    display: grid;
+    grid-template-columns: max-content max-content;
+    align-items: baseline;
+    gap: 2px 6px;
 }
 
 .rm-ack-badge .rm-ack-name {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: normal;
     text-transform: none;
     letter-spacing: normal;
@@ -96,14 +99,12 @@
 
 .rm-ack-badge .rm-ack-damage {
     display: inline-block;
-    margin-left: 5px;
-    padding: 0 4px;
-    background: rgba(168, 216, 168, 0.15);
-    border: 1px solid #3d7a3d;
-    border-radius: 3px;
-    font-size: 10px;
+    padding: 0 5px;
+    background: rgba(168, 216, 168, 0.22);
+    border-radius: 10px;
+    font-size: 11px;
     font-weight: bold;
-    vertical-align: middle;
+    line-height: 1.7;
 }
 
 /* Already-applied state on the damage tray Apply button */

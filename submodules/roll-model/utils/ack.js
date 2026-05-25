@@ -20,9 +20,9 @@ export class AcknowledgedModeUtility {
                 const nameItems = entries.map(e => {
                     const name = typeof e === "string" ? e : e.name;
                     const dmg = typeof e === "object" && e.damage != null
-                        ? ` <span class="rm-ack-damage">${e.damage}</span>`
-                        : "";
-                    return `<span class="rm-ack-name">• ${name}${dmg}</span>`;
+                        ? `<span class="rm-ack-damage">${e.damage}</span>`
+                        : `<span class="rm-ack-damage"></span>`;
+                    return `<span class="rm-ack-name">${name}</span>${dmg}`;
                 }).join("");
                 badgeInner = `<span class="rm-ack-prefix">Applied to</span><span class="rm-ack-names">${nameItems}</span>`;
             } else {
