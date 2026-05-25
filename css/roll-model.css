@@ -54,31 +54,23 @@
 }
 
 .rm-ack-badge {
-    display: flex !important;
-    align-items: flex-start;
-    gap: 5px;
-    padding: 5px 8px;
     margin-bottom: 4px;
-    background: #2a5a2a !important;
-    background-image: none !important;
-    color: #a8d8a8 !important;
-    font-size: 10px;
-    font-weight: bold;
-    border-radius: 2px;
-    border: 1px solid #3d7a3d;
+    border: 2px solid rgba(42, 90, 42, 0.7);
+    border-radius: 3px;
+    overflow: hidden;
     text-shadow: none !important;
     box-shadow: none !important;
 }
 
-.rm-ack-badge .rm-ack-content {
+.rm-ack-badge .rm-ack-header {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    flex: 1;
-    min-width: 0;
-}
-
-.rm-ack-badge .rm-ack-prefix {
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(42, 90, 42, 0.8);
+    color: #c8e8c8 !important;
+    font-size: 10px;
+    font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
@@ -87,24 +79,49 @@
     display: grid;
     grid-template-columns: max-content max-content;
     align-items: baseline;
-    gap: 2px 6px;
+    gap: 2px 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    background: var(--dnd5e-color-card, #f0ebe0);
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.08);
 }
 
 .rm-ack-badge .rm-ack-name {
-    font-size: 12px;
-    font-weight: normal;
-    text-transform: none;
-    letter-spacing: normal;
+    font-weight: bold;
 }
 
 .rm-ack-badge .rm-ack-damage {
     display: inline-block;
     padding: 0 5px;
-    background: rgba(168, 216, 168, 0.22);
     border-radius: 10px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: bold;
     line-height: 1.7;
+}
+
+.rm-ack-badge .rm-ack-damage.rm-ack-healing {
+    background: rgba(50, 150, 50, 0.18);
+    color: #2a6e2a;
+}
+
+.rm-ack-badge .rm-ack-damage.rm-ack-zero {
+    background: rgba(120, 120, 120, 0.15);
+    color: #505050;
+}
+
+.rm-ack-badge .rm-ack-damage.rm-ack-reduced {
+    background: rgba(60, 100, 200, 0.15);
+    color: #2a4a9a;
+}
+
+.rm-ack-badge .rm-ack-damage.rm-ack-full {
+    background: rgba(180, 40, 40, 0.18);
+    color: #8a1a1a;
+}
+
+.rm-ack-badge .rm-ack-damage.rm-ack-vulnerable {
+    background: rgba(120, 40, 180, 0.18);
+    color: #6a1a9a;
 }
 
 /* Already-applied state on the damage tray Apply button */

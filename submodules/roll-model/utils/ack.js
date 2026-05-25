@@ -14,22 +14,34 @@ export class AcknowledgedModeUtility {
 
         // Badge — only insert once; tray marking runs every render
         if (!$html.find(".rm-ack-badge").length) {
-            let badgeInner;
+            const headerLabel = appliedTo ? "Applied to" : `Applied by ${acknowledged}`;
+            let namesHtml = "";
             if (appliedTo) {
+                const totalDamage = message.rolls
+                    ?.filter(r => r instanceof CONFIG.Dice.DamageRoll)
+                    ?.reduce((sum, r) => sum + (r.total ?? 0), 0) ?? 0;
+
                 const entries = Array.isArray(appliedTo) ? appliedTo : [appliedTo];
                 const nameItems = entries.map(e => {
                     const name = typeof e === "string" ? e : e.name;
-                    const dmg = typeof e === "object" && e.damage != null
-                        ? `<span class="rm-ack-damage">${e.damage}</span>`
-                        : `<span class="rm-ack-damage"></span>`;
+                    let dmg;
+                    if (typeof e === "object" && e.damage != null) {
+                        let cat = "";
+                        if (e.damage > 0) cat = " rm-ack-healing";
+                        else if (e.damage === 0) cat = " rm-ack-zero";
+                        else if (totalDamage > 0 && Math.abs(e.damage) > totalDamage) cat = " rm-ack-vulnerable";
+                        else if (totalDamage > 0 && Math.abs(e.damage) < totalDamage) cat = " rm-ack-reduced";
+                        else cat = " rm-ack-full";
+                        dmg = `<span class="rm-ack-damage${cat}">${e.damage}</span>`;
+                    } else {
+                        dmg = `<span class="rm-ack-damage"></span>`;
+                    }
                     return `<span class="rm-ack-name">${name}</span>${dmg}`;
                 }).join("");
-                badgeInner = `<span class="rm-ack-prefix">Applied to</span><span class="rm-ack-names">${nameItems}</span>`;
-            } else {
-                badgeInner = `<span class="rm-ack-prefix">Applied by ${acknowledged}</span>`;
+                namesHtml = `<div class="rm-ack-names">${nameItems}</div>`;
             }
 
-            const badge = $(`<div class="rm-ack-badge"><i class="fas fa-check"></i><div class="rm-ack-content">${badgeInner}</div></div>`);
+            const badge = $(`<div class="rm-ack-badge"><div class="rm-ack-header"><i class="fas fa-check"></i><span class="rm-ack-prefix">${headerLabel}</span></div>${namesHtml}</div>`);
             const messageContent = $html.find(".message-content").first();
             if (messageContent.length) {
                 messageContent.prepend(badge);
@@ -90,8 +102,9 @@ export class AcknowledgedModeUtility {
                             : canvas.scene?.tokens?.find(tk => tk.actorId === resolved.id);
                         if (token?.hidden) return null;
                         const name = token?.name ?? resolved.name;
-                        const damageEl = t.querySelector(".calculated.damage, .calculated, .total, .adjustment");
-                        const damage = damageEl ? (parseInt(damageEl.textContent?.trim()) || null) : null;
+                        const damageEl = t.querySelector(".calculated.damage:not([hidden]), .calculated:not([hidden]), .total:not([hidden]), .adjustment:not([hidden])");
+                        const rawDmg = parseInt(damageEl?.textContent?.trim());
+                        const damage = damageEl && !isNaN(rawDmg) ? rawDmg : null;
                         return { name, damage };
                     }).filter(Boolean)
                     : [];
