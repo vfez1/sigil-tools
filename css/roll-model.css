@@ -734,3 +734,218 @@ damage-application button.rm-already-applied::before {
     -ms-user-select: none;
     user-select: none;
 }
+
+/* GAA token config auras tab */
+
+/* Hide when inactive, show when active — using CSS so we never need the `hidden` attribute */
+.rm-gaa-pane:not(.active) {
+    display: none !important;
+}
+
+.rm-gaa-pane.active {
+    display: flex !important;
+    flex-direction: column;
+    overflow: visible;
+    padding: 0;
+}
+
+.rm-gaa-scroll {
+    overflow-y: auto;
+    flex: 1 1 auto;
+    padding: 0.75rem 1rem;
+}
+
+.rm-gaa-table {
+    width: 100%;
+}
+
+/* Header row */
+.rm-gaa-table-header {
+    display: grid;
+    grid-template-columns: 36px 1fr 52px 32px 32px 36px;
+    align-items: center;
+    padding: 0 0 6px;
+    font-size: var(--font-size-11, 11px);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-light-5, #a0a0a0);
+    border-bottom: 1px solid var(--color-border-dark-secondary, rgba(255,255,255,0.15));
+}
+
+/* Group label */
+.rm-gaa-group-label {
+    font-size: var(--font-size-11, 11px);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-light-5, #888);
+    padding: 8px 0 4px;
+}
+
+/* Aura row */
+.rm-gaa-row {
+    display: grid;
+    grid-template-columns: 36px 1fr 52px 32px 32px 36px;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--color-border-dark-secondary, rgba(255,255,255,0.08));
+    font-size: var(--font-size-13, 13px);
+    color: var(--color-text-light-primary, #c9c7b8);
+}
+
+.rm-gaa-empty {
+    font-size: var(--font-size-12, 12px);
+    color: var(--color-text-light-5, #888);
+    padding: 10px 0;
+    font-style: italic;
+}
+
+/* Column alignment */
+.rm-gaa-col-radius {
+    text-align: center;
+}
+
+.rm-gaa-col-swatch {
+    width: 26px;
+    height: 18px;
+    border-radius: 3px;
+    display: block;
+    margin: 0 auto;
+    text-align: center;
+}
+
+/* Header swatch cells contain text labels, not color blocks — let them fill the column */
+.rm-gaa-table-header .rm-gaa-col-swatch {
+    width: auto;
+    height: auto;
+    margin: 0;
+}
+
+.rm-gaa-col-action {
+    display: flex;
+    justify-content: center;
+}
+
+.rm-gaa-col-name {
+    padding-right: 4px;
+}
+
+/* Toggle switch */
+.rm-gaa-switch {
+    position: relative;
+    display: inline-block;
+    width: 28px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.rm-gaa-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.rm-gaa-switch-track {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.15);
+    border-radius: 16px;
+    transition: background 0.2s;
+}
+
+.rm-gaa-switch-track::after {
+    content: "";
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    left: 2px;
+    top: 2px;
+    background: #888;
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.rm-gaa-switch input:checked + .rm-gaa-switch-track {
+    background: #4488ff;
+}
+
+.rm-gaa-switch input:checked + .rm-gaa-switch-track::after {
+    transform: translateX(12px);
+    background: #fff;
+}
+
+/* Add button */
+.rm-gaa-add-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 4px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    cursor: pointer;
+    color: var(--color-text-light-primary, #c9c7b8);
+}
+
+.rm-gaa-add-btn:hover {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.5);
+    color: #fff;
+}
+
+/* Preset dropdown — fixed so it floats above the scroll container */
+.rm-gaa-dropdown {
+    position: fixed;
+    min-width: 182px;
+    background: #2e2e2e;
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 4px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.65);
+    z-index: 10000;
+    overflow: hidden;
+}
+
+.rm-gaa-dropdown-item {
+    padding: 7px 12px;
+    font-size: var(--font-size-12, 12px);
+    cursor: pointer;
+    color: var(--color-text-light-primary, #c9c7b8);
+    white-space: nowrap;
+}
+
+.rm-gaa-dropdown-item:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.rm-gaa-dropdown-empty {
+    color: #666;
+    cursor: default;
+    font-style: italic;
+}
+
+/* Remove button */
+.rm-gaa-remove {
+    background: none;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.55;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: var(--color-text-light-primary, #c9c7b8);
+}
+
+.rm-gaa-remove:hover {
+    opacity: 1;
+    color: #e04040;
+}
+
