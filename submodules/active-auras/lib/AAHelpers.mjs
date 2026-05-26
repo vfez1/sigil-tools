@@ -630,6 +630,65 @@ export class AAHelpers {
     }
   }
 
+  /**
+   * Reconcile a freshly-created token's actor against applied AA effects it
+   * brought from elsewhere. Used by createTokenHook when an actor is dragged
+   * onto a scene from its sheet -- Foundry's data model lets the actor's
+   * pre-existing applied auras "follow" the new token even when no source
+   * for those auras is present on the destination scene, producing the
+   * visible "Sheyla still has Wabu's aura on a Wabu-less map" symptom.
+   *
+   * The rule: for each applied AA effect on the new token's actor, resolve
+   * the effect's origin to a source Actor. If that source actor has no
+   * token on the destination scene, the effect is unsupported here and is
+   * removed. Dual-present sources (e.g. an actor-linked Wabu placed on
+   * both scenes) are preserved because the source actor IS present.
+   *
+   * Re-application is lazy: if the target also has a token elsewhere where
+   * the source IS present, canvasReady's MainAura on that other scene will
+   * re-apply the effect with a fresh appliedSceneId.
+   *
+   * Non-actor-origin effects (template/drawing-based auras) are left alone;
+   * those have their own update flow keyed on the template/drawing scene.
+   *
+   * @param {TokenDocument} token - the newly-created token
+   */
+  static async ReconcileAppliedAurasOnToken(token) {
+    if (!CONFIG.AA.GM) return;
+    if (!token?.actor) return;
+    const sceneId = token.parent?.id;
+    if (!sceneId) return;
+    const scene = game.scenes.get(sceneId);
+    if (!scene) return;
+
+    // Actor ids that have a token on the destination scene.
+    const presentActorIds = new Set();
+    for (const t of scene.tokens ?? []) {
+      if (t.actor?.id) presentActorIds.add(t.actor.id);
+    }
+
+    const stale = [];
+    for (const eff of token.actor.effects ?? []) {
+      if (eff.flags?.ActiveAuras?.applied !== true) continue;
+      // Resolve the effect's origin to the source Actor (if any).
+      const sourceParent = fromUuidSync(eff.origin, { strict: false })?.parent;
+      if (!(sourceParent instanceof Actor)) continue;
+      if (presentActorIds.has(sourceParent.id)) continue;
+      stale.push(eff.id);
+    }
+
+    if (stale.length) {
+      try {
+        Logger.debug("ReconcileAppliedAurasOnToken deleting", {
+          actor: token.actor.name, scene: scene.name, stale,
+        });
+        await token.actor.deleteEmbeddedDocuments("ActiveEffect", stale);
+      } catch (err) {
+        Logger.error("ERROR CAUGHT in ReconcileAppliedAurasOnToken", err);
+      }
+    }
+  }
+
   static async RemoveAllAppliedAuras() {
     for (let removeToken of canvas.tokens.placeables) {
       const tokenEffects = Array.from(removeToken?.actor?.allApplicableEffects() ?? []);

@@ -27,8 +27,10 @@ export async function createTokenHook(token, _config, _id) {
     await (foundry.canvas?.animation?.CanvasAnimation ?? CanvasAnimation).getAnimation(token.object?.animationName)?.promise;
     if (foundry.utils.getProperty(token, "flags.multilevel-tokens")) return;
     const tokenEffects = Array.from(token.actor?.allApplicableEffects() ?? []);
+    let isSource = false;
     for (let effect of (tokenEffects ?? [])) {
       if (effect.flags.ActiveAuras?.isAura) {
+        isSource = true;
         Logger.debug("createToken, collate auras true false");
 
         const debouncedCollate = foundry.utils.debounce(async () => {
@@ -40,6 +42,42 @@ export async function createTokenHook(token, _config, _id) {
 
         break;
       }
+    }
+
+    // Target-side reconciliation: the source-discovery branch above only
+    // fires when the dropped token is itself an aura emitter. When a player
+    // (or GM) drags a target token from its actor sheet onto a scene, the
+    // actor's previously-applied aura effects come along for the ride
+    // because they live on the shared actor record. If no source for those
+    // auras is present on the destination scene, the effect is unsupported
+    // here and should be cleaned up. ReconcileAppliedAurasOnToken handles
+    // dual-present sources correctly (preserved when the source actor has a
+    // token on this scene too).
+    CONFIG.AA.Semaphore.add(AAHelpers.ReconcileAppliedAurasOnToken, token);
+
+    // Reconcile handles the "source actor absent from destination scene" half
+    // of the problem. The OTHER half is "source actor IS present on this
+    // scene, but the new token was dropped outside the aura's range" -- in
+    // that case Reconcile correctly preserves the effect (the source actor
+    // is here), but nothing else runs to re-evaluate distance for the new
+    // token. Schedule a single-token MainAura so the dropped target gets
+    // evaluated against this scene's effectMap; for any in-effectMap source
+    // the new token isn't in range of, MainAura's per-target add=false path
+    // calls RemoveActiveEffects (which doesn't apply the scene-tag filter)
+    // and strips the stale effect.
+    //
+    // Skipped when the dropped token is itself a source -- the source-drop
+    // branch above already schedules a full CollateAuras (which iterates all
+    // tokens), so a single-token pass would be redundant.
+    //
+    // Debounced like the source-drop path to give the canvas a render frame
+    // to register the new placeable before MainAura's canvas.tokens.get()
+    // distance checks run.
+    if (!isSource) {
+      const debouncedSingleEval = foundry.utils.debounce(() => {
+        CONFIG.AA.Semaphore.add(ActiveAuras.MainAura, token, "createToken", token.parent.id);
+      }, 500);
+      debouncedSingleEval(token);
     }
   } catch (error) {
     if (error.message === "Cannot read property 'effects' of null")
