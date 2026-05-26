@@ -543,10 +543,25 @@ function _applyTurnStartMarker() {
         const h = Math.max(1, token.height) * size;
 
         const g = new PIXI.Graphics();
-        g.beginFill(0x44aaff, 0.25);
-        g.lineStyle(3, 0x44aaff, 1.0);
-        g.drawRect(0, 0, w, h);
-        g.endFill();
+        g.lineStyle(3, 0xdd44ff, 1.0);
+        const cl = Math.round(size * 0.28);
+        g.moveTo(0, cl).lineTo(0, 0).lineTo(cl, 0);
+        g.moveTo(w - cl, 0).lineTo(w, 0).lineTo(w, cl);
+        g.moveTo(0, h - cl).lineTo(0, h).lineTo(cl, h);
+        g.moveTo(w - cl, h).lineTo(w, h).lineTo(w, h - cl);
+
+        const label = new PIXI.Text("S", new PIXI.TextStyle({
+            fontFamily: "serif",
+            fontSize: Math.round(size * 0.45),
+            fontWeight: "bold",
+            fill: 0xdd44ff,
+            stroke: 0x000000,
+            strokeThickness: 3,
+        }));
+        label.anchor.set(0.5, 0.5);
+        label.x = w / 2;
+        label.y = h / 2;
+        g.addChild(label);
         g.x = token.x;
         g.y = token.y;
         g.elevation = token.elevation ?? 0;
