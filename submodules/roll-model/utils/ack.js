@@ -27,7 +27,8 @@ export class AcknowledgedModeUtility {
                     let dmg;
                     if (typeof e === "object" && e.damage != null) {
                         let cat = "";
-                        if (e.damage > 0) cat = " rm-ack-healing";
+                        if (e.isTemp) cat = " rm-ack-temp";
+                        else if (e.damage > 0) cat = " rm-ack-healing";
                         else if (e.damage === 0) cat = " rm-ack-zero";
                         else if (totalDamage > 0 && Math.abs(e.damage) > totalDamage) cat = " rm-ack-vulnerable";
                         else if (totalDamage > 0 && Math.abs(e.damage) < totalDamage) cat = " rm-ack-reduced";
@@ -102,10 +103,12 @@ export class AcknowledgedModeUtility {
                             : canvas.scene?.tokens?.find(tk => tk.actorId === resolved.id);
                         if (token?.hidden) return null;
                         const name = token?.name ?? resolved.name;
-                        const damageEl = t.querySelector(".calculated.damage:not([hidden]), .calculated:not([hidden]), .total:not([hidden]), .adjustment:not([hidden])");
+                        const tempEl = t.querySelector(".calculated.temp:not([hidden])");
+                        const damageEl = tempEl ?? t.querySelector(".calculated.damage:not([hidden]), .calculated:not([hidden]), .total:not([hidden]), .adjustment:not([hidden])");
                         const rawDmg = parseInt(damageEl?.textContent?.trim());
                         const damage = damageEl && !isNaN(rawDmg) ? rawDmg : null;
-                        return { name, damage };
+                        const isTemp = !!tempEl;
+                        return { name, damage, isTemp };
                     }).filter(Boolean)
                     : [];
                 if (!targets.length) return;

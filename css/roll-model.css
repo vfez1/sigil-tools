@@ -99,6 +99,11 @@
     line-height: 1.7;
 }
 
+.rm-ack-badge .rm-ack-damage.rm-ack-temp {
+    background: rgba(60, 100, 200, 0.15);
+    color: #2a4a9a;
+}
+
 .rm-ack-badge .rm-ack-damage.rm-ack-healing {
     background: rgba(50, 150, 50, 0.18);
     color: #2a6e2a;
@@ -110,8 +115,8 @@
 }
 
 .rm-ack-badge .rm-ack-damage.rm-ack-reduced {
-    background: rgba(60, 100, 200, 0.15);
-    color: #2a4a9a;
+    background: rgba(200, 110, 20, 0.18);
+    color: #8a4a10;
 }
 
 .rm-ack-badge .rm-ack-damage.rm-ack-full {
