@@ -79,11 +79,10 @@ export class ChatUtility {
 
         ChatUtility._chatPinnedToBottom = true;
         ui.chat.scrollBottom();
-        ChatUtility._watchMessageScroll(message.id);
     }
 
     // Registers a scroll listener on the chat log to track whether the user is pinned
-    // to the bottom. Call once on ready. Drives _watchMessageScroll and controlToken scroll.
+    // to the bottom. Call once on ready. Drives controlToken scroll.
     static setupScrollListener() {
         const rawEl = ui.chat?.element;
         const root = rawEl instanceof HTMLElement ? rawEl : rawEl?.[0];
@@ -96,29 +95,6 @@ export class ChatUtility {
             else if (dist > 100) ChatUtility._chatPinnedToBottom = false;
         }, { passive: true, capture: true });
     }
-
-    // Watches a specific message element for size changes after a new roll and fires
-    // a corrective scrollBottom once the element stabilizes (damage-application Lit
-    // render and dnd5e tray injection both happen async after our hook).
-    // Disconnects after first stable state — not intended to track later interactions.
-    static _watchMessageScroll(messageId) {
-        if (ChatUtility._watchedMessages?.has(messageId)) return;
-        (ChatUtility._watchedMessages ??= new Set()).add(messageId);
-        const msgEl = document.querySelector(`[data-message-id="${messageId}"]`);
-        if (!msgEl) { ChatUtility._watchedMessages.delete(messageId); return; }
-        let stableTimer;
-        const observer = new ResizeObserver(() => {
-            clearTimeout(stableTimer);
-            stableTimer = setTimeout(() => {
-                observer.disconnect();
-                ChatUtility._watchedMessages?.delete(messageId);
-                if (ChatUtility._chatPinnedToBottom) ui.chat.scrollBottom?.();
-            }, 50);
-        });
-        observer.observe(msgEl);
-        setTimeout(() => { observer.disconnect(); ChatUtility._watchedMessages?.delete(messageId); }, 2000);
-    }
-
 
     /**
      * Updates a given chat message, saving changes to the database.
