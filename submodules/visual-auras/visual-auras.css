@@ -2,6 +2,12 @@
 #visual-aura-setup {
     min-width: 536px;
     min-height: 200px;
+    max-height: 80vh;
+}
+
+#visual-aura-setup .window-content {
+    overflow-y: auto;
+    min-height: 0;
 }
 
 /* Tab content area */

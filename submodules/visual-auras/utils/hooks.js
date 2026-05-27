@@ -20,11 +20,15 @@ async function onCreateToken(tokenDoc, options, userId) {
 async function onDeleteToken(tokenDoc, options, userId) {
     if (game.user.id !== userId) return;
     if (!game.user.isGM) return;
+    // Active GM's cascade already deletes owned regions; running here would race with it.
+    if (game.users.activeGM?.isSelf) return;
 
     const scene = tokenDoc.parent;
     if (!scene) return;
 
-    const toDelete = findAuraRegionsForToken(scene, tokenDoc.id).map(r => r.id);
+    const toDelete = findAuraRegionsForToken(scene, tokenDoc.id)
+        .filter(r => scene.regions.has(r.id))
+        .map(r => r.id);
     if (!toDelete.length) return;
 
     try {
