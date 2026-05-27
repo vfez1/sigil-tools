@@ -1,6 +1,6 @@
 import { MODULE_NAME } from "../../shared/const.js";
 import { VA_SETTING_NAMES, getPresets, getActorConfig } from "../utils/settings.js";
-import { buildRegionData, findAuraRegionsForToken } from "../utils/helpers.js";
+import { buildRegionData, findAuraRegionsForToken, getPresetsForToken } from "../utils/helpers.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -9,7 +9,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
         id: "visual-aura-setup",
         classes: ["standard-form", "visual-aura-setup"],
         tag: "div",
-        position: { width: 536 },
+        position: { width: 536, height: "auto" },
         window: {
             title: "Visual Aura Setup",
             icon: "fas fa-circle-dashed",
@@ -101,6 +101,9 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
                 });
             });
         });
+
+        // Re-measure after render so the window fits its content
+        this.setPosition({ height: "auto" });
     }
 
     // ─── Preset List Actions ───────────────────────────────────────────────
@@ -145,7 +148,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
         }
         await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.PRESETS, presets);
         await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.ACTOR_CONFIG, actorConfig);
-        await _refreshCurrentSceneAuras(presets, actorConfig);
+        await _refreshCurrentSceneAuras();
         this.render();
     }
 
@@ -162,8 +165,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
         if (idx >= 0) presets[idx] = preset;
         else presets.push(preset);
         await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.PRESETS, presets);
-        const actorConfig = getActorConfig();
-        await _refreshCurrentSceneAuras(presets, actorConfig);
+        await _refreshCurrentSceneAuras();
         this._editingPresetId = null;
         this.render();
     }
@@ -191,8 +193,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
         const actorConfig = getActorConfig();
         delete actorConfig[name];
         await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.ACTOR_CONFIG, actorConfig);
-        const presets = getPresets();
-        await _refreshCurrentSceneAuras(presets, actorConfig);
+        await _refreshCurrentSceneAuras();
         this.render();
     }
 
@@ -200,8 +201,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
         const actorConfig = getActorConfig();
         actorConfig[actorName] = presetIds;
         await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.ACTOR_CONFIG, actorConfig);
-        const presets = getPresets();
-        await _refreshCurrentSceneAuras(presets, actorConfig);
+        await _refreshCurrentSceneAuras();
     }
 
     // ─── Helpers ───────────────────────────────────────────────────────────
@@ -226,13 +226,12 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
     }
 }
 
-async function _refreshCurrentSceneAuras(presets, actorConfig) {
+async function _refreshCurrentSceneAuras() {
     const scene = game.canvas.scene;
     if (!scene) return;
 
     for (const tokenDoc of scene.tokens) {
-        const actor = tokenDoc.actor;
-        if (!actor) continue;
+        if (!tokenDoc.actor) continue;
 
         const existingIds = findAuraRegionsForToken(scene, tokenDoc.id).map(r => r.id);
         if (existingIds.length) {
@@ -243,18 +242,12 @@ async function _refreshCurrentSceneAuras(presets, actorConfig) {
             }
         }
 
-        const actorNameLower = actor.name.toLowerCase();
-        const entry = Object.entries(actorConfig).find(([k]) => k.toLowerCase() === actorNameLower);
-        const raw = entry?.[1];
-        const assignedPresetIds = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-        if (!assignedPresetIds.length) continue;
+        // Uses per-token disabled flags via getPresetsForToken
+        const tokenPresets = getPresetsForToken(tokenDoc);
+        if (!tokenPresets.length) continue;
 
-        const actorPresets = presets.filter(p => assignedPresetIds.includes(p.id));
-        if (!actorPresets.length) continue;
-
-        const regionData = actorPresets.map(p => buildRegionData(p, tokenDoc));
         try {
-            await scene.createEmbeddedDocuments("Region", regionData);
+            await scene.createEmbeddedDocuments("Region", tokenPresets.map(p => buildRegionData(p, tokenDoc)));
         } catch(e) {
             console.error("[visual-auras]", "_refreshCurrentSceneAuras | create failed:", e);
         }

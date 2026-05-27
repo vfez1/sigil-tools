@@ -1,7 +1,7 @@
 /* App size constraints */
 #visual-aura-setup {
     min-width: 536px;
-    min-height: 900px;
+    min-height: 200px;
 }
 
 /* Tab content area */
@@ -123,4 +123,23 @@
 
 .va-add-actor input {
     flex: 1;
+}
+
+/* Token config tab */
+.va-tc-wrap {
+    padding: 0.5rem 1rem;
+}
+
+.va-tc-note {
+    margin-top: 0.4rem;
+    font-size: 0.78em;
+    opacity: 0.5;
+}
+
+.va-tc-radius {
+    font-size: 0.8em;
+    opacity: 0.55;
+    margin-left: auto;
+    padding-right: 0.5rem;
+    white-space: nowrap;
 }

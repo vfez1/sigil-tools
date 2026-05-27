@@ -14,6 +14,19 @@ export function getPresetsForActor(actor) {
     return allPresets.filter(p => presetIds.includes(p.id));
 }
 
+export function getPresetsForToken(tokenDoc) {
+    const actor = tokenDoc.actor;
+    if (!actor) return [];
+
+    const actorPresets = getPresetsForActor(actor);
+    if (!actorPresets.length) return [];
+
+    const disabledIds = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];
+    if (!disabledIds.length) return actorPresets;
+
+    return actorPresets.filter(p => !disabledIds.includes(p.id));
+}
+
 export function buildRegionData(preset, token) {
     const radiusPx = token.parent.dimensions.distancePixels * preset.radius;
 
@@ -63,4 +76,27 @@ export function buildRegionData(preset, token) {
 
 export function findAuraRegionsForToken(scene, tokenId) {
     return scene.regions.filter(r => r.getFlag("sigil-tools", "visualAuras.tokenId") === tokenId);
+}
+
+export async function refreshTokenAuras(tokenDoc) {
+    const scene = tokenDoc.parent;
+    if (!scene) return;
+
+    const existingIds = findAuraRegionsForToken(scene, tokenDoc.id).map(r => r.id);
+    if (existingIds.length) {
+        try {
+            await scene.deleteEmbeddedDocuments("Region", existingIds);
+        } catch(e) {
+            console.error("[visual-auras]", "refreshTokenAuras | delete failed:", e);
+        }
+    }
+
+    const presets = getPresetsForToken(tokenDoc);
+    if (!presets.length) return;
+
+    try {
+        await scene.createEmbeddedDocuments("Region", presets.map(p => buildRegionData(p, tokenDoc)));
+    } catch(e) {
+        console.error("[visual-auras]", "refreshTokenAuras | create failed:", e);
+    }
 }
