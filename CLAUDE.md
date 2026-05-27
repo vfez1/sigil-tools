@@ -89,8 +89,8 @@ Dev utility for auto-loading a specific scene.
 
 ## Architecture conventions
 
-- **Enable toggles** for each submodule are registered in `roll-model/utils/settings.js` (`SETTING_NAMES.ENABLE_*`). The settings UI panel groups these at the bottom under a "Submodules" header.
-- **Settings panel section headers** are injected by `grid-aware-auras/loader.js` in a `renderSettingsConfig` hook. Add new sections there when adding submodule-specific settings.
+- **Enable toggles** for each submodule are registered in `shared/settings.js` (`SETTING_NAMES.ENABLE_*`). The settings UI panel groups these at the bottom under a "Submodules" header via `shared/settings-panel.js`.
+- **Settings panel section headers** are injected by `shared/settings-panel.js` in a `renderSettingsConfig` hook. Add new sections there when adding submodule-specific settings.
 - **Lang strings** live in `lang/en.json` under the `rm` key (matching `MODULE_SHORT`). Keys follow the pattern `rm.settings.<settingKey>.name` / `.hint`.
 - **No build step** for custom code — plain ES modules loaded directly. `grid-aware-auras/dist/module.js` is the exception (pre-built).
 - **Flags** on documents use `MODULE_SHORT` (`rm`) as the namespace.
@@ -117,6 +117,6 @@ Dev utility for auto-loading a specific scene.
 | Task | How |
 |---|---|
 | Deploy changes | `/deploy` |
-| Add a new submodule enable toggle | Add to `SETTING_NAMES` + `registerSettings()` in `roll-model/utils/settings.js`, add lang strings, add to `toggleKeys` in `grid-aware-auras/loader.js` |
-| Add a settings section header | Edit the `renderSettingsConfig` hook in `grid-aware-auras/loader.js` |
+| Add a new submodule enable toggle | Add to `SETTING_NAMES` + `registerSettings()` in `shared/settings.js`, add lang strings, add to `toggleKeys` in `shared/settings-panel.js` |
+| Add a settings section header | Edit the `renderSettingsConfig` hook in `shared/settings-panel.js` |
 | Add a new character-features hook | Add to `registerHooks()` in `character-features/utils/hooks.js` |

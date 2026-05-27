@@ -1,5 +1,5 @@
 import { MODULE_NAME } from "../../shared/const.js";
-import { SETTING_NAMES, SettingsUtility } from "./settings.js";
+import { SETTING_NAMES, SettingsUtility } from "../../shared/settings.js";
 
 export class AcknowledgedModeUtility {
     static onNewMessage(_message, _html) {}
