@@ -427,17 +427,21 @@ export class AAHelpers {
       if (tokenEffects.length > 0) {
         for (let testEffect of tokenEffects) {
           if (testEffect?.flags?.ActiveAuras?.applied !== true) continue;
-          // Scene-aware filter: only consider for removal effects that were
-          // applied in THIS scene. Effects tagged with a different scene
-          // belong to a cross-scene actor-linked aura (e.g. Wabu's aura applied
-          // in Shadowfell, visible on Hades-side actor-linked Sheyla) and must
-          // not be stripped just because the activeGM is now viewing a scene
-          // without the source token. Global cleanup runs separately via
-          // RemoveStaleAurasGlobally when the aura state actually changes.
-          // Legacy effects (no appliedSceneId tag) default to current-scene
-          // semantics so they still get cleaned up after upgrade.
-          const tag = testEffect.flags.ActiveAuras.appliedSceneId;
-          if (tag && tag !== canvas.scene.id) continue;
+          // Active-scene authority: any applied effect on a token of this
+          // scene whose origin is no longer in the scene's effectMap is
+          // stripped, regardless of which scene the effect was originally
+          // tagged with. The activeGM's currently-viewed scene is treated
+          // as authoritative for what auras are active on actors visible
+          // there -- if the source isn't here right now, the effect shouldn't
+          // be either. Earlier code had a `tag && tag !== canvas.scene.id`
+          // preservation check intended to avoid flicker on dual-present
+          // actor-linked auras (Sheyla buffed on Shadowfell still showing
+          // on her Hades-side token while the GM was viewing Hades), but
+          // that filter turned every cross-scene effect into a permanent
+          // leak whenever the source wasn't on the activeGM's current view.
+          // The `appliedSceneId` flag remains on each effect; it's still
+          // used by RemoveCrossSceneSourceAuras for eager cross-scene
+          // cleanup on source movement and scene activation.
           if (EffectsArray.some((o) => AAHelpers.originsMatch(o, testEffect.origin))) continue;
           try {
             Logger.debug("RemoveAppliedAuras", { removeToken, testEffect });

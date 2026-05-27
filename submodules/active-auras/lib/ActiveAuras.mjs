@@ -477,12 +477,12 @@ export class ActiveAuras {
       newEffectData.flags.dae?.specialDuration?.push(newEffectData.flags.ActiveAuras.time);
     }
 
-    // Stamp the scene this effect was applied in so RemoveAppliedAuras can be
-    // scene-aware. Without this tag, the canvasReady cleanup would strip
-    // cross-scene actor-linked auras whenever the activeGM switches to a scene
-    // that doesn't host the source token -- producing visible flicker on every
-    // scene change for shared-actor parties (e.g. a multi-plane combat where
-    // Wabu's aura is applied in Shadowfell while saves are rolled in Hades).
+    // Stamp the scene this effect was applied in. The tag is used by
+    // RemoveCrossSceneSourceAuras to identify cross-scene-tagged effects
+    // during eager cleanup paths (source token movement, scene activation).
+    // Per-scene RemoveAppliedAuras intentionally does NOT use the tag as a
+    // preservation filter -- the activeGM's currently-viewed scene is
+    // authoritative for what auras are active on tokens visible there.
     newEffectData.flags.ActiveAuras.appliedSceneId = canvas.scene.id;
 
     await token.actor.createEmbeddedDocuments("ActiveEffect", [newEffectData]);
