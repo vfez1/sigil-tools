@@ -35,7 +35,6 @@ async function onDeleteToken(tokenDoc, options, userId) {
 
 async function onCanvasReady(canvas) {
     if (!game.user.isGM) return;
-
     const scene = canvas.scene;
     if (!scene) return;
 
@@ -43,21 +42,37 @@ async function onCanvasReady(canvas) {
         if (!tokenDoc.actor) continue;
 
         const presets = getPresetsForActor(tokenDoc.actor);
-        if (!presets.length) continue;
-
+        const assignedIds = new Set(presets.map(p => p.id));
         const existingRegions = findAuraRegionsForToken(scene, tokenDoc.id);
-        const existingPresetIds = new Set(
-            existingRegions.map(r => r.getFlag("sigil-tools", "visualAuras.presetId")).filter(Boolean)
+
+        // Delete regions whose preset is no longer assigned
+        const toDelete = existingRegions
+            .filter(r => !assignedIds.has(r.getFlag("sigil-tools", "visualAuras.presetId")))
+            .map(r => r.id);
+
+        if (toDelete.length) {
+            try {
+                await scene.deleteEmbeddedDocuments("Region", toDelete);
+            } catch(e) {
+                console.error("[visual-auras]", "canvasReady | failed to delete stale regions:", e);
+            }
+        }
+
+        // Create regions for assigned presets that don't have one yet
+        const survivingPresetIds = new Set(
+            existingRegions
+                .filter(r => !toDelete.includes(r.id))
+                .map(r => r.getFlag("sigil-tools", "visualAuras.presetId"))
+                .filter(Boolean)
         );
 
-        const missing = presets.filter(p => !existingPresetIds.has(p.id));
+        const missing = presets.filter(p => !survivingPresetIds.has(p.id));
         if (!missing.length) continue;
 
-        const regionData = missing.map(p => buildRegionData(p, tokenDoc));
         try {
-            await scene.createEmbeddedDocuments("Region", regionData);
+            await scene.createEmbeddedDocuments("Region", missing.map(p => buildRegionData(p, tokenDoc)));
         } catch(e) {
-            console.error("[visual-auras]", "canvasReady | failed to create regions for", tokenDoc.name, ":", e);
+            console.error("[visual-auras]", "canvasReady | failed to create regions:", e);
         }
     }
 }
