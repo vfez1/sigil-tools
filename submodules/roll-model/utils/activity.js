@@ -136,7 +136,11 @@ export class ActivityUtility {
 
         const activityItem = activity.item;
         activityItem.flags.dnd5e ??= {};
-        activityItem.flags.dnd5e.scaling = (message.flags ?? message.data?.flags)?.dnd5e?.scaling;
+        const dnd5eScaling = (message.flags ?? message.data?.flags)?.dnd5e?.scaling;
+        // Fallback: for pool-based heal activities (e.g. Lay on Hands), dnd5e does not
+        // write the chosen amount to message.flags.dnd5e.scaling.  It was captured from
+        // usageConfig in the ACTIVITY_CONSUMPTION hook and saved as flags[MODULE_SHORT].healingScaling.
+        activityItem.flags.dnd5e.scaling = dnd5eScaling ?? flags.healingScaling;
 
         const usageConfig = {
             isCritical: flags.isCritical ?? false,

@@ -267,6 +267,37 @@ export class RollUtility {
         return true;
     }
 
+    /**
+     * Strips the actor's heal damage bonus (system.bonuses.heal.damage) from non-spell
+     * heal activities.  The bonus is intended for healing spells only — pool-based
+     * features like Lay on Hands should not benefit from it.
+     * @param {Object} outerConfig The outer roll configuration object.
+     * @param {Object} rollConfig  The individual roll configuration.
+     */
+    static stripNonSpellHealBonus(outerConfig, rollConfig) {
+        const subject = outerConfig?.subject ?? rollConfig?.subject;
+        if (!subject) return;
+
+        // Only applies to heal-type activities on non-spell items
+        if (subject.type !== "heal") return;
+        if (subject.item?.type === "spell") return;
+
+        const actor = subject.actor;
+        if (!actor) return;
+
+        const healBonus = foundry.utils.getProperty(actor, "system.bonuses.heal.damage");
+        if (!healBonus) return;
+
+        const parts = rollConfig.parts;
+        if (!parts?.length) return;
+
+        const healBonusNormalized = String(healBonus).trim();
+        rollConfig.parts = parts.filter((p) => {
+            const part = String(p).trim();
+            return part !== healBonusNormalized && part !== "@bonuses.heal.damage";
+        });
+    }
+
     static applyElementalFuryPotentSpellcastingDamageBonus(outerConfig, rollConfig, index) {
         if (index !== 0) return false;
 

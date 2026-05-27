@@ -186,6 +186,7 @@ export class HooksUtility {
             RollUtility.applyGWMDamageBonus(outerConfig, rollConfig, index);
             RollUtility.applyElementalFuryPotentSpellcastingDamageBonus(outerConfig, rollConfig, index);
             RollUtility.injectLunarRadianceType(outerConfig, rollConfig);
+            RollUtility.stripNonSpellHealBonus(outerConfig, rollConfig);
             RollUtility.captureDamageFormulaParts(outerConfig, rollConfig, index);
         });
 
@@ -208,6 +209,14 @@ export class HooksUtility {
         });
 
         Hooks.on(HOOKS_DND5E.ACTIVITY_CONSUMPTION, (activity, usageConfig, messageConfig, updates) => {
+            // For pool-based heal activities (e.g. Lay on Hands), dnd5e does not persist
+            // the user-chosen healing amount to message.flags.dnd5e.scaling.  Capture it
+            // here (after the dialog, usageConfig.scaling holds the chosen value) so that
+            // getDamageFromMessage can pass it to rollDamage and produce the right total.
+            if (activity.type === "heal" && usageConfig.scaling != null && messageConfig?.data?.flags?.[MODULE_SHORT]) {
+                messageConfig.data.flags[MODULE_SHORT].healingScaling = usageConfig.scaling;
+            }
+
             if (activity.hasOwnProperty(ROLL_TYPE.ATTACK) && updates.item.length > 0 && messageConfig.data) {
                 const ammo = updates.item.find((i) => i["system.quantity"]);
                 if (!ammo) return;
