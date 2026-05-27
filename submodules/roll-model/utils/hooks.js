@@ -83,6 +83,8 @@ export class HooksUtility {
             HooksUtility.registerActorSheetHooks();
         });
 
+        HooksUtility.registerSettingsPanelHooks();
+
         Hooks.on(HOOKS_CORE.READY, () => {
             if (!isEnabled(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
 
@@ -308,6 +310,99 @@ export class HooksUtility {
     static registerActorSheetHooks() {
         Hooks.on("renderCharacterActorSheet", (app, html) => {
             _renderPortentRollsOnSheet(app.actor, html);
+        });
+    }
+
+    static registerSettingsPanelHooks() {
+        Hooks.on("renderSettingsConfig", (app, html) => {
+            console.log("[roll-model] renderSettingsConfig | injecting sigil-tools section headers");
+            const el = html instanceof $ ? html[0] : html;
+            const section = el.querySelector('section[data-tab="sigil-tools"]');
+            if (!section) {
+                console.log("[roll-model] renderSettingsConfig | sigil-tools section not found, skipping");
+                return;
+            }
+
+            const HEADER_STYLE = [
+                "display:flex", "align-items:center", "gap:6px",
+                "background:linear-gradient(to right,rgba(150,40,30,0.7),transparent)",
+                "border-left:4px solid #e03020",
+                "padding:8px 12px", "margin:1.4em 0 0.3em",
+                "font-size:1.25em", "text-transform:uppercase",
+                "letter-spacing:0.06em", "font-weight:bold", "color:#f0e6d2"
+            ].join(";");
+            const HR_STYLE = "border:none;border-top:1px solid var(--color-border-light-tertiary,#c9c7b8);margin:0.5em 0 0;";
+
+            function makeHeader(icon, label) {
+                const h = document.createElement("div");
+                h.style.cssText = HEADER_STYLE;
+                h.innerHTML = `<i class="${icon}" style="width:14px;text-align:center;opacity:0.8"></i> ${label}`;
+                return h;
+            }
+
+            function insertHeader(anchorGroup, icon, label) {
+                if (!anchorGroup) {
+                    console.log("[roll-model] renderSettingsConfig | insertHeader: no anchor found for section:", label);
+                    return;
+                }
+                const hr = document.createElement("hr");
+                hr.style.cssText = HR_STYLE;
+                anchorGroup.before(hr, makeHeader(icon, label));
+                console.log("[roll-model] renderSettingsConfig | inserted header:", label);
+            }
+
+            // Roll Model
+            const firstRmGroup = section.querySelector('[name="sigil-tools.preventMovementHistory"]')?.closest(".form-group");
+            if (firstRmGroup) {
+                firstRmGroup.before(makeHeader("fas fa-dice-d20", "Roll Model"));
+                console.log("[roll-model] renderSettingsConfig | inserted Roll Model header");
+            }
+
+            // Visual Auras
+            const firstVaGroup = section.querySelector('button[data-action="openSubmenu"][data-key="sigil-tools.visualAurasSetup"]')?.closest(".form-group");
+            console.log("[roll-model] renderSettingsConfig | Visual Auras anchor found:", !!firstVaGroup);
+            insertHeader(firstVaGroup, "fas fa-circle-dashed", "Visual Auras");
+
+            // Character Features — move it to sit just before Active Auras in the DOM
+            const cfGroup = section.querySelector('button[data-action="openSubmenu"][data-key="sigil-tools.characterFeaturesSetup"]')?.closest(".form-group");
+            const firstAAGroup = section.querySelector('[name="sigil-tools.measurement"]')?.closest(".form-group");
+            console.log("[roll-model] renderSettingsConfig | Character Features anchor found:", !!cfGroup, "Active Auras anchor found:", !!firstAAGroup);
+            if (cfGroup && firstAAGroup) {
+                const cfHr = document.createElement("hr");
+                cfHr.style.cssText = HR_STYLE;
+                firstAAGroup.before(cfHr, makeHeader("fas fa-user", "Character Features"), cfGroup);
+                console.log("[roll-model] renderSettingsConfig | inserted Character Features header + moved group");
+            }
+
+            // Active Auras
+            insertHeader(firstAAGroup, "fas fa-circle-dashed", "Active Auras");
+
+            // Submodules enable toggles — pulled to the bottom
+            const toggleKeys = [
+                "enableRollModel",
+                "enableActiveAuras",
+                "enableOverrideSettings",
+                "enableSuppressWarnings",
+                "enableVisualAuras",
+                "enableEffectMacro",
+                "enableCharacterFeatures",
+            ];
+            const toggleGroups = toggleKeys
+                .map(k => {
+                    const el = section.querySelector(`[name="sigil-tools.${k}"]`)?.closest(".form-group");
+                    console.log("[roll-model] renderSettingsConfig | toggle key", k, "found:", !!el);
+                    return el;
+                })
+                .filter(Boolean);
+
+            if (toggleGroups.length) {
+                const hr = document.createElement("hr");
+                hr.style.cssText = HR_STYLE;
+                section.append(hr, makeHeader("fas fa-puzzle-piece", "Submodules"), ...toggleGroups);
+                console.log("[roll-model] renderSettingsConfig | appended Submodules section with", toggleGroups.length, "toggle(s)");
+            }
+
+            console.log("[roll-model] renderSettingsConfig | done");
         });
     }
 

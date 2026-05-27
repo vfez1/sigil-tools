@@ -2,7 +2,7 @@
     "id": "sigil-tools",
     "title": "Sigil Tools",
     "description": "Internal tooling module. Contains submodules for roll-model, active-auras, grid-aware-auras, effectmacro, override-settings, and campaign-specific automation.",
-    "version": "1.0.19",
+    "version": "1.0.20",
     "socket": true,
     "compatibility": {
         "minimum": "13",
@@ -19,21 +19,14 @@
     "scripts": [
         "submodules/suppress-warnings/suppress-warnings.js",
         "submodules/override-settings/override.js",
-        "submodules/dev-scene-loader/dev-scene-loader.js",
-        "submodules/grid-aware-auras/loader.js",
-        "submodules/grid-aware-auras/dist/module.js"
+        "submodules/dev-scene-loader/dev-scene-loader.js"
     ],
-    "styles": ["css/roll-model.css", "submodules/grid-aware-auras/dist/module.css", "submodules/effectmacro/styles/styles.css"],
+    "styles": ["css/roll-model.css", "submodules/effectmacro/styles/styles.css", "submodules/visual-auras/visual-auras.css"],
     "languages": [
         {
             "lang": "en",
             "name": "English",
             "path": "lang/en.json"
-        },
-        {
-            "lang": "en",
-            "name": "English",
-            "path": "submodules/grid-aware-auras/lang/en.json"
         },
         {
             "lang": "en",

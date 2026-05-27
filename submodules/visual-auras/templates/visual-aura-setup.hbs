@@ -1,0 +1,186 @@
+<div class="va-setup-wrapper">
+    <nav class="sheet-tabs tabs top-tabs" data-group="sheet">
+        <a class="{{#if (eq activeTab "presets")}}active{{/if}}" data-action="switchTab" data-tab="presets">
+            <i class="fa-solid fa-circle-dashed" inert=""></i>
+            <span>Presets</span>
+        </a>
+        <a class="{{#if (eq activeTab "actors")}}active{{/if}}" data-action="switchTab" data-tab="actors">
+            <i class="fa-solid fa-users" inert=""></i>
+            <span>Actors</span>
+        </a>
+    </nav>
+
+    {{!-- Presets Tab --}}
+    <section class="tab scrollable {{#if (eq activeTab "presets")}}active{{/if}}" data-tab="presets" data-group="sheet">
+
+        {{#if (eq presetMode "list")}}
+        {{!-- List View --}}
+        {{#if presets.length}}
+        <div class="va-preset-table">
+            <div class="va-pt-header">
+                <span>Name</span>
+                <span>Color</span>
+                <span>Radius</span>
+                <span></span>
+            </div>
+            {{#each presets}}
+            <div class="va-pt-row">
+                <span class="va-pt-name">{{name}}</span>
+                <span class="va-color-swatch" style="background: {{color}};"></span>
+                <span class="va-pt-radius">{{radius}} ft</span>
+                <div class="va-pt-controls">
+                    <button type="button" class="icon fa-solid fa-pen-to-square" data-action="editPreset" data-id="{{id}}" title="Edit"></button>
+                    <button type="button" class="icon fa-solid fa-copy" data-action="duplicatePreset" data-id="{{id}}" title="Duplicate"></button>
+                    <button type="button" class="icon fa-solid fa-trash" data-action="deletePreset" data-id="{{id}}" title="Delete"></button>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        {{else}}
+        <p class="hint">No presets defined yet.</p>
+        {{/if}}
+        <div class="form-group">
+            <button type="button" class="bright" data-action="addPreset">
+                <i class="fa-solid fa-plus"></i> Add Preset
+            </button>
+        </div>
+
+        {{else}}
+        {{!-- Edit View --}}
+        <div class="va-edit-header">
+            <button type="button" class="icon fa-solid fa-arrow-left" data-action="cancelEdit" title="Back to list"></button>
+            <span>{{#if editPreset.isNew}}New Preset{{else}}Editing: {{editPreset.name}}{{/if}}</span>
+        </div>
+        <input type="hidden" name="edit-id" value="{{editPreset.id}}" />
+        <div class="form-group">
+            <label>Name</label>
+            <div class="form-fields">
+                <input type="text" name="edit-name" value="{{editPreset.name}}" placeholder="Aura name" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Color</label>
+            <div class="form-fields">
+                <color-picker name="edit-color" value="{{editPreset.color}}">
+                    <input type="text" />
+                    <input type="color" />
+                </color-picker>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Radius <span class="units">(ft)</span></label>
+            <div class="form-fields">
+                <input type="number" name="edit-radius" value="{{editPreset.radius}}" min="1" max="120" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Visibility</label>
+            <div class="form-fields">
+                <select name="edit-visibility">
+                    <option value="ALWAYS" {{#if (eq editPreset.visibility "ALWAYS")}}selected{{/if}}>Always Visible</option>
+                    <option value="LAYER_UNLOCKED" {{#if (eq editPreset.visibility "LAYER_UNLOCKED")}}selected{{/if}}>GM Only</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Highlight Mode</label>
+            <div class="form-fields">
+                <select name="edit-highlightMode">
+                    <option value="shapes" {{#if (eq editPreset.highlightMode "shapes")}}selected{{/if}}>True Shapes</option>
+                    <option value="coverage" {{#if (eq editPreset.highlightMode "coverage")}}selected{{/if}}>Covered Grid Spaces</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group slim">
+            <label>Is Grid-Based</label>
+            <div class="form-fields">
+                <input type="checkbox" name="edit-gridBased" {{#if editPreset.gridBased}}checked{{/if}} />
+            </div>
+            <p class="hint">Use grid distance rules rather than exact Euclidean distance.</p>
+        </div>
+        <div class="form-group slim">
+            <label>Is Hole</label>
+            <div class="form-fields">
+                <input type="checkbox" name="edit-hole" {{#if editPreset.hole}}checked{{/if}} />
+            </div>
+            <p class="hint">Exclude the token's own base space from the aura shape.</p>
+        </div>
+        <div class="form-group slim">
+            <label>Display Measurements</label>
+            <div class="form-fields">
+                <input type="checkbox" name="edit-displayMeasurements" {{#if editPreset.displayMeasurements}}checked{{/if}} />
+            </div>
+        </div>
+        <fieldset>
+            <legend>Wall Restriction</legend>
+            <div class="form-group slim">
+                <label>Is Restricted</label>
+                <div class="form-fields">
+                    <input type="checkbox" name="edit-restrictionEnabled" {{#if editPreset.restrictionEnabled}}checked{{/if}} />
+                </div>
+                <p class="hint">Configure whether the shapes of this Region are constrained by walls.</p>
+            </div>
+            <div class="form-group slim">
+                <label>Restricted By</label>
+                <div class="form-fields">
+                    <select name="edit-restrictionType">
+                        <option value="darkness" {{#if (eq editPreset.restrictionType "darkness")}}selected{{/if}}>Darkness-blocking Walls and Light Sources with Priority &gt; Threshold</option>
+                        <option value="light" {{#if (eq editPreset.restrictionType "light")}}selected{{/if}}>Light-blocking Walls and Darkness Sources with Priority ≥ Threshold</option>
+                        <option value="move" {{#if (eq editPreset.restrictionType "move")}}selected{{/if}}>Movement-blocking Walls</option>
+                        <option value="sight" {{#if (eq editPreset.restrictionType "sight")}}selected{{/if}}>Sight-blocking Walls and Darkness Sources with Priority ≥ Threshold</option>
+                        <option value="sound" {{#if (eq editPreset.restrictionType "sound")}}selected{{/if}}>Sound-blocking Walls</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group slim">
+                <label>Priority Threshold</label>
+                <div class="form-fields">
+                    <input type="number" name="edit-restrictionPriority" value="{{editPreset.restrictionPriority}}" min="0" step="1" />
+                </div>
+            </div>
+        </fieldset>
+        <div class="va-edit-buttons">
+            <button type="button" class="bright" data-action="savePreset">
+                <i class="fa-solid fa-floppy-disk"></i> Save Preset
+            </button>
+            <button type="button" data-action="cancelEdit">Cancel</button>
+        </div>
+        {{/if}}
+
+    </section>
+
+    {{!-- Actors Tab --}}
+    <section class="tab scrollable {{#if (eq activeTab "actors")}}active{{/if}}" data-tab="actors" data-group="sheet">
+        {{#if actors.length}}
+        <div class="va-preset-table va-actor-table">
+            <div class="va-pt-header va-at-row">
+                <span>Name</span>
+                <span>Preset</span>
+                <span></span>
+            </div>
+            {{#each actors}}
+            <div class="va-pt-row va-at-row">
+                <span>{{name}}</span>
+                <multi-select data-actor-ms data-actor-name="{{name}}">
+                    {{#each presetList}}
+                    <option value="{{id}}" {{#if checked}}selected{{/if}}>{{name}}</option>
+                    {{/each}}
+                </multi-select>
+                <div class="va-pt-controls">
+                    <button type="button" class="icon fa-solid fa-trash" data-action="removeActor" data-actor-name="{{name}}" title="Remove"></button>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        {{else}}
+        <p class="hint">No actors configured yet.</p>
+        {{/if}}
+        <div class="va-add-actor">
+            <input type="text" class="va-new-actor-name" placeholder="Actor name" />
+            <button type="button" data-action="addActor">
+                <i class="fa-solid fa-plus"></i> Add Actor
+            </button>
+        </div>
+    </section>
+
+</div>

@@ -16,6 +16,7 @@ export const SETTING_NAMES = {
     ENABLE_GRID_AWARE_AURAS: "enableGridAwareAuras",
     ENABLE_EFFECT_MACRO: "enableEffectMacro",
     ENABLE_CHARACTER_FEATURES: "enableCharacterFeatures",
+    ENABLE_VISUAL_AURAS: "enableVisualAuras",
 };
 
 /**
@@ -89,6 +90,16 @@ export class SettingsUtility {
         game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_CHARACTER_FEATURES, {
             name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_CHARACTER_FEATURES}.name`),
             hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_CHARACTER_FEATURES}.hint`),
+            scope: "world",
+            config: true,
+            type: Boolean,
+            default: true,
+            requiresReload: true,
+        });
+
+        game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_VISUAL_AURAS, {
+            name: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_VISUAL_AURAS}.name`),
+            hint: CoreUtility.localize(`${MODULE_SHORT}.settings.${SETTING_NAMES.ENABLE_VISUAL_AURAS}.hint`),
             scope: "world",
             config: true,
             type: Boolean,
