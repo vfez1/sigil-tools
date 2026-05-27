@@ -48,7 +48,9 @@
         {{else}}
         {{!-- Edit View --}}
         <div class="va-edit-header">
-            <button type="button" class="icon fa-solid fa-arrow-left" data-action="cancelEdit" title="Back to list"></button>
+            <button type="button" class="va-back-btn" data-action="cancelEdit">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </button>
             <span>{{#if editPreset.isNew}}New Preset{{else}}Editing: {{editPreset.name}}{{/if}}</span>
         </div>
         <input type="hidden" name="edit-id" value="{{editPreset.id}}" />
@@ -139,12 +141,14 @@
                 </div>
             </div>
         </fieldset>
+        {{#if editPreset.isNew}}
         <div class="va-edit-buttons">
             <button type="button" class="bright" data-action="savePreset">
                 <i class="fa-solid fa-floppy-disk"></i> Save Preset
             </button>
             <button type="button" data-action="cancelEdit">Cancel</button>
         </div>
+        {{/if}}
         {{/if}}
 
     </section>

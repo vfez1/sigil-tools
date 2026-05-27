@@ -13,7 +13,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
         window: {
             title: "Visual Aura Setup",
             icon: "fas fa-circle-dashed",
-            resizable: true,
+            resizable: false,
         },
         actions: {
             switchTab: VisualAuraSetupApp.switchTab,
@@ -101,6 +101,22 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
                 });
             });
         });
+
+        // Auto-save when editing an existing preset (not a new one)
+        if (this._editingPresetId && this._editingPresetId !== "__new__") {
+            const presetId = this._editingPresetId;
+            const autoSave = async () => {
+                await VisualAuraSetupApp._autoSavePreset(this.element, presetId);
+            };
+            // Named inputs/selects
+            this.element.querySelectorAll('input[name^="edit-"], select[name^="edit-"]').forEach(el => {
+                el.addEventListener("change", autoSave);
+            });
+            // color-picker's child inputs don't carry a name — wire them explicitly
+            this.element.querySelector('[name="edit-color"]')?.querySelectorAll("input").forEach(el => {
+                el.addEventListener("change", autoSave);
+            });
+        }
 
         // Re-measure after render so the window fits its content
         this.setPosition({ height: "auto" });
@@ -205,6 +221,17 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
     }
 
     // ─── Helpers ───────────────────────────────────────────────────────────
+
+    static async _autoSavePreset(root, presetId) {
+        const preset = VisualAuraSetupApp._readEditForm(root);
+        if (!preset.name) return; // Skip silent save if name is empty
+        const presets = getPresets();
+        const idx = presets.findIndex(p => p.id === presetId);
+        if (idx < 0) return;
+        presets[idx] = preset;
+        await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.PRESETS, presets);
+        await _refreshCurrentSceneAuras();
+    }
 
     static _readEditForm(root) {
         const colorEl = root.querySelector('[name="edit-color"]');
