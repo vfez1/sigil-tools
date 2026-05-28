@@ -253,7 +253,9 @@ export function extendAESheet() {
   // add post setup for DAE
   Hooks.on("ready", () => {
     if (CONFIG.ActiveEffect.sheetClasses.base["core.DAEActiveEffectConfig"]){
-      CONFIG.ActiveEffect.sheetClasses.base["core.DAEActiveEffectConfig"].cls.PARTS = getExtendedParts(CONFIG.ActiveEffect.sheetClasses.base["core.DAEActiveEffectConfig"].cls.PARTS);
+      const daeCls = CONFIG.ActiveEffect.sheetClasses.base["core.DAEActiveEffectConfig"].cls;
+      daeCls.PARTS = getExtendedParts(daeCls.PARTS);
+      if (daeCls.TABS?.sheet?.tabs) daeCls.TABS = getExtendedTabs(daeCls.TABS);
 
       libWrapper.register(
         CONSTANTS.MODULE_ID,

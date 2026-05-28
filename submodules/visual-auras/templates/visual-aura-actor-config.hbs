@@ -1,0 +1,34 @@
+<div class="va-setup-wrapper">
+    <section class="tab scrollable active">
+        {{#if actors.length}}
+        <div class="va-preset-table va-actor-table">
+            <div class="va-pt-header va-at-row">
+                <span>Name</span>
+                <span>Presets</span>
+                <span></span>
+            </div>
+            {{#each actors}}
+            <div class="va-pt-row va-at-row">
+                <span>{{name}}</span>
+                <multi-select data-actor-ms data-actor-name="{{name}}">
+                    {{#each presetList}}
+                    <option value="{{id}}" {{#if checked}}selected{{/if}}>{{name}}</option>
+                    {{/each}}
+                </multi-select>
+                <div class="va-pt-controls">
+                    <button type="button" class="icon fa-solid fa-trash" data-action="removeActor" data-actor-name="{{name}}" title="Remove"></button>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        {{else}}
+        <p class="hint">No actors configured yet.</p>
+        {{/if}}
+        <div class="va-add-actor">
+            <input type="text" class="va-new-actor-name" placeholder="Actor name" />
+            <button type="button" data-action="addActor">
+                <i class="fa-solid fa-plus"></i> Add Actor
+            </button>
+        </div>
+    </section>
+</div>

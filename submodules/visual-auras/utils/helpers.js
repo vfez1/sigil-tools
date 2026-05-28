@@ -78,6 +78,33 @@ export function findAuraRegionsForToken(scene, tokenId) {
     return scene.regions.filter(r => r.getFlag("sigil-tools", "visualAuras.tokenId") === tokenId);
 }
 
+export async function refreshCurrentSceneAuras() {
+    const scene = game.canvas.scene;
+    if (!scene) return;
+
+    for (const tokenDoc of scene.tokens) {
+        if (!tokenDoc.actor) continue;
+
+        const existingIds = findAuraRegionsForToken(scene, tokenDoc.id).map(r => r.id);
+        if (existingIds.length) {
+            try {
+                await scene.deleteEmbeddedDocuments("Region", existingIds);
+            } catch(e) {
+                console.error("[visual-auras]", "refreshCurrentSceneAuras | delete failed:", e);
+            }
+        }
+
+        const tokenPresets = getPresetsForToken(tokenDoc);
+        if (!tokenPresets.length) continue;
+
+        try {
+            await scene.createEmbeddedDocuments("Region", tokenPresets.map(p => buildRegionData(p, tokenDoc)));
+        } catch(e) {
+            console.error("[visual-auras]", "refreshCurrentSceneAuras | create failed:", e);
+        }
+    }
+}
+
 export async function refreshTokenAuras(tokenDoc) {
     const scene = tokenDoc.parent;
     if (!scene) return;

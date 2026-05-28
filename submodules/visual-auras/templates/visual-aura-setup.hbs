@@ -1,17 +1,5 @@
 <div class="va-setup-wrapper">
-    <nav class="sheet-tabs tabs top-tabs" data-group="sheet">
-        <a class="{{#if (eq activeTab "presets")}}active{{/if}}" data-action="switchTab" data-tab="presets">
-            <i class="fa-solid fa-circle-dashed" inert=""></i>
-            <span>Presets</span>
-        </a>
-        <a class="{{#if (eq activeTab "actors")}}active{{/if}}" data-action="switchTab" data-tab="actors">
-            <i class="fa-solid fa-users" inert=""></i>
-            <span>Actors</span>
-        </a>
-    </nav>
-
-    {{!-- Presets Tab --}}
-    <section class="tab scrollable {{#if (eq activeTab "presets")}}active{{/if}}" data-tab="presets" data-group="sheet">
+    <section class="tab scrollable active">
 
         {{#if (eq presetMode "list")}}
         {{!-- List View --}}
@@ -152,39 +140,4 @@
         {{/if}}
 
     </section>
-
-    {{!-- Actors Tab --}}
-    <section class="tab scrollable {{#if (eq activeTab "actors")}}active{{/if}}" data-tab="actors" data-group="sheet">
-        {{#if actors.length}}
-        <div class="va-preset-table va-actor-table">
-            <div class="va-pt-header va-at-row">
-                <span>Name</span>
-                <span>Preset</span>
-                <span></span>
-            </div>
-            {{#each actors}}
-            <div class="va-pt-row va-at-row">
-                <span>{{name}}</span>
-                <multi-select data-actor-ms data-actor-name="{{name}}">
-                    {{#each presetList}}
-                    <option value="{{id}}" {{#if checked}}selected{{/if}}>{{name}}</option>
-                    {{/each}}
-                </multi-select>
-                <div class="va-pt-controls">
-                    <button type="button" class="icon fa-solid fa-trash" data-action="removeActor" data-actor-name="{{name}}" title="Remove"></button>
-                </div>
-            </div>
-            {{/each}}
-        </div>
-        {{else}}
-        <p class="hint">No actors configured yet.</p>
-        {{/if}}
-        <div class="va-add-actor">
-            <input type="text" class="va-new-actor-name" placeholder="Actor name" />
-            <button type="button" data-action="addActor">
-                <i class="fa-solid fa-plus"></i> Add Actor
-            </button>
-        </div>
-    </section>
-
 </div>

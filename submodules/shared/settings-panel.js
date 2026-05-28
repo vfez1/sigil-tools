@@ -45,13 +45,13 @@ export function registerSettingsPanelHooks() {
         insertHeader(firstAAGroup, "fas fa-circle-dashed", "Active Auras");
 
         const toggleKeys = [
-            "enableRollModel",
             "enableActiveAuras",
+            "enableCharacterFeatures",
+            "enableEffectMacro",
             "enableOverrideSettings",
+            "enableRollModel",
             "enableSuppressWarnings",
             "enableVisualAuras",
-            "enableEffectMacro",
-            "enableCharacterFeatures",
         ];
         const toggleGroups = toggleKeys
             .map(k => section.querySelector(`[name="sigil-tools.${k}"]`)?.closest(".form-group"))

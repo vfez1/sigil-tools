@@ -1,11 +1,13 @@
 /* App size constraints */
-#visual-aura-setup {
+#visual-aura-setup,
+#visual-aura-actor-config {
     min-width: 536px;
     min-height: 200px;
     max-height: 80vh;
 }
 
-#visual-aura-setup .window-content {
+#visual-aura-setup .window-content,
+#visual-aura-actor-config .window-content {
     overflow-y: auto;
     min-height: 0;
 }

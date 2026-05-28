@@ -1,6 +1,6 @@
 import { MODULE_NAME } from "../../shared/const.js";
 import { VA_SETTING_NAMES, getPresets, getActorConfig } from "../utils/settings.js";
-import { buildRegionData, findAuraRegionsForToken, getPresetsForToken } from "../utils/helpers.js";
+import { buildRegionData, findAuraRegionsForToken, getPresetsForToken, refreshCurrentSceneAuras } from "../utils/helpers.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -16,19 +16,15 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
             resizable: false,
         },
         actions: {
-            switchTab: VisualAuraSetupApp.switchTab,
             editPreset: VisualAuraSetupApp.editPreset,
             addPreset: VisualAuraSetupApp.addPreset,
             duplicatePreset: VisualAuraSetupApp.duplicatePreset,
             deletePreset: VisualAuraSetupApp.deletePreset,
             savePreset: VisualAuraSetupApp.savePreset,
             cancelEdit: VisualAuraSetupApp.cancelEdit,
-            addActor: VisualAuraSetupApp.addActor,
-            removeActor: VisualAuraSetupApp.removeActor,
         },
     };
 
-    tabGroups = { sheet: "presets" };
     _editingPresetId = null;
 
     static PARTS = {
@@ -37,7 +33,6 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
 
     async _prepareContext(options) {
         const rawPresets = getPresets();
-        const actorConfig = getActorConfig();
 
         const presets = rawPresets.map(p => ({
             highlightMode: "shapes",
@@ -49,12 +44,6 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
             gridBased: true,
             ...p,
         }));
-
-        const actors = Object.entries(actorConfig).map(([name, raw]) => {
-            const assignedIds = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-            const presetList = presets.map(p => ({ id: p.id, name: p.name, checked: assignedIds.includes(p.id) }));
-            return { name, presetList };
-        });
 
         let presetMode = "list";
         let editPreset = null;
@@ -86,52 +75,28 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
             }
         }
 
-        return { presets, actors, presetMode, editPreset, activeTab: this.tabGroups.sheet };
+        return { presets, presetMode, editPreset };
     }
 
     async _onRender(context, options) {
-        this.element.querySelectorAll("[data-actor-ms]").forEach(ms => {
-            const actorName = ms.dataset.actorName;
-            // Delay by one frame to skip the change the component fires on connect
-            requestAnimationFrame(() => {
-                ms.addEventListener("change", async e => {
-                    // ms.value calls _getValue() → Array.from(this._value) (internal Set)
-                    const ids = ms.value ?? [];
-                    await VisualAuraSetupApp._setActorPresets.call(this, actorName, ids);
-                });
-            });
-        });
-
         // Auto-save when editing an existing preset (not a new one)
         if (this._editingPresetId && this._editingPresetId !== "__new__") {
             const presetId = this._editingPresetId;
             const autoSave = async () => {
                 await VisualAuraSetupApp._autoSavePreset(this.element, presetId);
             };
-            // Named inputs/selects
             this.element.querySelectorAll('input[name^="edit-"], select[name^="edit-"]').forEach(el => {
                 el.addEventListener("change", autoSave);
             });
-            // color-picker's child inputs don't carry a name — wire them explicitly
             this.element.querySelector('[name="edit-color"]')?.querySelectorAll("input").forEach(el => {
                 el.addEventListener("change", autoSave);
             });
         }
 
-        // Re-measure after render so the window fits its content
         this.setPosition({ height: "auto" });
     }
 
     // ─── Preset List Actions ───────────────────────────────────────────────
-
-    static async switchTab(event, target) {
-        const tab = target.dataset.tab;
-        const wrapper = target.closest(".va-setup-wrapper");
-        if (!wrapper) return;
-        wrapper.querySelectorAll("nav a").forEach(a => a.classList.toggle("active", a.dataset.tab === tab));
-        wrapper.querySelectorAll(".tab").forEach(s => s.classList.toggle("active", s.dataset.tab === tab));
-        this.tabGroups.sheet = tab;
-    }
 
     static async editPreset(event, target) {
         this._editingPresetId = target.dataset.id;
@@ -164,7 +129,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
         }
         await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.PRESETS, presets);
         await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.ACTOR_CONFIG, actorConfig);
-        await _refreshCurrentSceneAuras();
+        await refreshCurrentSceneAuras();
         this.render();
     }
 
@@ -181,7 +146,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
         if (idx >= 0) presets[idx] = preset;
         else presets.push(preset);
         await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.PRESETS, presets);
-        await _refreshCurrentSceneAuras();
+        await refreshCurrentSceneAuras();
         this._editingPresetId = null;
         this.render();
     }
@@ -191,46 +156,17 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
         this.render();
     }
 
-    // ─── Actor Actions ─────────────────────────────────────────────────────
-
-    static async addActor(event, target) {
-        const input = this.element.querySelector(".va-new-actor-name");
-        const name = input?.value?.trim();
-        if (!name) { ui.notifications.warn("[Visual Auras] Actor name is required."); return; }
-        const actorConfig = getActorConfig();
-        if (name in actorConfig) { ui.notifications.warn("[Visual Auras] Actor already in list."); return; }
-        actorConfig[name] = [];
-        await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.ACTOR_CONFIG, actorConfig);
-        this.render();
-    }
-
-    static async removeActor(event, target) {
-        const name = target.dataset.actorName;
-        const actorConfig = getActorConfig();
-        delete actorConfig[name];
-        await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.ACTOR_CONFIG, actorConfig);
-        await _refreshCurrentSceneAuras();
-        this.render();
-    }
-
-    static async _setActorPresets(actorName, presetIds) {
-        const actorConfig = getActorConfig();
-        actorConfig[actorName] = presetIds;
-        await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.ACTOR_CONFIG, actorConfig);
-        await _refreshCurrentSceneAuras();
-    }
-
     // ─── Helpers ───────────────────────────────────────────────────────────
 
     static async _autoSavePreset(root, presetId) {
         const preset = VisualAuraSetupApp._readEditForm(root);
-        if (!preset.name) return; // Skip silent save if name is empty
+        if (!preset.name) return;
         const presets = getPresets();
         const idx = presets.findIndex(p => p.id === presetId);
         if (idx < 0) return;
         presets[idx] = preset;
         await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.PRESETS, presets);
-        await _refreshCurrentSceneAuras();
+        await refreshCurrentSceneAuras();
     }
 
     static _readEditForm(root) {
@@ -250,33 +186,5 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
             restrictionType: root.querySelector('[name="edit-restrictionType"]')?.value ?? "move",
             restrictionPriority: Number(root.querySelector('[name="edit-restrictionPriority"]')?.value ?? 0),
         };
-    }
-}
-
-async function _refreshCurrentSceneAuras() {
-    const scene = game.canvas.scene;
-    if (!scene) return;
-
-    for (const tokenDoc of scene.tokens) {
-        if (!tokenDoc.actor) continue;
-
-        const existingIds = findAuraRegionsForToken(scene, tokenDoc.id).map(r => r.id);
-        if (existingIds.length) {
-            try {
-                await scene.deleteEmbeddedDocuments("Region", existingIds);
-            } catch(e) {
-                console.error("[visual-auras]", "_refreshCurrentSceneAuras | delete failed:", e);
-            }
-        }
-
-        // Uses per-token disabled flags via getPresetsForToken
-        const tokenPresets = getPresetsForToken(tokenDoc);
-        if (!tokenPresets.length) continue;
-
-        try {
-            await scene.createEmbeddedDocuments("Region", tokenPresets.map(p => buildRegionData(p, tokenDoc)));
-        } catch(e) {
-            console.error("[visual-auras]", "_refreshCurrentSceneAuras | create failed:", e);
-        }
     }
 }

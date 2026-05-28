@@ -24,8 +24,6 @@
             "enableOverrideSettings.hint": "Enable the Override Settings submodule (auto-applies world and client settings from settings.json on load). Requires a reload.",
             "enableSuppressWarnings.name": "Enable: Suppress Warnings",
             "enableSuppressWarnings.hint": "Enable the Suppress Warnings submodule (filters configured console warnings and errors). Requires a reload.",
-            "enableGridAwareAuras.name": "Enable: Grid-Aware Auras",
-            "enableGridAwareAuras.hint": "Enable the Grid-Aware Auras submodule (draw grid-accurate aura shapes on tokens with configurable effects and automation). Requires a reload.",
             "enableEffectMacro.name": "Enable: EffectMacro",
             "enableEffectMacro.hint": "Enable the EffectMacro submodule (run macros from active effects on various triggers). Requires a reload.",
             "acknowledgedMode.name": "Acknowledged Mode",
