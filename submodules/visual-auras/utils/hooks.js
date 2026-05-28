@@ -171,6 +171,54 @@ async function onRenderTokenConfig(tokenConfig, element, isPlaced) {
     });
 }
 
+async function syncVisualAuraForEffect(effect, enabled) {
+    if (!game.user.isGM) return;
+    if (effect.flags?.ActiveAuras?.applied) return;
+
+    const presetId = effect.flags?.ActiveAuras?.visualAuraPreset;
+    if (!presetId) return;
+
+    const actor = effect.parent instanceof Actor ? effect.parent
+        : effect.parent?.parent instanceof Actor ? effect.parent.parent
+        : null;
+    if (!actor) return;
+
+    const scene = game.canvas.scene;
+    if (!scene) return;
+
+    const tokens = scene.tokens.filter(t => t.actor?.id === actor.id);
+    for (const tokenDoc of tokens) {
+        const currentDisabled = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];
+        const isCurrentlyDisabled = currentDisabled.includes(presetId);
+
+        if (enabled && !isCurrentlyDisabled) continue;
+        if (!enabled && isCurrentlyDisabled) continue;
+
+        const newDisabled = enabled
+            ? currentDisabled.filter(id => id !== presetId)
+            : [...currentDisabled, presetId];
+
+        await tokenDoc.setFlag("sigil-tools", "visualAuras.disabled", newDisabled);
+    }
+}
+
+async function onCreateActiveEffect(effect, options, userId) {
+    if (game.user.id !== userId) return;
+    if (effect.disabled) return;
+    await syncVisualAuraForEffect(effect, true);
+}
+
+async function onDeleteActiveEffect(effect, options, userId) {
+    if (game.user.id !== userId) return;
+    await syncVisualAuraForEffect(effect, false);
+}
+
+async function onUpdateActiveEffect(effect, changes, options, userId) {
+    if (game.user.id !== userId) return;
+    if (!("disabled" in changes)) return;
+    await syncVisualAuraForEffect(effect, !changes.disabled);
+}
+
 export function registerHooks() {
     Hooks.on("createToken", onCreateToken);
     Hooks.on("deleteToken", onDeleteToken);
@@ -178,4 +226,7 @@ export function registerHooks() {
     Hooks.on("canvasReady", onCanvasReady);
     Hooks.on("renderTokenConfig", (tc, el) => onRenderTokenConfig(tc, el, true));
     Hooks.on("renderPrototypeTokenConfig", (tc, el) => onRenderTokenConfig(tc, el, false));
+    Hooks.on("createActiveEffect", onCreateActiveEffect);
+    Hooks.on("deleteActiveEffect", onDeleteActiveEffect);
+    Hooks.on("updateActiveEffect", onUpdateActiveEffect);
 }

@@ -52,6 +52,36 @@ function getSchema(document) {
         { value: "All", label: aaLocalize("ACTIVEAURAS.FORM_TargetsAll") },
       ],
     },
+    visualAuraPreset: {
+      field: new StringField({
+        label: "Visual Aura Preset",
+        initial: "",
+      }),
+      name: `flags.${CONSTANTS.MODULE_NAME}.visualAuraPreset`,
+      value: _getAuraFlag(document, "visualAuraPreset", ""),
+      options: (() => {
+        try {
+          const actor = document.parent instanceof Actor ? document.parent
+            : document.parent?.parent instanceof Actor ? document.parent.parent
+            : null;
+          const allPresets = game.settings.get("sigil-tools", "visualAuraPresets") ?? [];
+          let presets = allPresets;
+          if (actor) {
+            const actorConfig = game.settings.get("sigil-tools", "visualAuraActorConfig") ?? {};
+            const actorNameLower = actor.name.toLowerCase();
+            const entry = Object.entries(actorConfig).find(([k]) => k.toLowerCase() === actorNameLower);
+            const assignedIds = Array.isArray(entry?.[1]) ? entry[1] : (entry?.[1] ? [entry[1]] : []);
+            presets = allPresets.filter(p => assignedIds.includes(p.id));
+          }
+          return [
+            { value: "", label: "— None —" },
+            ...presets.map(p => ({ value: p.id, label: p.name })),
+          ];
+        } catch {
+          return [{ value: "", label: "— None —" }];
+        }
+      })(),
+    },
     nameOverride: {
       field: new StringField({
         label: aaLocalize("ACTIVEAURAS.FORM_NameOverride"),

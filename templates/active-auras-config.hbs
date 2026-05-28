@@ -6,6 +6,7 @@
   {{formGroup activeAuras.isAura.field name=activeAuras.isAura.name value=activeAuras.isAura.value rootId=rootId}}
   </fieldset>
   <fieldset id="activeauras-details" {{#unless activeAuras.isAura.value}} style="display: none;"{{/unless}}>
+  {{formGroup activeAuras.visualAuraPreset.field name=activeAuras.visualAuraPreset.name value=activeAuras.visualAuraPreset.value options=activeAuras.visualAuraPreset.options rootId=rootId classes="aa-va-preset-link"}}
   {{formGroup activeAuras.aura.field name=activeAuras.aura.name value=activeAuras.aura.value options=activeAuras.aura.options rootId=rootId}}
   {{formGroup activeAuras.nameOverride.field name=activeAuras.nameOverride.name value=activeAuras.nameOverride.value rootId=rootId}}
   {{formGroup activeAuras.radius.field name=activeAuras.radius.name value=activeAuras.radius.value placeholder=activeAuras.radius.placeholder rootId=rootId}}

@@ -152,6 +152,12 @@
     flex: 1;
 }
 
+/* Active Auras — Visual Aura Preset link field */
+.aa-va-preset-link label {
+    color: #c8a840;
+    font-weight: bold;
+}
+
 /* Token config tab */
 .va-tc-wrap {
     padding: 0.5rem 1rem;
