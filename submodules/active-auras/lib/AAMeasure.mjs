@@ -38,14 +38,22 @@ export class AAMeasure {
     if (!AAMeasure.boundingCheck(target, source, radius)) return false;
     const auraPoly = shape;
     if (CONFIG.debug.AA && shape) {
-      canvas.layers
-        .find((l) => l.name === "DrawingsLayer")
-        .children.find((i) => i.inAura)
-        ?.destroy();
-      const g = new PIXI.Graphics();
-      g.beginFill(0, 0.2).drawShape(shape);
-      const aura = canvas.layers.find((l) => l.name === "DrawingsLayer").addChild(g);
-      aura.inAura = true;
+      // Use canvas.drawings (canonical v10+ accessor) and guard against it
+      // being null. On Foundry v14 the legacy
+      // `canvas.layers.find(l => l.name === "DrawingsLayer")` lookup returns
+      // undefined (the CanvasLayer.name semantics changed in v13 and
+      // weren't restored), and the unguarded `.children` access used to
+      // tear down MainAura mid-execution -- silently disabling all aura
+      // application whenever the AA debug setting was on.
+      const drawingsLayer = canvas.drawings
+        ?? canvas.layers?.find?.((l) => l.name === "DrawingsLayer");
+      if (drawingsLayer) {
+        drawingsLayer.children.find((i) => i.inAura)?.destroy();
+        const g = new PIXI.Graphics();
+        g.beginFill(0, 0.2).drawShape(shape);
+        const aura = drawingsLayer.addChild(g);
+        aura.inAura = true;
+      }
     }
 
     let sourceCorners = source.document.height === 1 && source.document.width === 1
@@ -73,13 +81,14 @@ export class AAMeasure {
       ];
 
     if (CONFIG.debug.AA) {
-      canvas.layers
-        .find((l) => l.name === "DrawingsLayer")
-        .children.filter((i) => i.squares)
-        ?.forEach((i) => i.destroy());
-
-      sourceCorners.forEach((i) => AAHelpers.drawSquare(i));
-      targetCorners.forEach((i) => AAHelpers.drawSquare(i));
+      // See guard rationale in the equivalent block above.
+      const drawingsLayer = canvas.drawings
+        ?? canvas.layers?.find?.((l) => l.name === "DrawingsLayer");
+      if (drawingsLayer) {
+        drawingsLayer.children.filter((i) => i.squares)?.forEach((i) => i.destroy());
+        sourceCorners.forEach((i) => AAHelpers.drawSquare(i));
+        targetCorners.forEach((i) => AAHelpers.drawSquare(i));
+      }
     }
 
     for (const t of targetCorners) {
@@ -180,14 +189,16 @@ export class AAMeasure {
     const yMax = t2.y + rad + t2.h + size * t1.document.height;
     const yMin = t2.y - rad - size * t1.document.height;
     if (CONFIG.debug.AA) {
-      canvas.layers
-        .find((l) => l.name === "DrawingsLayer")
-        .children.find((i) => i.boundingCheck)
-        ?.destroy();
-      let g = new PIXI.Graphics();
-      g.beginFill(0, 0.1).drawRect(xMin, yMin, xMax - xMin, yMax - yMin);
-      let check = canvas.layers.find((l) => l.name === "DrawingsLayer").addChild(g);
-      check.boundingCheck = true;
+      // See guard rationale in the equivalent block in `inAura` above.
+      const drawingsLayer = canvas.drawings
+        ?? canvas.layers?.find?.((l) => l.name === "DrawingsLayer");
+      if (drawingsLayer) {
+        drawingsLayer.children.find((i) => i.boundingCheck)?.destroy();
+        let g = new PIXI.Graphics();
+        g.beginFill(0, 0.1).drawRect(xMin, yMin, xMax - xMin, yMax - yMin);
+        let check = drawingsLayer.addChild(g);
+        check.boundingCheck = true;
+      }
     }
     return !(t1.x < xMin || t1.x > xMax || t1.y > yMax || t1.y < yMin);
   }

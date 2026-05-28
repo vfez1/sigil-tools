@@ -49,9 +49,16 @@ export class AAHelpers {
 
   static drawSquare(point) {
     const { x, y } = point;
+    // Use canvas.drawings (canonical v10+ accessor) and guard against it
+    // being null. On Foundry v14 the legacy
+    // `canvas.layers.find(l => l.name === "DrawingsLayer")` lookup returns
+    // undefined and used to crash all AA debug-visualization callers.
+    const drawingsLayer = canvas.drawings
+      ?? canvas.layers?.find?.((l) => l.name === "DrawingsLayer");
+    if (!drawingsLayer) return;
     const g = new PIXI.Graphics();
     g.beginFill(0xff0000, 0.2).drawRect(x - 5, y - 5, 10, 10);
-    const aura = canvas.layers.find((l) => l.name === "DrawingsLayer").addChild(g);
+    const aura = drawingsLayer.addChild(g);
     aura.squares = true;
   }
 
