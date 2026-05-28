@@ -1,0 +1,23 @@
+<div class="rm-collapse-settings">
+    <p class="hint">Item descriptions are collapsed by default on chat cards. Add item names here to keep them expanded.</p>
+
+    {{#if exceptions.length}}
+    <div class="rm-cs-list">
+        {{#each exceptions}}
+        <div class="rm-cs-row">
+            <span class="rm-cs-name">{{this}}</span>
+            <button type="button" class="rm-cs-remove" data-action="removeException" data-exception="{{this}}" title="Remove"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <p class="hint rm-cs-empty">No exceptions — all item descriptions start collapsed.</p>
+    {{/if}}
+
+    <div class="rm-cs-add">
+        <input type="text" name="new-exception" placeholder="Item name (e.g. Snicker-Snack)" />
+        <button type="button" class="bright" data-action="addException">
+            <i class="fa-solid fa-plus"></i> Add
+        </button>
+    </div>
+</div>

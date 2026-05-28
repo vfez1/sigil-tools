@@ -245,6 +245,20 @@ export class HooksUtility {
             AcknowledgedModeUtility.applyAcknowledgedStyle(message, html);
             _attachPortentClickHandlers(message, html);
 
+            // Collapse spell description by default.
+            // Keep expanded if: item has chat flavor text, or item name is in the exceptions list.
+            {
+                const root = html instanceof HTMLElement ? html : html[0];
+                const descHeader = root?.querySelector(".card-header.description.collapsible");
+                if (descHeader) {
+                    const item = message.getAssociatedItem?.();
+                    const hasChatFlavor = !!item?.system?.description?.chat?.trim();
+                    const exceptions = SettingsUtility.getSettingValue(SETTING_NAMES.COLLAPSE_DESCRIPTION_EXCEPTIONS) ?? [];
+                    const inExceptions = !!item?.name && exceptions.some(e => e.toLowerCase() === item.name.toLowerCase());
+                    if (!hasChatFlavor && !inExceptions) descHeader.classList.add("collapsed");
+                }
+            }
+
             // dnd5e's _trayStates saves open=false from the unprocessed initial render
             // and restores it on re-render via ??, overriding the "manual"/"never" setting.
             // Force the tray open after the processed re-render.

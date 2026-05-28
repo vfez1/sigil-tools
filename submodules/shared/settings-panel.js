@@ -29,17 +29,45 @@ export function registerSettingsPanelHooks() {
         }
 
         const firstRmGroup = section.querySelector('[name="sigil-tools.preventMovementHistory"]')?.closest(".form-group");
-        if (firstRmGroup) firstRmGroup.before(makeHeader("fas fa-dice-d20", "Roll Model"));
-
         const firstVaGroup = section.querySelector('button[data-action="openSubmenu"][data-key="sigil-tools.visualAurasSetup"]')?.closest(".form-group");
+
+        // Collect all Roll Model form-groups (everything from firstRmGroup up to firstVaGroup)
+        const rmGroups = [];
+        if (firstRmGroup && firstVaGroup) {
+            let el = firstRmGroup;
+            while (el && el !== firstVaGroup) {
+                if (el.classList?.contains("form-group")) rmGroups.push(el);
+                el = el.nextElementSibling;
+            }
+        }
+
+        // Explicitly collect RM-owned menu buttons that fall outside the loop range
+        // (registered after VA settings in the init hook order, so they land after firstVaGroup in the DOM)
+        const rmMenuKeys = ["sigil-tools.collapseSettings"];
+        for (const key of rmMenuKeys) {
+            const g = section.querySelector(`button[data-key="${key}"]`)?.closest(".form-group");
+            if (g && !rmGroups.includes(g)) rmGroups.push(g);
+        }
+
         insertHeader(firstVaGroup, "fas fa-circle-dashed", "Visual Auras");
 
         const cfGroup = section.querySelector('button[data-action="openSubmenu"][data-key="sigil-tools.characterFeaturesSetup"]')?.closest(".form-group");
         const firstAAGroup = section.querySelector('[name="sigil-tools.measurement"]')?.closest(".form-group");
-        if (cfGroup && firstAAGroup) {
-            const cfHr = document.createElement("hr");
-            cfHr.style.cssText = HR_STYLE;
-            firstAAGroup.before(cfHr, makeHeader("fas fa-user", "Character Features"), cfGroup);
+
+        // Insert Roll Model then Character Features as one block before Active Auras
+        if (firstAAGroup) {
+            const nodes = [];
+            if (rmGroups.length) {
+                const hr = document.createElement("hr");
+                hr.style.cssText = HR_STYLE;
+                nodes.push(hr, makeHeader("fas fa-dice-d20", "Roll Model"), ...rmGroups);
+            }
+            if (cfGroup) {
+                const cfHr = document.createElement("hr");
+                cfHr.style.cssText = HR_STYLE;
+                nodes.push(cfHr, makeHeader("fas fa-user", "Character Features"), cfGroup);
+            }
+            if (nodes.length) firstAAGroup.before(...nodes);
         }
 
         insertHeader(firstAAGroup, "fas fa-circle-dashed", "Active Auras");

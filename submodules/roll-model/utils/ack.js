@@ -42,7 +42,11 @@ export class AcknowledgedModeUtility {
                 namesHtml = `<div class="rm-ack-names">${nameItems}</div>`;
             }
 
-            const badge = $(`<div class="rm-ack-badge"><div class="rm-ack-header"><i class="fas fa-check"></i><span class="rm-ack-prefix">${headerLabel}</span></div>${namesHtml}</div>`);
+            const toggleIcon = namesHtml ? `<i class="fas fa-chevron-down rm-ack-toggle"></i>` : "";
+            const badge = $(`<div class="rm-ack-badge"><div class="rm-ack-header"><i class="fas fa-check"></i><span class="rm-ack-prefix">${headerLabel}</span>${toggleIcon}</div>${namesHtml}</div>`);
+            if (namesHtml) {
+                badge.find(".rm-ack-header").css("cursor", "pointer").on("click", () => badge.toggleClass("collapsed"));
+            }
             const messageContent = $html.find(".message-content").first();
             if (messageContent.length) {
                 messageContent.prepend(badge);

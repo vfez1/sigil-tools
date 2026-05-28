@@ -1,4 +1,5 @@
 import { MODULE_NAME, MODULE_SHORT } from "./const.js";
+import { CollapseSettingsApp } from "../roll-model/apps/CollapseSettingsApp.js";
 
 /**
  * Enumerable of identifiers for setting names.
@@ -9,6 +10,7 @@ export const SETTING_NAMES = {
     PREVENT_MOVEMENT_HISTORY: "preventMovementHistory",
     SHOW_TURN_START_MARKER: "showTurnStartMarker",
     ACK_MODE: "acknowledgedMode",
+    COLLAPSE_DESCRIPTION_EXCEPTIONS: "collapseDescriptionExceptions",
     ENABLE_ROLL_MODEL: "enableRollModel",
     ENABLE_ACTIVE_AURAS: "enableActiveAuras",
     ENABLE_OVERRIDE_SETTINGS: "enableOverrideSettings",
@@ -143,6 +145,23 @@ export class SettingsUtility {
             type: Boolean,
             default: true,
         });
+
+        game.settings.registerMenu(MODULE_NAME, "collapseSettings", {
+            name: "Collapse Settings",
+            label: "Collapse Settings",
+            hint: "Configure which items keep their description expanded by default on chat cards.",
+            icon: "fas fa-compress",
+            type: CollapseSettingsApp,
+            restricted: true,
+        });
+
+        game.settings.register(MODULE_NAME, SETTING_NAMES.COLLAPSE_DESCRIPTION_EXCEPTIONS, {
+            scope: "world",
+            config: false,
+            type: Array,
+            default: [],
+        });
+
     }
 
     /**

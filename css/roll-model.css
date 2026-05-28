@@ -129,6 +129,21 @@
     color: #6a1a9a;
 }
 
+.rm-ack-badge .rm-ack-toggle {
+    margin-left: auto;
+    font-size: 9px;
+    opacity: 0.7;
+    transition: transform 0.15s;
+}
+
+.rm-ack-badge.collapsed .rm-ack-toggle {
+    transform: rotate(-90deg);
+}
+
+.rm-ack-badge.collapsed .rm-ack-names {
+    display: none;
+}
+
 /* Already-applied state on the damage tray Apply button */
 damage-application button.rm-already-applied,
 damage-application button[data-action="applyDamage"].rm-already-applied {
@@ -725,6 +740,73 @@ damage-application button.rm-already-applied::before {
 }
 
 /* ===== end Character Features Setup ===== */
+
+/* ===== Collapse Settings App ===== */
+
+.rm-collapse-settings {
+    padding: 6px 2px;
+}
+
+.rm-cs-list {
+    margin: 8px 0;
+    border: 1px solid var(--color-border-light-tertiary, #c9c7b8);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.rm-cs-row {
+    display: flex;
+    align-items: center;
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--color-border-light-tertiary, #c9c7b8);
+    font-size: var(--font-size-13);
+}
+
+.rm-cs-row:last-child {
+    border-bottom: none;
+}
+
+.rm-cs-name {
+    flex: 1;
+}
+
+.rm-cs-remove {
+    background: none;
+    border: none;
+    opacity: 0.6;
+    cursor: pointer;
+    color: var(--color-text-light-primary, #f0e6d2);
+    font-size: var(--font-size-13);
+    padding: 2px 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.rm-cs-remove:hover {
+    opacity: 1;
+    color: #e05050;
+}
+
+.rm-cs-empty {
+    text-align: center;
+    padding: 6px 0 2px;
+}
+
+.rm-cs-add {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.rm-cs-add input {
+    flex: 1;
+}
+
+/* ===== end Collapse Settings App ===== */
+
 
 .noselect {
     -webkit-touch-callout: none;
