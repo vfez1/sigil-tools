@@ -22,6 +22,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
             deletePreset: VisualAuraSetupApp.deletePreset,
             savePreset: VisualAuraSetupApp.savePreset,
             cancelEdit: VisualAuraSetupApp.cancelEdit,
+            toggleDefaultEnabled: VisualAuraSetupApp.toggleDefaultEnabled,
         },
     };
 
@@ -42,6 +43,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
             restrictionPriority: 0,
             hole: false,
             gridBased: true,
+            defaultEnabled: false,
             ...p,
         }));
 
@@ -64,6 +66,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
                     restrictionEnabled: false,
                     restrictionType: "move",
                     restrictionPriority: 0,
+                    defaultEnabled: false,
                     isNew: true,
                 };
             } else {
@@ -156,6 +159,16 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
         this.render();
     }
 
+    static async toggleDefaultEnabled(event, target) {
+        const id = target.dataset.id;
+        const presets = getPresets();
+        const preset = presets.find(p => p.id === id);
+        if (!preset) return;
+        preset.defaultEnabled = !preset.defaultEnabled;
+        await game.settings.set(MODULE_NAME, VA_SETTING_NAMES.PRESETS, presets);
+        this.render();
+    }
+
     // ─── Helpers ───────────────────────────────────────────────────────────
 
     static async _autoSavePreset(root, presetId) {
@@ -185,6 +198,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
             restrictionEnabled: root.querySelector('[name="edit-restrictionEnabled"]')?.checked ?? false,
             restrictionType: root.querySelector('[name="edit-restrictionType"]')?.value ?? "move",
             restrictionPriority: Number(root.querySelector('[name="edit-restrictionPriority"]')?.value ?? 0),
+            defaultEnabled: root.querySelector('[name="edit-defaultEnabled"]')?.checked ?? false,
         };
     }
 }

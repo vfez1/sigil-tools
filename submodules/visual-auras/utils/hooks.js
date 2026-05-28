@@ -5,13 +5,25 @@ async function onCreateToken(tokenDoc, options, userId) {
     if (!game.user.isGM) return;
     if (!tokenDoc.actor) return;
 
-    // New tokens have no disabled presets yet, so use actor-level presets directly
     const presets = getPresetsForActor(tokenDoc.actor);
     if (!presets.length) return;
 
-    const regionData = presets.map(p => buildRegionData(p, tokenDoc));
+    const enabledPresets = presets.filter(p => !!p.defaultEnabled);
+    const disabledPresets = presets.filter(p => !p.defaultEnabled);
+
+    // Stamp the disabled flag before creating regions so canvasReady reconciliation
+    // agrees with us. Pass skipRefresh so onUpdateToken doesn't also call refreshTokenAuras.
+    if (disabledPresets.length) {
+        await tokenDoc.update(
+            { "flags.sigil-tools.visualAuras.disabled": disabledPresets.map(p => p.id) },
+            { "visual-auras.skipRefresh": true }
+        );
+    }
+
+    if (!enabledPresets.length) return;
+
     try {
-        await tokenDoc.parent.createEmbeddedDocuments("Region", regionData);
+        await tokenDoc.parent.createEmbeddedDocuments("Region", enabledPresets.map(p => buildRegionData(p, tokenDoc)));
     } catch(e) {
         console.error("[visual-auras]", "createToken | failed to create regions:", e);
     }
@@ -20,8 +32,8 @@ async function onCreateToken(tokenDoc, options, userId) {
 async function onDeleteToken(tokenDoc, options, userId) {
     if (game.user.id !== userId) return;
     if (!game.user.isGM) return;
-    // Active GM's cascade already deletes owned regions; running here would race with it.
-    if (game.users.activeGM?.isSelf) return;
+    // Full GM's cascade deletes attached regions; AssistantGM's does not, so they handle it here.
+    if (game.user.role === CONST.USER_ROLES.GAMEMASTER) return;
 
     const scene = tokenDoc.parent;
     if (!scene) return;
@@ -41,6 +53,7 @@ async function onDeleteToken(tokenDoc, options, userId) {
 async function onUpdateToken(tokenDoc, changes, options, userId) {
     if (game.user.id !== userId) return;
     if (!game.user.isGM) return;
+    if (options["visual-auras.skipRefresh"]) return;
 
     const flatChanges = foundry.utils.flattenObject(changes);
     if (!("flags.sigil-tools.visualAuras.disabled" in flatChanges)) return;
