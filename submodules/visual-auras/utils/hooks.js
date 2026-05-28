@@ -86,6 +86,38 @@ async function onCanvasReady(canvas) {
     for (const tokenDoc of scene.tokens) {
         if (!tokenDoc.actor) continue;
 
+        // Re-derive aura state from live effect states to fix flags that went stale
+        // on scenes that weren't the active canvas when the effect was toggled.
+        const effectStateByPreset = new Map();
+        for (const effect of (tokenDoc.actor.allApplicableEffects?.() ?? [])) {
+            if (effect.flags?.ActiveAuras?.applied) continue;
+            const presetId = effect.flags?.ActiveAuras?.visualAuraPreset;
+            if (!presetId) continue;
+            if (!effect.disabled) effectStateByPreset.set(presetId, true);
+            else if (!effectStateByPreset.has(presetId)) effectStateByPreset.set(presetId, false);
+        }
+
+        if (effectStateByPreset.size > 0) {
+            const currentDisabled = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];
+            let newDisabled = [...currentDisabled];
+            let flagChanged = false;
+            for (const [presetId, isEnabled] of effectStateByPreset) {
+                if (isEnabled && newDisabled.includes(presetId)) {
+                    newDisabled = newDisabled.filter(id => id !== presetId);
+                    flagChanged = true;
+                } else if (!isEnabled && !newDisabled.includes(presetId)) {
+                    newDisabled.push(presetId);
+                    flagChanged = true;
+                }
+            }
+            if (flagChanged) {
+                await tokenDoc.update(
+                    { "flags.sigil-tools.visualAuras.disabled": newDisabled },
+                    { "visual-auras.skipRefresh": true }
+                );
+            }
+        }
+
         // Use getPresetsForToken to respect per-token disabled flags
         const presets = getPresetsForToken(tokenDoc);
         const assignedIds = new Set(presets.map(p => p.id));
@@ -200,22 +232,27 @@ async function syncVisualAuraForEffect(effect, enabled) {
         : null;
     if (!actor) return;
 
-    for (const scene of game.scenes) {
-        const tokens = scene.tokens.filter(t => t.actor?.id === actor.id);
-        for (const tokenDoc of tokens) {
-            const currentDisabled = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];
-            const isCurrentlyDisabled = currentDisabled.includes(presetId);
+    const scene = game.canvas.scene;
+    if (!scene) return;
 
-            if (enabled && !isCurrentlyDisabled) continue;
-            if (!enabled && isCurrentlyDisabled) continue;
+    const pending = [];
+    for (const tokenDoc of scene.tokens.filter(t => t.actor?.id === actor.id)) {
+        const currentDisabled = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];
+        const isCurrentlyDisabled = currentDisabled.includes(presetId);
 
-            const newDisabled = enabled
-                ? currentDisabled.filter(id => id !== presetId)
-                : [...currentDisabled, presetId];
+        if (enabled && !isCurrentlyDisabled) continue;
+        if (!enabled && isCurrentlyDisabled) continue;
 
-            await tokenDoc.setFlag("sigil-tools", "visualAuras.disabled", newDisabled);
-        }
+        const newDisabled = enabled
+            ? currentDisabled.filter(id => id !== presetId)
+            : [...currentDisabled, presetId];
+
+        pending.push({ tokenDoc, newDisabled });
     }
+
+    await Promise.all(pending.map(({ tokenDoc, newDisabled }) =>
+        tokenDoc.setFlag("sigil-tools", "visualAuras.disabled", newDisabled)
+    ));
 }
 
 async function onCreateActiveEffect(effect, options, userId) {
