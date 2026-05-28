@@ -113,6 +113,13 @@ export async function preDeleteTokenHook(token) {
   }
   if (AAHelpers.IsAuraToken(token.id, token.parent.id)) {
     Logger.debug("preDelete, collate auras false true");
+    // Remove the effects this source emitted to OTHER actors first, while the
+    // document is still in the collection and the effectMap still carries the
+    // source's origins. ExtractAuraById (below) clears those origins, and the
+    // post-delete CollateAuras pass can't be relied on -- the deleted token's
+    // PIXI placeable lingers a frame, so generateConfigMap re-adds the source's
+    // aura and RemoveAppliedAuras then preserves the orphaned target effects.
+    await AAHelpers.removeEmittedAurasFromSource(token);
     AAHelpers.ExtractAuraById(token.id, token.parent.id);
   }
   await AAHelpers.removeAurasOnToken(token);

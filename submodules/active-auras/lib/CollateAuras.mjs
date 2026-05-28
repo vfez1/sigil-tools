@@ -61,6 +61,12 @@ export async function generateConfigMap(sceneID, source) {
 
   for (const t of canvas.tokens.placeables) {
     const testToken = t.document;
+    // Skip placeables whose document has already left the scene -- e.g. a
+    // token mid-deletion whose PIXI placeable hasn't been torn down yet.
+    // Without this, a just-deleted aura source gets re-added to the effectMap
+    // during the deleteToken collation, and RemoveAppliedAuras then treats its
+    // origin as still live and preserves the orphaned effects on its targets.
+    if (!testToken?.parent?.tokens?.has(testToken.id)) continue;
     //Skips over null actor tokens
     if (testToken.actor === null || testToken.actor === undefined) continue;
     //Skips over MLT coppied tokens

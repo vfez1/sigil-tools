@@ -378,6 +378,56 @@ export class AAHelpers {
   }
 
   /**
+   * Remove every applied aura effect emitted by `token` from all tokens on its
+   * scene. Called from preDeleteTokenHook so a deleted aura source's emitted
+   * effects are torn down deterministically -- while the document is still in
+   * the collection and the scene effectMap still carries the source's origins
+   * -- instead of relying on the post-delete CollateAuras pass.
+   *
+   * That pass is unreliable for deletion: generateConfigMap iterates
+   * canvas.tokens.placeables, and a just-deleted token's PIXI placeable can
+   * linger a frame after the document is removed. When it does, the source's
+   * aura is re-added to the scene effectMap, so RemoveAppliedAuras sees the
+   * origin as still "live" and PRESERVES the orphaned effects on the targets
+   * -- the lingering-effect-on-source-delete bug.
+   *
+   * @param {TokenDocument} token  the aura-source token being deleted
+   */
+  static async removeEmittedAurasFromSource(token) {
+    if (!CONFIG.AA.GM) return;
+    const scene = token.parent;
+    if (!scene) return;
+    const sceneMap = CONFIG.AA.Map.get(scene.id);
+    // Origins of the auras this token emits, read from the still-intact scene
+    // effectMap (this runs before ExtractAuraById clears those entries).
+    const auraOrigins = (sceneMap?.effects ?? [])
+      .filter((e) => e.entityId === token.id)
+      .map((e) => e.data?.origin)
+      .filter((o) => !!o);
+    if (!auraOrigins.length) return;
+
+    Logger.debug("removeEmittedAurasFromSource", { sourceTokenId: token.id, auraOrigins });
+
+    for (const t of scene.tokens) {
+      const tActor = t.actor;
+      if (!tActor) continue;
+      const stale = [];
+      for (const eff of tActor.effects ?? []) {
+        if (eff.flags?.ActiveAuras?.applied !== true) continue;
+        if (auraOrigins.some((o) => AAHelpers.originsMatch(o, eff.origin))) stale.push(eff.id);
+      }
+      if (stale.length) {
+        try {
+          Logger.debug("removeEmittedAurasFromSource deleting", { actor: tActor.name, stale });
+          await tActor.deleteEmbeddedDocuments("ActiveEffect", stale);
+        } catch (err) {
+          Logger.error("ERROR CAUGHT in removeEmittedAurasFromSource", err);
+        }
+      }
+    }
+  }
+
+  /**
    * Collapse multiple AA-applied effects on the same actor that share a
    * normalized (origin, name) — keeping the first-seen and deleting the rest.
    * Matches AAHelpers.originsMatch / CreateActiveEffect dedup semantics:
