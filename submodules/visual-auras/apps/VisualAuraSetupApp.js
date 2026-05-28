@@ -45,7 +45,7 @@ export class VisualAuraSetupApp extends HandlebarsApplicationMixin(ApplicationV2
             gridBased: true,
             defaultEnabled: false,
             ...p,
-        }));
+        })).sort((a, b) => a.name.localeCompare(b.name));
 
         let presetMode = "list";
         let editPreset = null;

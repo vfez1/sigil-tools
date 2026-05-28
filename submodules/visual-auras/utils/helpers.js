@@ -85,7 +85,27 @@ export async function refreshCurrentSceneAuras() {
     for (const tokenDoc of scene.tokens) {
         if (!tokenDoc.actor) continue;
 
-        const existingIds = findAuraRegionsForToken(scene, tokenDoc.id).map(r => r.id);
+        const existingRegions = findAuraRegionsForToken(scene, tokenDoc.id);
+        const existingPresetIds = new Set(
+            existingRegions.map(r => r.getFlag("sigil-tools", "visualAuras.presetId")).filter(Boolean)
+        );
+
+        // Presets newly assigned to this token (no existing region, not already in
+        // the disabled list) that are off by default get stamped as disabled so they
+        // appear in the Auras tab but produce no region.
+        const currentDisabled = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];
+        const newDefaultDisabled = getPresetsForActor(tokenDoc.actor)
+            .filter(p => !p.defaultEnabled && !existingPresetIds.has(p.id) && !currentDisabled.includes(p.id))
+            .map(p => p.id);
+
+        if (newDefaultDisabled.length) {
+            await tokenDoc.update(
+                { "flags.sigil-tools.visualAuras.disabled": [...currentDisabled, ...newDefaultDisabled] },
+                { "visual-auras.skipRefresh": true }
+            );
+        }
+
+        const existingIds = existingRegions.map(r => r.id);
         if (existingIds.length) {
             try {
                 await scene.deleteEmbeddedDocuments("Region", existingIds);
