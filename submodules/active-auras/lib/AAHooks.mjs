@@ -18,6 +18,11 @@ function addToCollateSemaphore(sceneID, checkAuras, removeAuras, source) {
   CONFIG.AA.Semaphore.add(CollateAuras, sceneID, checkAuras, removeAuras, source);
 }
 
+// Tracks scenes where preDeleteTokenHook's removeEmittedAurasFromSource is still
+// in-flight. deleteTokenHook fires while the await is pending, so we skip the
+// removeAuras pass to avoid a double-delete race against the in-progress cleanup.
+const _sourceCleanupInProgress = new Set();
+
 export async function createTokenHook(token, _config, _id) {
   if (canvas.scene === null) {
     Logger.debug("Active Auras disabled due to no canvas");
@@ -111,8 +116,12 @@ export async function preDeleteTokenHook(token) {
     Logger.debug("Active Auras disabled due to no canvas");
     return;
   }
-  if (AAHelpers.IsAuraToken(token.id, token.parent.id)) {
+  const isAuraSource = AAHelpers.IsAuraToken(token.id, token.parent.id);
+  if (isAuraSource) {
     Logger.debug("preDelete, collate auras false true");
+    // Flag the scene BEFORE awaiting so deleteTokenHook (which fires while we
+    // await) can see the in-progress cleanup and skip its removeAuras pass.
+    _sourceCleanupInProgress.add(token.parent.id);
     // Remove the effects this source emitted to OTHER actors first, while the
     // document is still in the collection and the effectMap still carries the
     // source's origins. ExtractAuraById (below) clears those origins, and the
@@ -121,6 +130,7 @@ export async function preDeleteTokenHook(token) {
     // aura and RemoveAppliedAuras then preserves the orphaned target effects.
     await AAHelpers.removeEmittedAurasFromSource(token);
     AAHelpers.ExtractAuraById(token.id, token.parent.id);
+    _sourceCleanupInProgress.delete(token.parent.id);
   }
   await AAHelpers.removeAurasOnToken(token);
 }
@@ -130,7 +140,10 @@ export async function deleteTokenHook() {
     Logger.debug("Active Auras disabled due to no canvas");
     return;
   }
-  addToCollateSemaphore(canvas.scene.id, true, true, "deleteTokenHook");
+  // If preDeleteTokenHook's removeEmittedAurasFromSource is still in-flight for
+  // this scene, skip removeAuras to avoid racing its in-progress delete.
+  const removeAuras = !_sourceCleanupInProgress.has(canvas.scene.id);
+  addToCollateSemaphore(canvas.scene.id, true, removeAuras, "deleteTokenHook");
 }
 
 /**

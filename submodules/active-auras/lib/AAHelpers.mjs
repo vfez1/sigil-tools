@@ -404,7 +404,9 @@ export class AAHelpers {
       .filter((e) => e.entityId === token.id)
       .map((e) => e.data?.origin)
       .filter((o) => !!o);
-    if (!auraOrigins.length) return;
+    if (!auraOrigins.length) {
+      return;
+    }
 
     Logger.debug("removeEmittedAurasFromSource", { sourceTokenId: token.id, auraOrigins });
 
@@ -973,7 +975,9 @@ export class AAHelpers {
   }
 
   static async removeAurasOnToken(token) {
-    if (!token.actorLink) return;
+    if (!token.actorLink) {
+      return;
+    }
     const auras = Array.from(token.actor.allApplicableEffects())
       .filter((i) => foundry.utils.hasProperty(i, "flags.ActiveAuras.applied")).map((i) => i.id);
     if (!auras) return;
