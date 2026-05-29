@@ -74,6 +74,18 @@ export function buildRegionData(preset, token) {
     };
 }
 
+export function buildEffectStateByPreset(actor) {
+    const map = new Map();
+    for (const effect of (actor.allApplicableEffects?.() ?? [])) {
+        if (effect.flags?.ActiveAuras?.applied) continue;
+        const presetId = effect.flags?.ActiveAuras?.visualAuraPreset;
+        if (!presetId) continue;
+        if (!effect.disabled) map.set(presetId, true);
+        else if (!map.has(presetId)) map.set(presetId, false);
+    }
+    return map;
+}
+
 export function findAuraRegionsForToken(scene, tokenId) {
     return scene.regions.filter(r => r.getFlag("sigil-tools", "visualAuras.tokenId") === tokenId);
 }

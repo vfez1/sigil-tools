@@ -56,9 +56,6 @@
     "NoScriptProvided": "You did not provide a function.",
     "NoSuchScript": "No such script embedded in effect.",
 
-    "SettingRestrictPermission": "Restrict Permissions",
-    "SettingRestrictPermissionHint": "If enabled, non-GM clients will not be able to add, edit, or delete macros from an Active Effect.",
-
     "effectSheet": {
       "used": "These are the macros configured to be executed automatically by the 'Effect Macro' module.",
       "unused": "Select the trigger and configure a new macro to be executed automatically by the 'Effect Macro' module."

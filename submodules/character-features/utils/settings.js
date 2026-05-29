@@ -1,5 +1,4 @@
 import { MODULE_NAME } from "../../shared/const.js";
-import { CharacterSetupApp } from "../apps/CharacterSetupApp.js";
 
 export const CF_SETTING_NAMES = {
     CHARACTER_CONFIG: "characterFeaturesConfig",
@@ -31,20 +30,3 @@ export function getConfig() {
     }
 }
 
-export function registerSettings() {
-    game.settings.registerMenu(MODULE_NAME, "characterFeaturesSetup", {
-        name: "Character Setup",
-        label: "Open Character Setup",
-        hint: "Configure per-character automation (e.g. wild shape effect toggling).",
-        icon: "fas fa-user-gear",
-        type: CharacterSetupApp,
-        restricted: true,
-    });
-
-    game.settings.register(MODULE_NAME, CF_SETTING_NAMES.CHARACTER_CONFIG, {
-        scope: "world",
-        config: false,
-        type: Object,
-        default: DEFAULT_CONFIG,
-    });
-}

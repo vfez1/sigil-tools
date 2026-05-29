@@ -1,4 +1,4 @@
-import { getPresetsForActor, getPresetsForToken, buildRegionData, findAuraRegionsForToken, refreshTokenAuras } from "./helpers.js";
+import { getPresetsForActor, getPresetsForToken, buildRegionData, buildEffectStateByPreset, findAuraRegionsForToken, refreshTokenAuras } from "./helpers.js";
 
 async function onCreateToken(tokenDoc, options, userId) {
     if (game.user.id !== userId) return;
@@ -12,14 +12,7 @@ async function onCreateToken(tokenDoc, options, userId) {
     // instead of defaultEnabled. Without this, dragging a token with an already-active
     // effect onto a scene would stamp the preset as disabled (defaultEnabled=false)
     // even though its controlling effect is live.
-    const effectStateByPreset = new Map();
-    for (const effect of (tokenDoc.actor.allApplicableEffects?.() ?? [])) {
-        if (effect.flags?.ActiveAuras?.applied) continue;
-        const presetId = effect.flags?.ActiveAuras?.visualAuraPreset;
-        if (!presetId) continue;
-        if (!effect.disabled) effectStateByPreset.set(presetId, true);
-        else if (!effectStateByPreset.has(presetId)) effectStateByPreset.set(presetId, false);
-    }
+    const effectStateByPreset = buildEffectStateByPreset(tokenDoc.actor);
 
     const enabledPresets = presets.filter(p =>
         effectStateByPreset.has(p.id) ? effectStateByPreset.get(p.id) : !!p.defaultEnabled
@@ -88,14 +81,7 @@ async function onCanvasReady(canvas) {
 
         // Re-derive aura state from live effect states to fix flags that went stale
         // on scenes that weren't the active canvas when the effect was toggled.
-        const effectStateByPreset = new Map();
-        for (const effect of (tokenDoc.actor.allApplicableEffects?.() ?? [])) {
-            if (effect.flags?.ActiveAuras?.applied) continue;
-            const presetId = effect.flags?.ActiveAuras?.visualAuraPreset;
-            if (!presetId) continue;
-            if (!effect.disabled) effectStateByPreset.set(presetId, true);
-            else if (!effectStateByPreset.has(presetId)) effectStateByPreset.set(presetId, false);
-        }
+        const effectStateByPreset = buildEffectStateByPreset(tokenDoc.actor);
 
         if (effectStateByPreset.size > 0) {
             const currentDisabled = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];

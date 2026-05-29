@@ -10,6 +10,12 @@ import { ARCHIVE_SETTINGS } from "../chat-archive/utils/settings.js";
 
 function localize(key) { return game.i18n.localize(key); }
 function label(settingKey, suffix) { return localize(`${MODULE_SHORT}.settings.${settingKey}.${suffix}`); }
+function registerToggle(key) {
+    game.settings.register(MODULE_NAME, key, {
+        name: label(key, "name"), hint: label(key, "hint"),
+        scope: "world", config: true, type: Boolean, default: true, requiresReload: true,
+    });
+}
 
 export function registerAllSettings() {
     // ── Roll Model ────────────────────────────────────────────────────────────
@@ -110,53 +116,14 @@ export function registerAllSettings() {
 
     // ── Submodule toggles (alphabetical) ─────────────────────────────────────
 
-    game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_ACTIVE_AURAS, {
-        name: label(SETTING_NAMES.ENABLE_ACTIVE_AURAS, "name"),
-        hint: label(SETTING_NAMES.ENABLE_ACTIVE_AURAS, "hint"),
-        scope: "world", config: true, type: Boolean, default: true, requiresReload: true,
-    });
-
-    game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_CHARACTER_FEATURES, {
-        name: label(SETTING_NAMES.ENABLE_CHARACTER_FEATURES, "name"),
-        hint: label(SETTING_NAMES.ENABLE_CHARACTER_FEATURES, "hint"),
-        scope: "world", config: true, type: Boolean, default: true, requiresReload: true,
-    });
-
-    game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_CHAT_ARCHIVE, {
-        name: label(SETTING_NAMES.ENABLE_CHAT_ARCHIVE, "name"),
-        hint: label(SETTING_NAMES.ENABLE_CHAT_ARCHIVE, "hint"),
-        scope: "world", config: true, type: Boolean, default: true, requiresReload: true,
-    });
-
-    game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_EFFECT_MACRO, {
-        name: label(SETTING_NAMES.ENABLE_EFFECT_MACRO, "name"),
-        hint: label(SETTING_NAMES.ENABLE_EFFECT_MACRO, "hint"),
-        scope: "world", config: true, type: Boolean, default: true, requiresReload: true,
-    });
-
-    game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_OVERRIDE_SETTINGS, {
-        name: label(SETTING_NAMES.ENABLE_OVERRIDE_SETTINGS, "name"),
-        hint: label(SETTING_NAMES.ENABLE_OVERRIDE_SETTINGS, "hint"),
-        scope: "world", config: true, type: Boolean, default: true, requiresReload: true,
-    });
-
-    game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_ROLL_MODEL, {
-        name: label(SETTING_NAMES.ENABLE_ROLL_MODEL, "name"),
-        hint: label(SETTING_NAMES.ENABLE_ROLL_MODEL, "hint"),
-        scope: "world", config: true, type: Boolean, default: true, requiresReload: true,
-    });
-
-    game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_SUPPRESS_WARNINGS, {
-        name: label(SETTING_NAMES.ENABLE_SUPPRESS_WARNINGS, "name"),
-        hint: label(SETTING_NAMES.ENABLE_SUPPRESS_WARNINGS, "hint"),
-        scope: "world", config: true, type: Boolean, default: true, requiresReload: true,
-    });
-
-    game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_VISUAL_AURAS, {
-        name: label(SETTING_NAMES.ENABLE_VISUAL_AURAS, "name"),
-        hint: label(SETTING_NAMES.ENABLE_VISUAL_AURAS, "hint"),
-        scope: "world", config: true, type: Boolean, default: true, requiresReload: true,
-    });
+    registerToggle(SETTING_NAMES.ENABLE_ACTIVE_AURAS);
+    registerToggle(SETTING_NAMES.ENABLE_CHARACTER_FEATURES);
+    registerToggle(SETTING_NAMES.ENABLE_CHAT_ARCHIVE);
+    registerToggle(SETTING_NAMES.ENABLE_EFFECT_MACRO);
+    registerToggle(SETTING_NAMES.ENABLE_OVERRIDE_SETTINGS);
+    registerToggle(SETTING_NAMES.ENABLE_ROLL_MODEL);
+    registerToggle(SETTING_NAMES.ENABLE_SUPPRESS_WARNINGS);
+    registerToggle(SETTING_NAMES.ENABLE_VISUAL_AURAS);
 
     // ── Keybindings ───────────────────────────────────────────────────────────
 

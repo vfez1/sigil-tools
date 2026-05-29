@@ -1,8 +1,6 @@
 import { TRIGGERS } from "../triggers.mjs";
 
 export default async function renderActiveEffectConfig(config, html, data) {
-  if (game.settings.get(effectmacro.id, "restrictPermissions") && !game.user.isGM) return;
-
   const used = [];
   const options = [];
 
