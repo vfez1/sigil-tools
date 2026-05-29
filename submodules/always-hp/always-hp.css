@@ -1,0 +1,225 @@
+/* ===== Always-HP Widget ===== */
+
+:root {
+    --ahp-heal-light: #15838d;
+    --ahp-heal-dark: #4dd0e1;
+    --ahp-hurt-light: #ff6400;
+    --ahp-hurt-dark: #ff0000;
+}
+
+#rm-always-hp {
+    background: var(--color-cool-5-90);
+}
+
+.alwayshp-content {
+    flex: 0 0 30px;
+    padding-top: 2px;
+    text-align: center;
+}
+
+#alwayshp-hp {
+    width: 75px;
+    text-align: center;
+    background: url(../../../ui/parchment.jpg) repeat;
+    font-size: 18px;
+    font-weight: bold;
+    height: 25px;
+    color: #333;
+}
+
+.alwayshp-btn {
+    line-height: 24px;
+    width: 30px;
+    text-align: center;
+    border-radius: 3px;
+    display: inline-block;
+    vertical-align: top;
+    cursor: pointer;
+}
+
+.death-savingthrow {
+    display: none;
+    width: 40px;
+}
+
+.death-savingthrow > div {
+    width: 12px;
+    height: 12px;
+    border: 1px solid #808080;
+    background-color: #c0c0c0;
+    border-radius: 100%;
+    display: inline-block;
+}
+
+.death-savingthrow > div.active {
+    border: 1px solid var(--ahp-hurt-dark);
+    background-color: var(--ahp-hurt-light);
+}
+
+.death-savingthrow > div.active:after {
+    content: "";
+    display: block;
+    width: 6px;
+    height: 6px;
+    margin: 2px;
+    border-radius: 100%;
+    background-color: var(--ahp-hurt-dark);
+}
+
+.death-savingthrow.save > div.active {
+    border: 1px solid var(--ahp-heal-light);
+    background-color: var(--ahp-heal-dark);
+}
+
+.death-savingthrow.save > div.active:after {
+    background-color: var(--ahp-heal-light);
+}
+
+#alwayshp-btn-fullheal {
+    line-height: 21px;
+}
+
+#alwayshp-btn-fullheal i {
+    padding-top: 6px;
+}
+
+.bad-ones {
+    border: 1px solid var(--ahp-hurt-dark);
+    box-shadow: 0 0 10px var(--ahp-hurt-light);
+}
+
+.bad-ones i {
+    color: var(--ahp-hurt-dark);
+}
+
+.good-ones {
+    border: 1px solid var(--ahp-heal-dark);
+    box-shadow: 0 0 10px var(--ahp-heal-dark);
+}
+
+.good-ones i {
+    color: var(--ahp-heal-dark);
+}
+
+#rm-always-hp .window-content {
+    background: none;
+    padding: 2px 0px;
+    border-top: 2px solid #782e22;
+    overflow-y: hidden;
+}
+
+#rm-always-hp .window-title {
+    height: 100%;
+}
+
+#rm-always-hp .window-header .character-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    white-space: nowrap;
+    width: 100%;
+    height: 100%;
+}
+
+#rm-always-hp .window-header .character-name.single {
+    line-height: 38px;
+}
+
+#rm-always-hp .window-header .character-name .count {
+    display: inline-block;
+    padding: 0.25em 0.4em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+#rm-always-hp .window-header .token-stats {
+    font-size: 12px;
+    flex-grow: 0;
+    text-align: right;
+    flex-wrap: nowrap;
+    padding-top: 2px;
+    height: 20px;
+}
+
+#rm-always-hp.minimized .window-header .token-stats {
+    margin-top: 4px;
+}
+
+#rm-always-hp .window-header .token-stats:empty {
+    display: none;
+}
+
+#rm-always-hp .window-header .token-stats .stat {
+    display: inline-block;
+    padding: 0.25em 0.4em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    color: #fff;
+    background-color: #6c757d;
+}
+
+#rm-always-hp .window-header .token-stats .stat.temp {
+    background-color: #17a2b8;
+}
+
+#rm-always-hp .window-header .token-stats .stat:empty {
+    display: none;
+}
+
+#rm-always-hp .resource {
+    position: absolute;
+    width: calc(100% + 4px);
+    height: 10px;
+    left: 0px;
+    top: 27px;
+    border: 2px solid rgba(0, 0, 0, 0.9);
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.5);
+    margin-left: -2px;
+}
+
+#rm-always-hp .resource .bar {
+    border: 1px solid solid rgba(0, 0, 0, 0.8);
+    border-radius: 2px;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+#rm-always-hp .resource .bar-change {
+    display: none;
+    width: 73px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+    left: 50%;
+    top: 14px;
+    margin-left: -36px;
+    background: url(../../../ui/parchment.jpg) repeat;
+}
+
+#rm-always-hp .resource:hover .bar-change {
+    display: inline-block;
+}
+
+#rm-always-hp .resource .temp-bar {
+    background-color: #66ccff;
+    border-radius: 2px;
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    height: 4px;
+}
