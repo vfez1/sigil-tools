@@ -38,31 +38,23 @@ const Logger = {
     switch (logLevel) {
       case "DEBUG":
         if (payload) {
-          console.debug(msg, ...payload); // eslint-disable-line no-console
-        } else {
-          console.debug(msg); // eslint-disable-line no-console
-        }
+          console.debug(msg, ...payload);        } else {
+          console.debug(msg);        }
         break;
       case "INFO":
         if (payload) {
-          console.info(msg, ...payload); // eslint-disable-line no-console
-        } else {
-          console.info(msg); // eslint-disable-line no-console
-        }
+          console.info(msg, ...payload);        } else {
+          console.info(msg);        }
         break;
       case "WARN":
         if (payload) {
-          console.warn(msg, ...payload); // eslint-disable-line no-console
-        } else {
-          console.warn(msg); // eslint-disable-line no-console
-        }
+          console.warn(msg, ...payload);        } else {
+          console.warn(msg);        }
         break;
       case "ERR":
         if (payload) {
-          console.error(msg, ...payload); // eslint-disable-line no-console
-        } else {
-          console.error(msg); // eslint-disable-line no-console
-        }
+          console.error(msg, ...payload);        } else {
+          console.error(msg);        }
         break;
       default:
         break;

@@ -1,6 +1,6 @@
 import { MODULE_NAME } from "../../shared/const.js";
 import { VA_SETTING_NAMES, getPresets, getActorConfig } from "../utils/settings.js";
-import { buildRegionData, findAuraRegionsForToken, getPresetsForToken, refreshCurrentSceneAuras } from "../utils/helpers.js";
+import { refreshCurrentSceneAuras } from "../utils/helpers.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 

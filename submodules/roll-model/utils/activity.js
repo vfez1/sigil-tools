@@ -169,8 +169,6 @@ export class ActivityUtility {
 
     static getFormulaFromMessage(message) {
         const activity = message.getAssociatedActivity();
-        const flags = (message.flags ?? message.data?.flags)?.[MODULE_SHORT] ?? {};
-
         activity.item.flags.dnd5e ??= {};
         activity.item.flags.dnd5e.scaling = (message.flags ?? message.data?.flags)?.dnd5e?.scaling;
 

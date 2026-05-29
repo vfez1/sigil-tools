@@ -52,7 +52,8 @@ export class AcknowledgedModeUtility {
                 messageContent.prepend(badge);
             } else {
                 const header = $html.find(".message-header").first();
-                header.length ? badge.insertAfter(header) : $html.prepend(badge);
+                if (header.length) badge.insertAfter(header);
+                else $html.prepend(badge);
             }
         }
 

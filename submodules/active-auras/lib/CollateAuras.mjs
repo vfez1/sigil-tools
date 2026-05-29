@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { AAHelpers } from "./AAHelpers.mjs";
 import { ActiveAuras } from "./ActiveAuras.mjs";
 import Logger from "./Logger.mjs";

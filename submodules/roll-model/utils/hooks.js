@@ -6,7 +6,6 @@ import { registerAllSettings } from "../../shared/settings-registry.js";
 import { AcknowledgedModeUtility } from "./ack.js";
 import { ActivityUtility } from "./activity.js";
 import { ChatUtility } from "./chat.js";
-import { CoreUtility } from "./core.js";
 import { AlwaysHPWidget, HPManager, applyHPDismissPatch } from "../../always-hp/always-hp.js";
 import { ROLL_TYPE, RollUtility } from "./roll.js";
 

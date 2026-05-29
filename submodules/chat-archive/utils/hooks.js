@@ -82,7 +82,8 @@ function injectArchiveButton(controlButtons) {
     btn.setAttribute("aria-label", "Archive old messages");
     btn.addEventListener("click", archiveMessages);
     const trashBtn = controlButtons.querySelector('[data-action="flush"]');
-    trashBtn ? controlButtons.insertBefore(btn, trashBtn) : controlButtons.append(btn);
+    if (trashBtn) controlButtons.insertBefore(btn, trashBtn);
+    else controlButtons.append(btn);
 }
 
 function onRenderChatLog(chatLog, html) {
