@@ -2,6 +2,7 @@ import { MODULE_NAME, MODULE_SHORT, MODULE_TITLE } from "../../shared/const.js";
 import { isEnabled } from "../../shared/enable.js";
 import { SETTING_NAMES, SettingsUtility } from "../../shared/settings.js";
 import { registerSettingsPanelHooks } from "../../shared/settings-panel.js";
+import { registerAllSettings } from "../../shared/settings-registry.js";
 import { AcknowledgedModeUtility } from "./ack.js";
 import { ActivityUtility } from "./activity.js";
 import { ChatUtility } from "./chat.js";
@@ -45,7 +46,7 @@ export class HooksUtility {
         Hooks.once(HOOKS_CORE.INIT, () => {
             _logHookDebug(`Initialising ${MODULE_TITLE}`);
 
-            SettingsUtility.registerSettings();
+            registerAllSettings();
 
             if (!isEnabled(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
 

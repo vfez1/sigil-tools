@@ -1,4 +1,6 @@
 import { MODULE_NAME } from "../../shared/const.js";
+import { isEnabled } from "../../shared/enable.js";
+import { SETTING_NAMES } from "../../shared/settings.js";
 import { ARCHIVE_SETTINGS } from "./settings.js";
 
 async function archiveMessages() {
@@ -90,6 +92,7 @@ function onRenderChatLog(chatLog, html) {
 }
 
 export function registerArchiveHooks() {
+    if (!isEnabled(SETTING_NAMES.ENABLE_CHAT_ARCHIVE)) return;
     Hooks.on("renderChatLog", onRenderChatLog);
     // Chat log is already rendered by the time ready fires — inject directly
     if (game.user.isGM) {

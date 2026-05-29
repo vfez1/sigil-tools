@@ -38,7 +38,9 @@
             "enableCharacterFeatures.name": "Enable: Character Features",
             "enableCharacterFeatures.hint": "Enable the Character Features submodule (PC-specific automation such as wild shape effect toggling). Requires a reload.",
             "enableVisualAuras.name": "Enable: Visual Auras",
-            "enableVisualAuras.hint": "Enable the Visual Auras submodule (auto-creates Region-based visual aura rings on configured actor tokens across all scenes). Requires a reload."
+            "enableVisualAuras.hint": "Enable the Visual Auras submodule (auto-creates Region-based visual aura rings on configured actor tokens across all scenes). Requires a reload.",
+            "enableChatArchive.name": "Enable: Chat Archive",
+            "enableChatArchive.hint": "Enable the Chat Archive submodule (injects an archive button into the chat log to POST old messages to the archive server). Requires a reload."
         },
         "choices": {
             "rollModifierMode": {
