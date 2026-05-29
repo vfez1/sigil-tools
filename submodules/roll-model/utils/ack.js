@@ -117,6 +117,7 @@ export class AcknowledgedModeUtility {
                     }).filter(Boolean)
                     : [];
                 if (!targets.length) return;
+                console.log(`[rm] ACK apply captured | messageId=${message.id} targets=`, targets);
                 if (game.user.isGM) {
                     _mergeAppliedTo(message, targets);
                 } else {
@@ -163,6 +164,7 @@ function _markApplyButton(root, appliedNames) {
 }
 
 async function _mergeAppliedTo(message, newTargets) {
+    console.log(`[rm] _mergeAppliedTo | messageId=${message.id}`, newTargets);
     const existing = message.getFlag(MODULE_NAME, "appliedTo") ?? [];
     // Normalise legacy string entries to objects
     const existingArr = (Array.isArray(existing) ? existing : [existing]).map(e =>
@@ -172,5 +174,6 @@ async function _mergeAppliedTo(message, newTargets) {
     for (const t of newTargets) {
         if (!nameSet.has(t.name)) existingArr.push(t);
     }
+    console.log(`[rm] _mergeAppliedTo → setFlag | messageId=${message.id} merged=`, existingArr);
     await message.setFlag(MODULE_NAME, "appliedTo", existingArr);
 }

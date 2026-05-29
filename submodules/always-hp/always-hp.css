@@ -7,17 +7,17 @@
     --ahp-hurt-dark: #ff0000;
 }
 
-#rm-always-hp {
+#ahp-widget {
     background: var(--color-cool-5-90);
 }
 
-.alwayshp-content {
+.ahp-content {
     flex: 0 0 30px;
     padding-top: 2px;
     text-align: center;
 }
 
-#alwayshp-hp {
+#ahp-hp {
     width: 75px;
     text-align: center;
     background: url(../../../../ui/parchment.jpg) repeat;
@@ -27,7 +27,7 @@
     color: #333;
 }
 
-.alwayshp-btn {
+.ahp-btn {
     line-height: 24px;
     width: 30px;
     text-align: center;
@@ -37,12 +37,12 @@
     cursor: pointer;
 }
 
-.death-savingthrow {
+.ahp-death-save {
     display: none;
     width: 40px;
 }
 
-.death-savingthrow > div {
+.ahp-death-save > div {
     width: 12px;
     height: 12px;
     border: 1px solid #808080;
@@ -51,12 +51,12 @@
     display: inline-block;
 }
 
-.death-savingthrow > div.active {
+.ahp-death-save > div.active {
     border: 1px solid var(--ahp-hurt-dark);
     background-color: var(--ahp-hurt-light);
 }
 
-.death-savingthrow > div.active:after {
+.ahp-death-save > div.active:after {
     content: "";
     display: block;
     width: 6px;
@@ -66,53 +66,53 @@
     background-color: var(--ahp-hurt-dark);
 }
 
-.death-savingthrow.save > div.active {
+.ahp-death-save.save > div.active {
     border: 1px solid var(--ahp-heal-light);
     background-color: var(--ahp-heal-dark);
 }
 
-.death-savingthrow.save > div.active:after {
+.ahp-death-save.save > div.active:after {
     background-color: var(--ahp-heal-light);
 }
 
-#alwayshp-btn-fullheal {
+#ahp-btn-fullheal {
     line-height: 21px;
 }
 
-#alwayshp-btn-fullheal i {
+#ahp-btn-fullheal i {
     padding-top: 6px;
 }
 
-.bad-ones {
+.ahp-bad {
     border: 1px solid var(--ahp-hurt-dark);
     box-shadow: 0 0 10px var(--ahp-hurt-light);
 }
 
-.bad-ones i {
+.ahp-bad i {
     color: var(--ahp-hurt-dark);
 }
 
-.good-ones {
+.ahp-good {
     border: 1px solid var(--ahp-heal-dark);
     box-shadow: 0 0 10px var(--ahp-heal-dark);
 }
 
-.good-ones i {
+.ahp-good i {
     color: var(--ahp-heal-dark);
 }
 
-#rm-always-hp .window-content {
+#ahp-widget .window-content {
     background: none;
     padding: 2px 0px;
     border-top: 2px solid #782e22;
     overflow-y: hidden;
 }
 
-#rm-always-hp .window-title {
+#ahp-widget .window-title {
     height: 100%;
 }
 
-#rm-always-hp .window-header .character-name {
+#ahp-widget .window-header .character-name {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -122,11 +122,11 @@
     height: 100%;
 }
 
-#rm-always-hp .window-header .character-name.single {
+#ahp-widget .window-header .character-name.single {
     line-height: 38px;
 }
 
-#rm-always-hp .window-header .character-name .count {
+#ahp-widget .window-header .character-name .count {
     display: inline-block;
     padding: 0.25em 0.4em;
     font-weight: 700;
@@ -139,7 +139,7 @@
     background-color: rgba(0, 0, 0, 0.5);
 }
 
-#rm-always-hp .window-header .token-stats {
+#ahp-widget .window-header .token-stats {
     font-size: 12px;
     flex-grow: 0;
     text-align: right;
@@ -148,15 +148,15 @@
     height: 20px;
 }
 
-#rm-always-hp.minimized .window-header .token-stats {
+#ahp-widget.minimized .window-header .token-stats {
     margin-top: 4px;
 }
 
-#rm-always-hp .window-header .token-stats:empty {
+#ahp-widget .window-header .token-stats:empty {
     display: none;
 }
 
-#rm-always-hp .window-header .token-stats .stat {
+#ahp-widget .window-header .token-stats .stat {
     display: inline-block;
     padding: 0.25em 0.4em;
     font-weight: 700;
@@ -169,15 +169,15 @@
     background-color: #6c757d;
 }
 
-#rm-always-hp .window-header .token-stats .stat.temp {
+#ahp-widget .window-header .token-stats .stat.temp {
     background-color: #17a2b8;
 }
 
-#rm-always-hp .window-header .token-stats .stat:empty {
+#ahp-widget .window-header .token-stats .stat:empty {
     display: none;
 }
 
-#rm-always-hp .resource {
+#ahp-widget .resource {
     position: absolute;
     width: calc(100% + 4px);
     height: 10px;
@@ -189,14 +189,14 @@
     margin-left: -2px;
 }
 
-#rm-always-hp .resource .bar {
+#ahp-widget .resource .bar {
     border: 1px solid solid rgba(0, 0, 0, 0.8);
     border-radius: 2px;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.4);
 }
 
-#rm-always-hp .resource .bar-change {
+#ahp-widget .resource .bar-change {
     display: none;
     width: 73px;
     font-size: 18px;
@@ -211,11 +211,11 @@
     background: url(../../../../ui/parchment.jpg) repeat;
 }
 
-#rm-always-hp .resource:hover .bar-change {
+#ahp-widget .resource:hover .bar-change {
     display: inline-block;
 }
 
-#rm-always-hp .resource .temp-bar {
+#ahp-widget .resource .temp-bar {
     background-color: #66ccff;
     border-radius: 2px;
     position: absolute;

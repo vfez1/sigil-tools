@@ -1,6 +1,6 @@
 /* ===== Character Features Setup ===== */
 
-.sigil-character-setup .cf-effect-list {
+.cf-setup .cf-effect-list {
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -11,7 +11,7 @@
     background: rgba(0, 0, 0, 0.05);
 }
 
-.sigil-character-setup .cf-effect-cols {
+.cf-setup .cf-effect-cols {
     display: grid;
     grid-template-columns: 1fr 80px 1fr 30px;
     gap: 4px;
@@ -25,34 +25,34 @@
     letter-spacing: 0.04em;
 }
 
-.sigil-character-setup .cf-effect-row {
+.cf-setup .cf-effect-row {
     display: grid;
     grid-template-columns: 1fr 80px 1fr 30px;
     gap: 4px;
     align-items: center;
 }
 
-.sigil-character-setup .cf-effect-row input,
-.sigil-character-setup .cf-effect-row select {
+.cf-setup .cf-effect-row input,
+.cf-setup .cf-effect-row select {
     height: 26px;
     padding: 0 6px;
     margin: 0;
     font-size: var(--font-size-12);
 }
 
-.sigil-character-setup .cf-help-icon {
+.cf-setup .cf-help-icon {
     font-size: var(--font-size-13);
     color: #7ab8d4;
     cursor: help;
     vertical-align: middle;
 }
 
-.sigil-character-setup .cf-help-icon:hover {
+.cf-setup .cf-help-icon:hover {
     color: #b8dff0;
     text-shadow: 0 0 6px rgba(120, 190, 230, 0.6);
 }
 
-.sigil-character-setup .cf-effect-row button[data-action="removeEffect"] {
+.cf-setup .cf-effect-row button[data-action="removeEffect"] {
     height: 26px;
     width: 30px;
     padding: 0;

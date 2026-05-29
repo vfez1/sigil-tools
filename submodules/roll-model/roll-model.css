@@ -320,31 +320,6 @@ damage-application button.rm-already-applied::before {
     padding: 0px 8px;
 }
 
-.rm-options-subsection {
-    align-items: center;
-    padding: 0 2px;
-    border-bottom: 0px;
-}
-
-.rm-options-title {
-    padding-left: 6px;
-    padding-top: 4px;
-    font-size: 12px;
-}
-
-.rm-options-box {
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid #999;
-    border-radius: 4px;
-    box-shadow: 0 0 2px #fff inset;
-    display: flex;
-    flex-flow: row wrap;
-    justify-content: space-between;
-}
-
-.rm-options-spacer {
-    padding-bottom: 8px;
-}
 
 .rm-type-selector {
     display: flex;

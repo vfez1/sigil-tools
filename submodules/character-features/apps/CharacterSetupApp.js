@@ -6,7 +6,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 export class CharacterSetupApp extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = {
         id: "character-features-setup",
-        classes: ["standard-form", "sigil-character-setup"],
+        classes: ["standard-form", "cf-setup"],
         tag: "form",
         form: {
             handler: CharacterSetupApp.formHandler,

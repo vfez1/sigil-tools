@@ -20,7 +20,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     tempPct = null;
 
     static DEFAULT_OPTIONS = {
-        id: "rm-always-hp",
+        id: "ahp-widget",
         classes: ["always-hp"],
         window: {
             resizable: false,
@@ -79,7 +79,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
 
         let html = $(this.element);
 
-        html.find('#alwayshp-btn-dead').click(ev => {
+        html.find('#ahp-btn-dead').click(ev => {
             ev.preventDefault();
             if (ev.shiftKey == true)
                 this.changeHP(0, null, 'toggle');
@@ -93,7 +93,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
             this.clearInput();
         });
 
-        html.find('#alwayshp-btn-hurt').click(ev => {
+        html.find('#ahp-btn-hurt').click(ev => {
             ev.preventDefault();
             let data = this.parseValue;
             if (data.value != '') {
@@ -103,7 +103,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
             this.clearInput();
         });
 
-        html.find('#alwayshp-btn-heal').click(ev => {
+        html.find('#ahp-btn-heal').click(ev => {
             ev.preventDefault();
             let data = this.parseValue;
             if (data.value != '') {
@@ -113,7 +113,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
             this.clearInput();
         });
 
-        html.find('#alwayshp-btn-fullheal').click(ev => {
+        html.find('#ahp-btn-fullheal').click(ev => {
             ev.preventDefault();
             this.changeHP('full', null, false);
             this.clearInput();
@@ -123,7 +123,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
             this.clearInput();
         });
 
-        html.find('#alwayshp-hp').focus(ev => {
+        html.find('#ahp-hp').focus(ev => {
             ev.preventDefault();
             let elem = ev.target;
             if (elem.setSelectionRange) {
@@ -142,7 +142,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (data.value != '' && data.value != 0) {
                     ev.preventDefault();
 
-                    let rawvalue = $('#alwayshp-hp', this.element).val();
+                    let rawvalue = $('#ahp-hp', this.element).val();
 
                     data.value = rawvalue.startsWith('+') ? -Math.abs(data.value) : Math.abs(data.value);
                     this.changeHP(data.value, data.target);
@@ -151,7 +151,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         });
 
-        html.find('.death-savingthrow').click(ev => {
+        html.find('.ahp-death-save').click(ev => {
             ev.preventDefault();
             this.addDeathST($(ev.currentTarget).hasClass('save'), 1);
         }).contextmenu(ev => {
@@ -326,10 +326,10 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
         let actor = (canvas.tokens.controlled.length == 1 ? canvas.tokens.controlled[0].actor : null);
         let data = actor?.system;
         let showST = (actor != undefined && data?.attributes?.hp?.value == 0 && actor?.hasPlayerOwner);
-        $('.death-savingthrow', this.element).css({ display: (showST ? 'inline-block' : 'none') });
+        $('.ahp-death-save', this.element).css({ display: (showST ? 'inline-block' : 'none') });
         if (showST && data.attributes.death) {
-            $('.death-savingthrow.fail > div', this.element).each(function (idx) { $(this).toggleClass('active', idx < data.attributes.death.failure) });
-            $('.death-savingthrow.save > div', this.element).each(function (idx) { $(this).toggleClass('active', idx < data.attributes.death.success) });
+            $('.ahp-death-save.fail > div', this.element).each(function (idx) { $(this).toggleClass('active', idx < data.attributes.death.failure) });
+            $('.ahp-death-save.save > div', this.element).each(function (idx) { $(this).toggleClass('active', idx < data.attributes.death.success) });
         }
 
         $('.resource', this.element).toggle(canvas.tokens.controlled.length == 1 && this.valuePct != undefined);
@@ -340,7 +340,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     get parseValue() {
-        let value = $('#alwayshp-hp', this.element).val();
+        let value = $('#ahp-hp', this.element).val();
         let result = { value: value };
         if (value.indexOf("r") > -1 || value.indexOf("R") > -1) {
             result.target = "regular";
@@ -361,7 +361,7 @@ export class AlwaysHPWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     clearInput() {
-        $('#alwayshp-hp', this.element).val('');
+        $('#ahp-hp', this.element).val('');
     }
 
     onPersistPosition(position) {

@@ -74,7 +74,7 @@ export class HooksUtility {
                     } else {
                         HPManager.app.bringToTop();
                     }
-                    $("#alwayshp-hp", HPManager.app.element).focus();
+                    $("#ahp-hp", HPManager.app.element).focus();
                 },
             });
 
