@@ -57,7 +57,7 @@ export class ChatUtility {
 
         if (content.length === 0) {
             await $(html).removeClass("rm-hide");
-            ui.chat.scrollBottom();
+            if (ChatUtility._chatPinnedToBottom) requestAnimationFrame(() => ChatUtility._scrollToBottom());
             return;
         }
 
@@ -78,8 +78,40 @@ export class ChatUtility {
             await $(html).removeClass("rm-hide");
         }
 
-        ChatUtility._chatPinnedToBottom = true;
-        ui.chat.scrollBottom();
+        if (ChatUtility._chatPinnedToBottom) {
+            requestAnimationFrame(() => ChatUtility._scrollToBottom());
+            // Re-scroll if late-inflating content (e.g. <damage-application>) grows the card after our rAF
+            ChatUtility._watchAndScrollBottom(message.id);
+        } else {
+            // Scrolled-up case: if we have an anchor for this message (user clicked Apply while scrolled up),
+            // compensate scrollTop for however much the card grew so the user's view stays in place.
+            const anchor = ChatUtility._scrollAnchor;
+            if (anchor?.messageId === message.id) {
+                ChatUtility._scrollAnchor = null;
+                const startHeight = anchor.cardHeight;
+                requestAnimationFrame(() => {
+                    const msgEl = document.querySelector(`[data-message-id="${message.id}"]`);
+                    if (!msgEl) return;
+                    const el = ChatUtility._chatLogScrollEl;
+                    if (!el) return;
+                    // Scroll down by however much the card grew, keeping content below the apply button in place.
+                    // Also watch for late tray re-inflation and keep compensating.
+                    let lastHeight = msgEl.offsetHeight;
+                    const growth = lastHeight - startHeight;
+                    if (growth > 0) el.scrollTop += growth;
+                    const ro = new ResizeObserver(() => {
+                        const h = msgEl.offsetHeight;
+                        const g = h - lastHeight;
+                        if (g > 0 && ChatUtility._chatLogScrollEl) {
+                            ChatUtility._chatLogScrollEl.scrollTop += g;
+                        }
+                        lastHeight = h;
+                    });
+                    ro.observe(msgEl);
+                    setTimeout(() => ro.disconnect(), 1500);
+                });
+            }
+        }
     }
 
     // Registers a scroll listener on the chat log to track whether the user is pinned
@@ -88,13 +120,43 @@ export class ChatUtility {
         const rawEl = ui.chat?.element;
         const root = rawEl instanceof HTMLElement ? rawEl : rawEl?.[0];
         if (!root) return;
+
+        // Find the actual scrollable child by computed overflow style
+        ChatUtility._chatLogScrollEl = Array.from(root.querySelectorAll("*")).find(el => {
+            const s = window.getComputedStyle(el);
+            return s.overflowY === "auto" || s.overflowY === "scroll" || s.overflow === "auto" || s.overflow === "scroll";
+        }) ?? null;
         // Capture phase catches scroll on any scrollable child; e.target is the actual scrolling element
         root.addEventListener("scroll", (e) => {
             const t = e.target;
+            ChatUtility._chatLogScrollEl = t;
             const dist = t.scrollHeight - t.scrollTop - t.clientHeight;
             if (dist <= 20) ChatUtility._chatPinnedToBottom = true;
             else if (dist > 100) ChatUtility._chatPinnedToBottom = false;
         }, { passive: true, capture: true });
+    }
+
+    static _scrollToBottom() {
+        const el = ChatUtility._chatLogScrollEl;
+        if (el) el.scrollTop = el.scrollHeight;
+        else ui.chat.scrollBottom();
+    }
+
+    static _watchAndScrollBottom(messageId) {
+        if (!messageId) return;
+        const li = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (!li) return;
+        let raf;
+        const ro = new ResizeObserver(() => {
+            if (!ChatUtility._chatPinnedToBottom) { ro.disconnect(); return; }
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(() => {
+                const el = ChatUtility._chatLogScrollEl;
+                if (el) el.scrollTop = el.scrollHeight;
+            });
+        });
+        ro.observe(li);
+        setTimeout(() => ro.disconnect(), 1500);
     }
 
     /**
