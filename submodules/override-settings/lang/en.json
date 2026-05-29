@@ -1,0 +1,8 @@
+{
+    "rm": {
+        "settings": {
+            "enableOverrideSettings.name": "Enable: Override Settings",
+            "enableOverrideSettings.hint": "Enable the Override Settings submodule (auto-applies world and client settings from settings.json on load). Requires a reload."
+        }
+    }
+}

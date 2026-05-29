@@ -60,5 +60,12 @@
       "used": "These are the macros configured to be executed automatically by the 'Effect Macro' module.",
       "unused": "Select the trigger and configure a new macro to be executed automatically by the 'Effect Macro' module."
     }
+  },
+
+  "rm": {
+    "settings": {
+      "enableEffectMacro.name": "Enable: EffectMacro",
+      "enableEffectMacro.hint": "Enable the EffectMacro submodule (run macros from active effects on various triggers). Requires a reload."
+    }
   }
 }

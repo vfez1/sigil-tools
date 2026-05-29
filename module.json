@@ -2,7 +2,7 @@
     "id": "sigil-tools",
     "title": "Sigil Tools",
     "description": "Internal tooling module. Contains submodules for roll-model, active-auras, grid-aware-auras, effectmacro, override-settings, and campaign-specific automation.",
-    "version": "1.0.36",
+    "version": "1.0.37",
     "socket": true,
     "compatibility": {
         "minimum": "13",
@@ -23,21 +23,14 @@
     ],
     "styles": ["css/roll-model.css", "submodules/effectmacro/styles/styles.css", "submodules/visual-auras/visual-auras.css"],
     "languages": [
-        {
-            "lang": "en",
-            "name": "English",
-            "path": "lang/en.json"
-        },
-        {
-            "lang": "en",
-            "name": "English",
-            "path": "submodules/effectmacro/lang/en.json"
-        },
-        {
-            "lang": "en",
-            "name": "English",
-            "path": "submodules/active-auras/lang/en.json"
-        }
+        { "lang": "en", "name": "English", "path": "submodules/roll-model/lang/en.json" },
+        { "lang": "en", "name": "English", "path": "submodules/visual-auras/lang/en.json" },
+        { "lang": "en", "name": "English", "path": "submodules/character-features/lang/en.json" },
+        { "lang": "en", "name": "English", "path": "submodules/chat-archive/lang/en.json" },
+        { "lang": "en", "name": "English", "path": "submodules/override-settings/lang/en.json" },
+        { "lang": "en", "name": "English", "path": "submodules/suppress-warnings/lang/en.json" },
+        { "lang": "en", "name": "English", "path": "submodules/active-auras/lang/en.json" },
+        { "lang": "en", "name": "English", "path": "submodules/effectmacro/lang/en.json" }
     ],
     "relationships": {
         "requires": [

@@ -1,0 +1,8 @@
+{
+    "rm": {
+        "settings": {
+            "enableCharacterFeatures.name": "Enable: Character Features",
+            "enableCharacterFeatures.hint": "Enable the Character Features submodule (PC-specific automation such as wild shape effect toggling). Requires a reload."
+        }
+    }
+}

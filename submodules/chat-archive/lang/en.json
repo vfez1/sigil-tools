@@ -1,0 +1,8 @@
+{
+    "rm": {
+        "settings": {
+            "enableChatArchive.name": "Enable: Chat Archive",
+            "enableChatArchive.hint": "Enable the Chat Archive submodule (injects an archive button into the chat log to POST old messages to the archive server). Requires a reload."
+        }
+    }
+}

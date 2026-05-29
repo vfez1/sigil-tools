@@ -1,0 +1,8 @@
+{
+    "rm": {
+        "settings": {
+            "enableVisualAuras.name": "Enable: Visual Auras",
+            "enableVisualAuras.hint": "Enable the Visual Auras submodule (auto-creates Region-based visual aura rings on configured actor tokens across all scenes). Requires a reload."
+        }
+    }
+}

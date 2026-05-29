@@ -1,0 +1,8 @@
+{
+    "rm": {
+        "settings": {
+            "enableSuppressWarnings.name": "Enable: Suppress Warnings",
+            "enableSuppressWarnings.hint": "Enable the Suppress Warnings submodule (filters configured console warnings and errors). Requires a reload."
+        }
+    }
+}

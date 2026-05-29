@@ -18,14 +18,6 @@
         "settings": {
             "enableRollModel.name": "Enable: Roll Model",
             "enableRollModel.hint": "Enable the Roll Model submodule (D&D 5e roll overhaul, multi-roll display, damage buttons). Requires a reload.",
-            "enableActiveAuras.name": "Enable: Active Auras",
-            "enableActiveAuras.hint": "Enable the Active Auras submodule (automatically applies effects to tokens within aura range). Requires a reload.",
-            "enableOverrideSettings.name": "Enable: Override Settings",
-            "enableOverrideSettings.hint": "Enable the Override Settings submodule (auto-applies world and client settings from settings.json on load). Requires a reload.",
-            "enableSuppressWarnings.name": "Enable: Suppress Warnings",
-            "enableSuppressWarnings.hint": "Enable the Suppress Warnings submodule (filters configured console warnings and errors). Requires a reload.",
-            "enableEffectMacro.name": "Enable: EffectMacro",
-            "enableEffectMacro.hint": "Enable the EffectMacro submodule (run macros from active effects on various triggers). Requires a reload.",
             "acknowledgedMode.name": "Acknowledged Mode",
             "acknowledgedMode.hint": "Track damage acknowledgment on chat cards from player-owned actors. The GM can manually acknowledge a card; players applying damage also stamp the card with the affected target names. Both show a green badge visible to all.",
             "preventMovementHistory.name": "Prevent Movement History",
@@ -34,13 +26,7 @@
             "showTurnStartMarker.hint": "Highlight the cell a token occupied at the start of their turn with a blue overlay.",
             "showTurnStartMarker.pcs": "Player Characters Only",
             "showTurnStartMarker.all": "All Tokens",
-            "showTurnStartMarker.disabled": "Disabled",
-            "enableCharacterFeatures.name": "Enable: Character Features",
-            "enableCharacterFeatures.hint": "Enable the Character Features submodule (PC-specific automation such as wild shape effect toggling). Requires a reload.",
-            "enableVisualAuras.name": "Enable: Visual Auras",
-            "enableVisualAuras.hint": "Enable the Visual Auras submodule (auto-creates Region-based visual aura rings on configured actor tokens across all scenes). Requires a reload.",
-            "enableChatArchive.name": "Enable: Chat Archive",
-            "enableChatArchive.hint": "Enable the Chat Archive submodule (injects an archive button into the chat log to POST old messages to the archive server). Requires a reload."
+            "showTurnStartMarker.disabled": "Disabled"
         },
         "choices": {
             "rollModifierMode": {
