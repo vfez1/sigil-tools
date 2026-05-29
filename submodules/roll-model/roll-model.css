@@ -170,7 +170,7 @@ damage-application button.rm-already-applied::before {
 }
 
 .rm-multiroll .die-icon {
-    background-image: url(../../../icons/svg/d20-grey.svg);
+    background-image: url(../../../../icons/svg/d20-grey.svg);
     width: 22px;
     line-height: 22px;
     background-size: 22px;

@@ -20,7 +20,7 @@
 #alwayshp-hp {
     width: 75px;
     text-align: center;
-    background: url(../../../ui/parchment.jpg) repeat;
+    background: url(../../../../ui/parchment.jpg) repeat;
     font-size: 18px;
     font-weight: bold;
     height: 25px;
@@ -208,7 +208,7 @@
     left: 50%;
     top: 14px;
     margin-left: -36px;
-    background: url(../../../ui/parchment.jpg) repeat;
+    background: url(../../../../ui/parchment.jpg) repeat;
 }
 
 #rm-always-hp .resource:hover .bar-change {
