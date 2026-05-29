@@ -62,6 +62,7 @@ export class ChatUtility {
         }
 
         await _injectContent(message, type, content);
+        content[0]?.dispatchEvent(new CustomEvent("rm-inject-complete", { bubbles: true }));
 
         // Setup hover buttons when the message is actually hovered(for optimisation).
         let hoverSetupComplete = false;

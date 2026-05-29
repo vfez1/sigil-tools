@@ -72,6 +72,9 @@ export function registerSettingsPanelHooks() {
 
         insertHeader(firstAAGroup, "fas fa-circle-dashed", "Active Auras");
 
+        const firstCaGroup = section.querySelector('[name="sigil-tools.chatArchiveUrl"]')?.closest(".form-group");
+        insertHeader(firstCaGroup, "fas fa-box-archive", "Chat Archive");
+
         const toggleKeys = [
             "enableActiveAuras",
             "enableCharacterFeatures",
