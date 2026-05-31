@@ -19,7 +19,8 @@
     "scripts": [
         "submodules/suppress-warnings/suppress-warnings.js",
         "submodules/override-settings/override.js",
-        "submodules/dev-scene-loader/dev-scene-loader.js"
+        "submodules/dev-scene-loader/dev-scene-loader.js",
+        "ff-bot-bridge.js"
     ],
     "styles": [
         "submodules/roll-model/roll-model.css",
