@@ -3,49 +3,6 @@ import { isEnabled } from "../../shared/enable.js";
 import { SETTING_NAMES } from "../../shared/settings.js";
 import { ARCHIVE_SETTINGS } from "./settings.js";
 
-async function archiveMessages() {
-    const keepCount = game.settings.get(MODULE_NAME, ARCHIVE_SETTINGS.KEEP_COUNT);
-    const url = game.settings.get(MODULE_NAME, ARCHIVE_SETTINGS.URL);
-
-    const allMessages = [...game.messages].sort((a, b) => a.timestamp - b.timestamp);
-    const toArchive = allMessages.slice(0, Math.max(0, allMessages.length - keepCount));
-
-    if (!toArchive.length) {
-        ui.notifications.info(`Nothing to archive — fewer than ${keepCount} messages in chat.`);
-        return;
-    }
-
-    const confirmed = await Dialog.confirm({
-        title: "Archive Chat Messages",
-        content: `<p>Archive <strong>${toArchive.length}</strong> messages and delete them from chat?</p>
-                  <p style="margin-top:6px;opacity:0.7;font-size:0.9em">The ${keepCount} most recent messages will be kept.</p>`,
-    });
-    if (!confirmed) return;
-
-    ui.notifications.info(`Rendering ${toArchive.length} messages…`);
-    const messages = await _renderMessages(toArchive);
-
-    let res;
-    try {
-        res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages }),
-        });
-    } catch (e) {
-        ui.notifications.error(`Archive failed: could not reach server (${e.message}).`);
-        return;
-    }
-
-    if (!res.ok) {
-        ui.notifications.error(`Archive failed: server returned ${res.status}.`);
-        return;
-    }
-
-    const data = await res.json();
-    await ChatMessage.deleteDocuments(toArchive.map(m => m.id));
-    ui.notifications.info(`Archived ${data.count} messages. View at /chatarchive`);
-}
 
 let _archiveInProgress = false;
 
