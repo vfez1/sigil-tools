@@ -15,7 +15,10 @@ export class AcknowledgedModeUtility {
 
         // Badge — only insert once; tray marking runs every render
         if (!$html.find(".rm-ack-badge").length) {
-            const headerLabel = appliedTo ? "Applied to" : `Applied by ${acknowledged}`;
+            const activityType = message.flags?.dnd5e?.activity?.type;
+            const isHealing = activityType === 'heal'
+                || message.rolls?.some(r => r instanceof CONFIG.Dice.DamageRoll && (r.options?.type === 'healing' || r.options?.type === 'temphp'));
+            const headerLabel = appliedTo ? (isHealing ? "Healing applied to" : "Damage applied to") : `Applied by ${acknowledged}`;
             let namesHtml = "";
             if (appliedTo) {
                 const totalDamage = message.rolls
@@ -50,7 +53,9 @@ export class AcknowledgedModeUtility {
             }
             const messageContent = $html.find(".message-content").first();
             if (messageContent.length) {
-                messageContent.prepend(badge);
+                const saveWrapper = messageContent.children(".rm-embedded-saves").last();
+                if (saveWrapper.length) saveWrapper.after(badge);
+                else messageContent.prepend(badge);
             } else {
                 const header = $html.find(".message-header").first();
                 if (header.length) badge.insertAfter(header);

@@ -210,6 +210,78 @@ export class ChatUtility {
     static isMessageCritical(message) {
         return message.flags[MODULE_SHORT].isCritical ?? false;
     }
+
+    static updateAllSaveButtonStates() {
+        for (const message of game.messages) {
+            const embeddedSaves = message.flags?.[MODULE_SHORT]?.embeddedSaves;
+            if (!embeddedSaves) continue;
+            const li = document.querySelector(`[data-message-id="${message.id}"]`);
+            if (!li) continue;
+            _updateSaveButtonState(li, embeddedSaves, message.rolls);
+        }
+    }
+
+    static registerSaveSocketListener() {
+        game.socket.on(`module.${MODULE_NAME}`, async (data) => {
+            if (!game.user.isGM) return;
+            if (data.type !== "embeddedSave") return;
+
+            const message = game.messages.get(data.messageId);
+            if (!message) return;
+
+            const d20Roll = CONFIG.Dice.D20Roll.fromData(data.rollJSON);
+            const { speakerName, ability } = data;
+
+            const filteredRolls = message.rolls.filter(r =>
+                !r.options?.embeddedSave || r.options?.embeddedSaveSpeaker !== speakerName
+            );
+            filteredRolls.push(d20Roll);
+
+            const existingSaves = message.flags[MODULE_SHORT]?.embeddedSaves ?? {};
+            existingSaves[speakerName] = { ability };
+
+            await ChatUtility.updateChatMessage(message, {
+                rolls: filteredRolls,
+                [`flags.${MODULE_SHORT}.embeddedSaves`]: existingSaves,
+            });
+        });
+    }
+
+    static registerSaveListener() {
+        if (ChatUtility._saveListenerRegistered) return;
+        ChatUtility._saveListenerRegistered = true;
+
+        document.addEventListener(
+            "click",
+            async (event) => {
+                const target = event.target instanceof Element ? event.target.closest('[data-action="rollSave"]') : null;
+                if (!target) return;
+
+                const li = target.closest("[data-message-id]");
+                if (!li) return;
+
+                const message = game.messages.get(li.dataset.messageId);
+                if (!message) return;
+
+                event.stopImmediatePropagation();
+                event.preventDefault();
+
+                await _processSaveButtonEvent(message, target, event);
+            },
+            true
+        );
+    }
+
+    static updateAllSaveMultipliers() {
+        for (const message of game.messages) {
+            const embeddedSaves = message.flags?.[MODULE_SHORT]?.embeddedSaves;
+            if (!embeddedSaves) continue;
+            const li = document.querySelector(`[data-message-id="${message.id}"]`);
+            if (!li) continue;
+            _autoSetHalfDamageForFailedSaves(message, li);
+        }
+    }
+
 }
 
 /**
@@ -222,8 +294,11 @@ function _onOverlayHover(message, html) {
     const hasPermission = game.user.isGM || message?.isAuthor;
     const isItem = message.flags.dnd5e?.use !== undefined;
 
-    html.find(".rm-overlay").show();
-    html.find(".rm-overlay-multiroll").toggle(hasPermission && !ChatUtility.isMessageMultiRoll(message));
+    // Save-section overlays are handled by per-section hover in _injectOverlayRetroButtons
+    const saveOverlays = html.find("[data-save-speaker] .rm-overlay");
+    html.find(".rm-overlay").not(saveOverlays).show();
+    const saveMultiRollOverlays = html.find("[data-save-speaker] .rm-overlay-multiroll");
+    html.find(".rm-overlay-multiroll").not(saveMultiRollOverlays).toggle(hasPermission && !ChatUtility.isMessageMultiRoll(message));
     html.find(".rm-overlay-crit").toggle(hasPermission && isItem && !ChatUtility.isMessageCritical(message));
 }
 
@@ -286,6 +361,13 @@ function _setupCardListeners(message, html) {
     html.find(".rm-celestial-revelation input").change(async (event) => {
         await _processCelestialToggleEvent(message, event);
     });
+
+    // Mark save button completed/failed if the controlled token already has a save on this card.
+    const embeddedSavesForBtn = message.flags[MODULE_SHORT]?.embeddedSaves ?? {};
+    if (Object.keys(embeddedSavesForBtn).length > 0) {
+        _updateSaveButtonState(html[0] ?? html, embeddedSavesForBtn, message.rolls);
+        _autoSetHalfDamageForFailedSaves(message, html);
+    }
 }
 
 async function _injectContent(message, type, html) {
@@ -399,7 +481,16 @@ async function _injectContent(message, type, html) {
                 await _injectFormulaRoll(message, actions);
             }
 
+            // Remove redundant system-generated chat-card shells BEFORE injecting embedded saves,
+            // because the save wrapper also carries .dnd5e2.chat-card and would be removed otherwise.
             html.find(".dnd5e2.chat-card").not(".activation-card").remove();
+
+            {
+                const embeddedSaves = message.flags[MODULE_SHORT].embeddedSaves;
+                if (embeddedSaves && Object.keys(embeddedSaves).length > 0) {
+                    await _injectEmbeddedSave(message, html);
+                }
+            }
             break;
         default:
             break;
@@ -410,7 +501,7 @@ async function _injectContent(message, type, html) {
 
 async function _injectAttackRoll(message, html) {
     const ChatMessage5e = CONFIG.ChatMessage.documentClass;
-    const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll);
+    const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll && !r.options?.embeddedSave);
 
     if (!roll) return;
 
@@ -669,6 +760,21 @@ async function _injectOverlayRetroButtons(message, html) {
     html.find(".rm-overlay-crit div").click(async (event) => {
         await _processRetroCritButtonEvent(message, event);
     });
+
+    // Save-section adv/dis overlays: show only when hovering the specific save section
+    const hasPermission = game.user.isGM || message?.isAuthor;
+    html.find("[data-save-speaker]").each((_, section) => {
+        const $section = $(section);
+        $section.hover(
+            () => {
+                if (!hasPermission) return;
+                $section.find(".rm-overlay-multiroll").show();
+            },
+            () => {
+                $section.find(".rm-overlay").attr("style", "display: none;");
+            }
+        );
+    });
 }
 
 async function _processBreakConcentrationButtonEvent(message, event) {
@@ -812,23 +918,32 @@ async function _processRetroAdvButtonEvent(message, event) {
 
         if (!confirmed) return;
 
-        message.flags[MODULE_SHORT].advantage = state === ROLL_STATE.ADV;
-        message.flags[MODULE_SHORT].disadvantage = state === ROLL_STATE.DIS;
+        if (key === ROLL_TYPE.ABILITY_SAVE) {
+            // Retroactive adv/dis on an embedded save — find the save roll by speaker name.
+            const speaker = $(button).closest("[data-save-speaker]")[0]?.dataset.saveSpeaker;
+            const saveRoll = message.rolls.find(r => r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === speaker);
+            if (!saveRoll) return;
+            await RollUtility.upgradeRoll(saveRoll, state);
+            ChatUtility.updateChatMessage(message, { rolls: message.rolls });
+        } else {
+            message.flags[MODULE_SHORT].advantage = state === ROLL_STATE.ADV;
+            message.flags[MODULE_SHORT].disadvantage = state === ROLL_STATE.DIS;
 
-        const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll);
-        await RollUtility.upgradeRoll(roll, state);
+            const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll && !r.options?.embeddedSave);
+            await RollUtility.upgradeRoll(roll, state);
 
-        if (key !== ROLL_TYPE.ATTACK && key !== ROLL_TYPE.TOOL_CHECK) {
-            message.flavor += message.rolls[0].hasAdvantage
-                ? ` (${CoreUtility.localize("DND5E.Advantage")})`
-                : ` (${CoreUtility.localize("DND5E.Disadvantage")})`;
+            if (key !== ROLL_TYPE.ATTACK && key !== ROLL_TYPE.TOOL_CHECK) {
+                message.flavor += message.rolls[0].hasAdvantage
+                    ? ` (${CoreUtility.localize("DND5E.Advantage")})`
+                    : ` (${CoreUtility.localize("DND5E.Disadvantage")})`;
+            }
+
+            ChatUtility.updateChatMessage(message, {
+                flags: message.flags,
+                rolls: message.rolls,
+                flavor: message.flavor,
+            });
         }
-
-        ChatUtility.updateChatMessage(message, {
-            flags: message.flags,
-            rolls: message.rolls,
-            flavor: message.flavor,
-        });
 
         CoreUtility.playRollSound();
     }
@@ -886,6 +1001,199 @@ async function _processRetroCritButtonEvent(message, event) {
 
         CoreUtility.playRollSound();
     }
+}
+
+
+function _updateSaveButtonState(root, embeddedSaves, rolls) {
+    const el = root instanceof $ ? root[0] : root;
+    const saveBtn = el?.querySelector('[data-action="rollSave"]');
+    if (!saveBtn) return;
+
+    const controlled = canvas.tokens?.controlled ?? [];
+    saveBtn.classList.remove("rm-already-applied", "rm-save-failed");
+    if (!controlled.length) return;
+
+    const savedNames = new Set(Object.keys(embeddedSaves));
+    if (!controlled.every(t => savedNames.has(t.name))) return;
+
+    const anyFailed = controlled.some(t => {
+        const saveRoll = (rolls ?? []).find(r => r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === t.name);
+        if (!saveRoll) return false;
+        const dc = saveRoll.options?.target;
+        return dc !== undefined && saveRoll.total < dc;
+    });
+
+    saveBtn.classList.add(anyFailed ? "rm-save-failed" : "rm-already-applied");
+}
+
+function _autoSetHalfDamageForFailedSaves(message, html) {
+    const embeddedSaves = message.flags?.[MODULE_SHORT]?.embeddedSaves;
+    if (!embeddedSaves || !Object.keys(embeddedSaves).length) {
+        return;
+    }
+
+    const controlled = canvas.tokens?.controlled ?? [];
+    if (!controlled.length) return;
+
+    const root = html instanceof $ ? html[0] : html;
+    const damageApp = root?.querySelector("damage-application");
+    if (!damageApp) return;
+
+    for (const token of controlled) {
+        if (!embeddedSaves[token.name]) continue;
+
+        const saveRoll = (message.rolls ?? []).find(r =>
+            r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === token.name
+        );
+        if (!saveRoll) continue;
+
+        const dc = saveRoll.options?.target;
+        if (dc === undefined || saveRoll.total < dc) {
+            continue;
+        }
+
+        // Mixin buildTargetsList uses t.actor.uuid (not token document UUID) as the Map key
+        const uuid = token.actor?.uuid;
+        if (!uuid) continue;
+
+        const options = damageApp.getTargetOptions(uuid);
+        options.multiplier = 0.5;
+
+        // Refresh the rendered entry if the tray is already open
+        const entry = damageApp.querySelector(`[data-target-uuid="${uuid}"]`);
+        if (entry) {
+            const actor = fromUuidSync(uuid);
+            if (actor) damageApp.refreshListEntry(actor, entry, options);
+        }
+    }
+}
+
+async function _injectEmbeddedSave(message, html) {
+    // html is .message-content — wrapper is prepended so saves appear above the card and above the ack badge.
+    const embeddedSaves = message.flags[MODULE_SHORT].embeddedSaves;
+
+    if (!embeddedSaves) {
+        return;
+    }
+
+    const entries = Object.entries(embeddedSaves);
+    if (!entries.length) {
+        return;
+    }
+
+    const wrapper = $('<div class="rm-embedded-saves"></div>');
+
+    const headerEl = $(`<div class="rm-saves-header">
+        <i class="fas fa-shield-heart"></i>
+        <span>${CoreUtility.localize("DND5E.SavingThrow")}s</span>
+        <i class="fas fa-chevron-down rm-saves-caret"></i>
+    </div>`);
+    wrapper.append(headerEl);
+
+    // dnd5e2 chat-card context needed for dice roll CSS inside the content.
+    const savesContent = $('<div class="rm-saves-content dnd5e2 chat-card"></div>');
+
+    for (const [speakerName] of entries) {
+        const saveRoll = message.rolls.find(r =>
+            r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === speakerName
+        );
+        if (!saveRoll) {
+            continue;
+        }
+
+        RollUtility.resetRollGetters(saveRoll);
+        saveRoll.options.displayChallenge ??= true;
+
+        const render = await RenderUtility.render(TEMPLATE.MULTIROLL, {
+            roll: saveRoll,
+            key: ROLL_TYPE.ABILITY_SAVE,
+        });
+
+        // Use the same full dice-roll structure as _injectAttackRoll so dnd5e's CSS applies correctly.
+        const ChatMessage5e = CONFIG.ChatMessage.documentClass;
+        const chatData = await saveRoll.toMessage({}, { create: false });
+        const rollHTML = $(await new ChatMessage5e(chatData).renderHTML()).find(".dice-roll");
+        rollHTML.find(".dice-total").replaceWith(render);
+        rollHTML.find(".dice-tooltip").prepend(rollHTML.find(".dice-formula"));
+
+        const sectionHTML = $(await RenderUtility.render(TEMPLATE.SECTION, {
+            section: `rm-section-${ROLL_TYPE.ABILITY_SAVE}`,
+            title: speakerName,
+            icon: '<i class="fas fa-shield-heart"></i>',
+        }));
+        sectionHTML.attr("data-save-speaker", speakerName);
+
+        sectionHTML.append(rollHTML);
+        savesContent.append(sectionHTML);
+    }
+
+    wrapper.append(savesContent);
+
+    headerEl.on("click", () => wrapper.toggleClass("collapsed"));
+
+    html.prepend(wrapper);
+}
+
+async function _processSaveButtonEvent(message, button, event) {
+    const ability = button.dataset.ability;
+    const token = canvas.tokens.controlled[0];
+    if (!token) {
+        ui.notifications.warn(game.i18n.localize("DND5E.ActionWarningNoToken"));
+        return;
+    }
+
+    const actor = token.actor;
+    const speakerName = token.name;
+
+    const activityObj = message.getAssociatedActivity?.();
+    const dcRaw = activityObj?.save?.dc;
+    const dc = typeof dcRaw === "number" ? dcRaw : dcRaw?.value ?? dcRaw?.flat ?? undefined;
+
+    const isAdvantage = CoreUtility.areKeysPressed(event, "skipDialogAdvantage");
+    const isDisadvantage = CoreUtility.areKeysPressed(event, "skipDialogDisadvantage");
+
+    const rollResult = await actor.rollSavingThrow(
+        { ability, advantage: isAdvantage, disadvantage: isDisadvantage },
+        { configure: false },
+        { create: false }
+    );
+
+    const rollArr = CoreUtility.isIterable(rollResult) ? Array.from(rollResult) : (rollResult ? [rollResult] : []);
+    const d20Roll = rollArr.find(r => r instanceof CONFIG.Dice.D20Roll) ?? rollArr[0];
+
+    if (!d20Roll) {
+        return;
+    }
+
+    d20Roll.options.embeddedSave = true;
+    d20Roll.options.embeddedSaveSpeaker = speakerName;
+    d20Roll.options.displayChallenge = true;
+    d20Roll.options.target ??= dc;
+
+    const filteredRolls = message.rolls.filter(r =>
+        !r.options?.embeddedSave || r.options?.embeddedSaveSpeaker !== speakerName
+    );
+    filteredRolls.push(d20Roll);
+
+    const existingSaves = message.flags[MODULE_SHORT]?.embeddedSaves ?? {};
+    existingSaves[speakerName] = { ability };
+
+    if (message.isOwner || game.user.isGM) {
+        await ChatUtility.updateChatMessage(message, {
+            rolls: filteredRolls,
+            [`flags.${MODULE_SHORT}.embeddedSaves`]: existingSaves,
+        });
+    } else {
+        game.socket.emit(`module.${MODULE_NAME}`, {
+            type: "embeddedSave",
+            messageId: message.id,
+            rollJSON: d20Roll.toJSON(),
+            speakerName,
+            ability,
+        });
+    }
+
+    CoreUtility.playRollSound();
 }
 
 /**

@@ -276,6 +276,15 @@ export class HooksUtility {
 
         AcknowledgedModeUtility.registerApplyListener();
         AcknowledgedModeUtility.registerSocketListener();
+        ChatUtility.registerSaveListener();
+        ChatUtility.registerSaveSocketListener();
+
+        Hooks.on("controlToken", () => {
+            requestAnimationFrame(() => {
+                ChatUtility.updateAllSaveButtonStates();
+                ChatUtility.updateAllSaveMultipliers();
+            });
+        });
 
     }
 

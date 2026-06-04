@@ -55,7 +55,7 @@
 
 .rm-ack-badge {
     margin-bottom: 4px;
-    border: 2px solid rgba(42, 90, 42, 0.7);
+    border: 1px solid var(--color-border-light-tertiary, #c9c7b8);
     border-radius: 3px;
     overflow: hidden;
     text-shadow: none !important;
@@ -67,12 +67,13 @@
     align-items: center;
     gap: 6px;
     padding: 4px 8px;
-    background: rgba(42, 90, 42, 0.8);
-    color: #c8e8c8 !important;
+    background: rgba(60, 110, 220, 0.2);
+    color: var(--color-text-dark-primary, #1a1a1a) !important;
     font-size: 10px;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--color-border-light-tertiary, #c9c7b8);
 }
 
 .rm-ack-badge .rm-ack-names {
@@ -148,13 +149,39 @@
 damage-application button.rm-already-applied,
 damage-application button[data-action="applyDamage"].rm-already-applied {
     opacity: 0.55;
+    background: linear-gradient(to bottom, #3a3a3a, #252525) !important;
+    border-color: #606060 !important;
+    color: #c0c0c0 !important;
+}
+
+damage-application button.rm-already-applied::before {
+    content: "✓ ";
+    font-weight: bold;
+}
+
+/* Already-rolled state on the Save button — passed */
+.card-buttons [data-action="rollSave"].rm-already-applied {
+    opacity: 0.55;
     background: linear-gradient(to bottom, #1e3d1e, #122612) !important;
     border-color: #3d6b3d !important;
     color: #8aba8a !important;
 }
 
-damage-application button.rm-already-applied::before {
+.card-buttons [data-action="rollSave"].rm-already-applied::before {
     content: "✓ ";
+    font-weight: bold;
+}
+
+/* Already-rolled state on the Save button — failed */
+.card-buttons [data-action="rollSave"].rm-save-failed {
+    opacity: 0.85;
+    background: linear-gradient(to bottom, #8b2020, #6a1515) !important;
+    border-color: #c04040 !important;
+    color: #ffd0d0 !important;
+}
+
+.card-buttons [data-action="rollSave"].rm-save-failed::before {
+    content: "✗ ";
     font-weight: bold;
 }
 
@@ -423,6 +450,49 @@ damage-application button.rm-already-applied::before {
 .rm-celestial-revelation input {
     display: none;
 }
+
+/* ===== Embedded Saves Block ===== */
+
+.rm-embedded-saves {
+    margin-bottom: 4px;
+    border: 1px solid var(--color-border-light-tertiary, #c9c7b8);
+    border-radius: 3px;
+    overflow: hidden;
+    text-shadow: none !important;
+    box-shadow: none !important;
+}
+
+.rm-saves-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(60, 110, 220, 0.2);
+    color: var(--color-text-dark-primary, #1a1a1a) !important;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border-light-tertiary, #c9c7b8);
+}
+
+.rm-saves-caret {
+    margin-left: auto;
+    font-size: 9px;
+    opacity: 0.7;
+    transition: transform 0.15s;
+}
+
+.rm-embedded-saves.collapsed .rm-saves-caret {
+    transform: rotate(-90deg);
+}
+
+.rm-embedded-saves.collapsed .rm-saves-content {
+    display: none;
+}
+
+/* ===== end Embedded Saves Block ===== */
 
 /* ===== Collapse Settings App ===== */
 
