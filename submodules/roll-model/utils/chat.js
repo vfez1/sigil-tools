@@ -37,6 +37,10 @@ export class ChatUtility {
         }
 
         if (!message.flags[MODULE_SHORT] || !message.flags[MODULE_SHORT].quickRoll) {
+            // Clear stale flavor text for enricher damage messages (dnd5e 5.3 moved the key)
+            if (message.flags.dnd5e?.messageType === "roll" && !message.flags.dnd5e?.item?.id) {
+                $(html).find(".flavor-text").text("");
+            }
             return;
         }
 
