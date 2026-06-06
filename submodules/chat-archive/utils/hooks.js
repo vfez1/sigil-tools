@@ -39,7 +39,8 @@ async function autoArchiveMessages() {
         }
 
         const data = await res.json().catch(() => ({ count: toArchive.length }));
-        await ChatMessage.deleteDocuments(toArchive.map(m => m.id));
+        const idsToDelete = toArchive.map(m => m.id).filter(id => game.messages.has(id));
+        await ChatMessage.deleteDocuments(idsToDelete);
         console.log(`[chat-archive] Auto-archived ${data.count ?? toArchive.length} messages.`);
     } finally {
         _archiveInProgress = false;
