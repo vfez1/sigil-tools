@@ -16,6 +16,9 @@
         "allowSummoning": true,
         "defaultSkills": ["acr", "ani", "arc", "ath", "dec", "his", "ins", "itm", "inv", "med", "nat", "prc", "prf", "per", "rel", "slt", "ste", "sur"]
     },
+    "zoom-pan-options": {
+        "middle-mouse-pan": true
+    },
     "combat-tracker-dock": {
         "overflowStyle": "scroll",
         "carouselStyle": "1",
