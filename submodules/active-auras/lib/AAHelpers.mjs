@@ -378,67 +378,6 @@ export class AAHelpers {
   }
 
   /**
-   * Remove every applied aura effect emitted by `token` from all tokens on its
-   * scene. Called from preDeleteTokenHook so a deleted aura source's emitted
-   * effects are torn down deterministically -- while the document is still in
-   * the collection and the scene effectMap still carries the source's origins
-   * -- instead of relying on the post-delete CollateAuras pass.
-   *
-   * That pass is unreliable for deletion: generateConfigMap iterates
-   * canvas.tokens.placeables, and a just-deleted token's PIXI placeable can
-   * linger a frame after the document is removed. When it does, the source's
-   * aura is re-added to the scene effectMap, so RemoveAppliedAuras sees the
-   * origin as still "live" and PRESERVES the orphaned effects on the targets
-   * -- the lingering-effect-on-source-delete bug.
-   *
-   * @param {TokenDocument} token  the aura-source token being deleted
-   */
-  static async removeEmittedAurasFromSource(token) {
-    if (!CONFIG.AA.GM) return;
-    const scene = token.parent;
-    if (!scene) return;
-    const sceneMap = CONFIG.AA.Map.get(scene.id);
-    // Origins of the auras this token emits, read from the still-intact scene
-    // effectMap (this runs before ExtractAuraById clears those entries).
-    const auraOrigins = (sceneMap?.effects ?? [])
-      .filter((e) => e.entityId === token.id)
-      .map((e) => e.data?.origin)
-      .filter((o) => !!o);
-    if (!auraOrigins.length) {
-      return;
-    }
-
-    Logger.debug("removeEmittedAurasFromSource", { sourceTokenId: token.id, auraOrigins });
-
-    for (const t of scene.tokens) {
-      const tActor = t.actor;
-      if (!tActor) continue;
-      const stale = [];
-      for (const eff of tActor.effects ?? []) {
-        if (eff.flags?.ActiveAuras?.applied !== true) continue;
-        if (auraOrigins.some((o) => AAHelpers.originsMatch(o, eff.origin))) stale.push(eff.id);
-      }
-      // Filter to IDs still present on the actor just before delete. When a
-      // batch operation deletes multiple tokens at once (e.g. user selects Wabu
-      // plus Calcryx plus Aveneus and presses Delete), preDeleteTokenHook fires
-      // for each token concurrently. The targets run removeAurasOnToken in
-      // parallel with this source-side removeEmittedAurasFromSource, and the
-      // two paths race on the same effect ids -- the loser would otherwise
-      // throw "ActiveEffect X does not exist!". Re-checking actor.effects right
-      // before the delete tolerates the race without losing correctness.
-      const existing = stale.filter((id) => tActor.effects.has(id));
-      if (existing.length) {
-        try {
-          Logger.debug("removeEmittedAurasFromSource deleting", { actor: tActor.name, stale: existing });
-          await tActor.deleteEmbeddedDocuments("ActiveEffect", existing);
-        } catch (err) {
-          Logger.error("ERROR CAUGHT in removeEmittedAurasFromSource", err);
-        }
-      }
-    }
-  }
-
-  /**
    * Collapse multiple AA-applied effects on the same actor that share a
    * normalized (origin, name) — keeping the first-seen and deleting the rest.
    * Matches AAHelpers.originsMatch / CreateActiveEffect dedup semantics:
@@ -491,6 +430,14 @@ export class AAHelpers {
     Logger.debug("RemoveAppliedAuras", { MapKey: canvas.scene.id, MapObject, EffectsArray });
 
     for (let removeToken of canvas.tokens.placeables) {
+      // Skip lingering PIXI placeables whose document has already left the scene
+      // (a token mid-deletion whose placeable hasn't been torn down yet). Their
+      // own applied auras are removed by removeAurasOnToken in
+      // preDeleteTokenHook; processing them here too would issue a second
+      // concurrent delete for the same (often linked-actor) effect and throw
+      // "ActiveEffect does not exist". Mirrors the generateConfigMap guard.
+      const removeTokenDoc = removeToken.document;
+      if (!removeTokenDoc?.parent?.tokens?.has(removeTokenDoc.id)) continue;
       const tokenEffects = Array.from(removeToken?.actor?.allApplicableEffects() ?? []);
       if (tokenEffects.length > 0) {
         for (let testEffect of tokenEffects) {
