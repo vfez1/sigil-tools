@@ -350,8 +350,6 @@ export class HooksUtility {
             const nextTurnBtn = root.querySelector('[data-action="next-turn"]');
             if (nextTurnBtn) {
                 nextTurnBtn.style.background = "#1a4a1a";
-                nextTurnBtn.style.borderColor = "#4caf50";
-                nextTurnBtn.style.color = "#b8ffb8";
             }
 
             const nextRoundBtn = root.querySelector('[data-action="next-round"]');
