@@ -55,7 +55,7 @@ export class ActivityUtility {
             rmFlags.renderDamage = true;
         }
 
-        if (hasFormula && activity[ROLL_TYPE.FORMULA]?.formula !== "") {
+        if (hasFormula && activity[ROLL_TYPE.FORMULA]?.formula) {
             rmFlags.renderFormula = true;
 
             if (activity.roll?.name && activity.roll.name !== "") {
