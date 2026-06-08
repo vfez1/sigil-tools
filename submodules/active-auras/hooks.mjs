@@ -113,31 +113,16 @@ function gmHooks() {
   // true). The `updateToken` hook fires on every client via Foundry's database
   // sync, so this listener catches both GM- and player-initiated transforms.
   if (game.system.id === "dnd5e") {
-    // Poll until the source token's PIXI center matches the value derived from
-    // its current document (x, y, width, height). After a size-changing
-    // wildshape (e.g. 1x1 -> Huge 3x3) PIXI can take several render frames to
-    // catch up — especially when a new texture has to load — and a fixed rAF
-    // wait sometimes proceeds while Token.center is still based on the old
-    // shape. That stale center makes MainAura compute the aura polygon as if
-    // the source were still 1x1, leaving the affected-token set unchanged.
-    const waitForTokenStable = async (tokenDoc, maxFrames = 30) => {
-      if (!tokenDoc) return;
-      const grid = canvas.dimensions?.size ?? 100;
-      for (let i = 0; i < maxFrames; i++) {
-        const obj = tokenDoc.object;
-        if (obj?.center) {
-          const ex = tokenDoc.x + (tokenDoc.width * grid) / 2;
-          const ey = tokenDoc.y + (tokenDoc.height * grid) / 2;
-          if (Math.abs(obj.center.x - ex) < 0.5 && Math.abs(obj.center.y - ey) < 0.5) return;
-        }
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-      }
-    };
-
     Hooks.on("updateToken", async (tokenDoc, change) => {
       if (!("actorId" in change)) return;
       try {
-        await waitForTokenStable(tokenDoc);
+        // Wait for the post-wildshape PIXI center to catch up with the resized
+        // document before recollating. A size-changing wildshape (e.g. 1x1 ->
+        // Huge 3x3) takes several render frames to settle Token.center; without
+        // this, MainAura computes the aura polygon from the stale (old-size)
+        // center and the affected-token set comes out wrong. See
+        // AAHelpers.waitForTokenStable for the polling rationale.
+        await AAHelpers.waitForTokenStable(tokenDoc);
         const obj = tokenDoc?.object;
         if (obj?.movementAnimationPromise) await obj.movementAnimationPromise;
         const animationName = obj?.animationName;

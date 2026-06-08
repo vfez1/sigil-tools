@@ -28,6 +28,40 @@ export class AAHelpers {
     return AAHelpers.stripActorFromOrigin(a) === AAHelpers.stripActorFromOrigin(b);
   }
 
+  /**
+   * Resolve once the token's PIXI placeable center matches the value derived
+   * from its current document (x, y, width, height) -- i.e. the render loop has
+   * caught up with the document data. Polls per animation frame up to
+   * `maxFrames`, then gives up (best-effort).
+   *
+   * Needed because AAMeasure reads `Token.center` for distance checks, and that
+   * value lags the document immediately after a token is created or resized:
+   *   - On a fresh drop, the placeable may not be positioned/rendered yet.
+   *   - When a source token's heavy CollateAuras blocks the main thread (low
+   *     FPS during rapid drops), a fixed-delay MainAura can fire before the
+   *     render loop has recomputed the new token's center, so its distance
+   *     check reads a stale position and the aura isn't applied until the token
+   *     is nudged.
+   * Polling via requestAnimationFrame yields to the render loop, so it waits
+   * out both render starvation and any in-flight drop/resize animation.
+   *
+   * @param {TokenDocument} tokenDoc
+   * @param {number} maxFrames  frames to wait before giving up (default 30)
+   */
+  static async waitForTokenStable(tokenDoc, maxFrames = 30) {
+    if (!tokenDoc) return;
+    const grid = canvas.dimensions?.size ?? 100;
+    for (let i = 0; i < maxFrames; i++) {
+      const obj = tokenDoc.object;
+      if (obj?.center) {
+        const ex = tokenDoc.x + (tokenDoc.width * grid) / 2;
+        const ey = tokenDoc.y + (tokenDoc.height * grid) / 2;
+        if (Math.abs(obj.center.x - ex) < 0.5 && Math.abs(obj.center.y - ey) < 0.5) return;
+      }
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+  }
+
   static evaluateCustomCheck(token, check, auraEntity) {
     try {
       // console.warn("custom check", { token, check, auraEntity });

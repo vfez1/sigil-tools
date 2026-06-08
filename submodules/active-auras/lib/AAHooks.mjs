@@ -70,14 +70,21 @@ export async function createTokenHook(token, _config, _id) {
     // branch above already schedules a full CollateAuras (which iterates all
     // tokens), so a single-token pass would be redundant.
     //
-    // Debounced like the source-drop path to give the canvas a render frame
-    // to register the new placeable before MainAura's canvas.tokens.get()
-    // distance checks run.
+    // Wait for the new token's placeable center to settle before evaluating,
+    // rather than a fixed delay. When a source (e.g. Wabu) and a target (e.g.
+    // Halvi) are dropped in quick succession, the source's CollateAuras can
+    // block the main thread for seconds (FPS drops to single digits); a fixed
+    // 500ms MainAura then fires while the new token's center is still stale, so
+    // its distance check reads the wrong position and the aura isn't applied
+    // until the token is nudged. waitForTokenStable polls via rAF, which yields
+    // to the render loop until the center matches the document -- naturally
+    // waiting out both the render starvation and the drop animation. It also
+    // gives the source's queued CollateAuras time to populate the effectMap
+    // first (both run on the same Semaphore), so the source aura is present
+    // when this MainAura evaluates the new token.
     if (!isSource) {
-      const debouncedSingleEval = foundry.utils.debounce(() => {
-        CONFIG.AA.Semaphore.add(ActiveAuras.MainAura, token, "createToken", token.parent.id);
-      }, 500);
-      debouncedSingleEval(token);
+      await AAHelpers.waitForTokenStable(token);
+      CONFIG.AA.Semaphore.add(ActiveAuras.MainAura, token, "createToken", token.parent.id);
     }
   } catch (error) {
     if (error.message === "Cannot read property 'effects' of null")
