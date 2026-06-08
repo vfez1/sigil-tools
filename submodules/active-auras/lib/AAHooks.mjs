@@ -18,6 +18,33 @@ function addToCollateSemaphore(sceneID, checkAuras, removeAuras, source) {
   CONFIG.AA.Semaphore.add(CollateAuras, sceneID, checkAuras, removeAuras, source);
 }
 
+// Coalesce token-drop collations. createToken fires once per dropped token;
+// dropping several in quick succession (and right after a scene switch) puts the
+// canvas under heavy load with FPS in the single digits. A per-token single-token
+// MainAura measures distance at one fragile instant during that thrash and comes
+// out wrong -- freshly-dropped allies clearly inside an aura get evaluated as out
+// of range and never receive the effect. A FULL CollateAuras, by contrast,
+// reliably evaluates every present token even under load. This shared debounce
+// collapses any burst of drops into ONE full collation that runs after the canvas
+// has quieted; the two-frame wait lets the render loop settle every freshly-placed
+// placeable's center before measurement. checkAuras=true applies in-range auras;
+// removeAuras=false leaves scene-authority cleanup to ReconcileAppliedAurasOnToken
+// and the per-target add=false removal inside MainAura (which still gives WYSIWYG
+// removal for a token dropped out of range of a present source).
+//
+// Built lazily on first use (not at module eval) so we never touch
+// foundry.utils.debounce before the foundry global is ready.
+let _createTokenCollateDebounced;
+function scheduleCreateTokenCollate() {
+  _createTokenCollateDebounced ??= foundry.utils.debounce(async () => {
+    if (!canvas.scene) return;
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    if (!canvas.scene) return;
+    addToCollateSemaphore(canvas.id, true, false, "createTokenCollate");
+  }, 500);
+  _createTokenCollateDebounced();
+}
+
 export async function createTokenHook(token, _config, _id) {
   if (canvas.scene === null) {
     Logger.debug("Active Auras disabled due to no canvas");
@@ -26,76 +53,25 @@ export async function createTokenHook(token, _config, _id) {
   try {
     await (foundry.canvas?.animation?.CanvasAnimation ?? CanvasAnimation).getAnimation(token.object?.animationName)?.promise;
     if (foundry.utils.getProperty(token, "flags.multilevel-tokens")) return;
-    const tokenEffects = Array.from(token.actor?.allApplicableEffects() ?? []);
-    let isSource = false;
-    for (let effect of (tokenEffects ?? [])) {
-      if (effect.flags.ActiveAuras?.isAura) {
-        isSource = true;
-        Logger.debug("createToken, collate auras true false");
 
-        const debouncedCollate = foundry.utils.debounce(async () => {
-          addToCollateSemaphore(canvas.id, true, false, "createTokenCollate");
-          // wait to allow token to be placed on canvas and report
-        }, 500);
-
-        debouncedCollate(token);
-
-        break;
-      }
-    }
-
-    // Target-side reconciliation: the source-discovery branch above only
-    // fires when the dropped token is itself an aura emitter. When a player
-    // (or GM) drags a target token from its actor sheet onto a scene, the
-    // actor's previously-applied aura effects come along for the ride
-    // because they live on the shared actor record. If no source for those
-    // auras is present on the destination scene, the effect is unsupported
-    // here and should be cleaned up. ReconcileAppliedAurasOnToken handles
-    // dual-present sources correctly (preserved when the source actor has a
-    // token on this scene too).
+    // Distance-free reconciliation: when a token is dragged from its actor sheet
+    // onto a scene, the actor's previously-applied aura effects ride along (they
+    // live on the shared actor record). If no source for those auras is present
+    // on the destination scene, strip them. Presence-based (not distance-based),
+    // so it's safe to run immediately per token; ReconcileAppliedAurasOnToken
+    // preserves dual-present sources (source actor also has a token here).
     CONFIG.AA.Semaphore.add(AAHelpers.ReconcileAppliedAurasOnToken, token);
 
-    // Reconcile handles the "source actor absent from destination scene" half
-    // of the problem. The OTHER half is "source actor IS present on this
-    // scene, but the new token was dropped outside the aura's range" -- in
-    // that case Reconcile correctly preserves the effect (the source actor
-    // is here), but nothing else runs to re-evaluate distance for the new
-    // token. Schedule a single-token MainAura so the dropped target gets
-    // evaluated against this scene's effectMap; for any in-effectMap source
-    // the new token isn't in range of, MainAura's per-target add=false path
-    // calls RemoveActiveEffects (which doesn't apply the scene-tag filter)
-    // and strips the stale effect.
-    //
-    // Skipped when the dropped token is itself a source -- the source-drop
-    // branch above already schedules a full CollateAuras (which iterates all
-    // tokens), so a single-token pass would be redundant.
-    //
-    // Wait for the new token's placeable center to settle before evaluating,
-    // rather than a fixed delay. When a source (e.g. Wabu) and a target (e.g.
-    // Halvi) are dropped in quick succession, the source's CollateAuras can
-    // block the main thread for seconds (FPS drops to single digits); a fixed
-    // 500ms MainAura then fires while the new token's center is still stale, so
-    // its distance check reads the wrong position and the aura isn't applied
-    // until the token is nudged. waitForTokenStable polls via rAF, which yields
-    // to the render loop until the center matches the document -- naturally
-    // waiting out both the render starvation and the drop animation. It also
-    // gives the source's queued CollateAuras time to populate the effectMap
-    // first (both run on the same Semaphore), so the source aura is present
-    // when this MainAura evaluates the new token.
-    if (!isSource) {
-      // Settle BOTH the dropped token and the aura-source tokens before the
-      // single-token eval. The dropped token's center must be right so it's
-      // measured at its final position; the sources' centers must be right
-      // because the aura polygon is built from THEM. Right after a scene switch
-      // a just-placed source's center lags its document for a few frames, and
-      // evaluating against that stale polygon reports in-range targets as out of
-      // range -- which then strips their correct carried-over effect. With both
-      // settled the distance check is trustworthy, so this eval can safely apply
-      // AND remove (WYSIWYG: drag out of range -> effect goes away immediately).
-      await AAHelpers.waitForTokenStable(token);
-      await AAHelpers.waitForAuraSourcesStable(token.parent);
-      CONFIG.AA.Semaphore.add(ActiveAuras.MainAura, token, "createToken", token.parent.id);
-    }
+    // Apply/refresh auras via a coalesced FULL collation (see
+    // scheduleCreateTokenCollate). This replaces the old per-drop single-token
+    // MainAura, which measured distance at one fragile instant and -- during the
+    // canvas thrash that follows a scene switch + rapid drops -- repeatedly came
+    // out wrong, leaving in-range allies without the aura. The full collation
+    // evaluates every present token reliably and still gives WYSIWYG removal for
+    // tokens dropped out of range. Works for source drops too (a full collation
+    // applies the new source's aura to everyone in range), so no source/target
+    // branching is needed.
+    scheduleCreateTokenCollate();
   } catch (error) {
     if (error.message === "Cannot read property 'effects' of null")
       Logger.error(token, "This token has a no actor linked to it, please cleanup this token");

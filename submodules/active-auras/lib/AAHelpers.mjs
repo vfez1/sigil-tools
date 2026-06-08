@@ -62,35 +62,6 @@ export class AAHelpers {
     }
   }
 
-  /**
-   * Wait for every aura-source token on a scene to have a settled PIXI center.
-   *
-   * The distance check in UpdateToken builds each aura's shape/polygon from its
-   * SOURCE token's center (`canvas.tokens.get(entityId)`), not from the token
-   * being evaluated. Right after a scene switch a source's center can lag its
-   * document for several frames, so a single-token evaluation measures against a
-   * stale polygon and wrongly reports targets as out of range -- which then
-   * strips their (correct) carried-over effect. Settling the sources first makes
-   * the measurement trustworthy, so the eval can safely both apply AND remove
-   * (WYSIWYG) without false strips.
-   *
-   * Cheap when sources are already settled: waitForTokenStable returns on its
-   * first synchronous check without yielding a frame.
-   *
-   * @param {Scene} scene  the scene whose aura sources should settle
-   */
-  static async waitForAuraSourcesStable(scene) {
-    if (!scene) return;
-    const sceneMap = CONFIG.AA.Map.get(scene.id);
-    const sourceIds = new Set(
-      (sceneMap?.effects ?? []).map((e) => e.entityId).filter((id) => !!id)
-    );
-    for (const id of sourceIds) {
-      const sourceDoc = scene.tokens.get(id);
-      if (sourceDoc) await AAHelpers.waitForTokenStable(sourceDoc);
-    }
-  }
-
   static evaluateCustomCheck(token, check, auraEntity) {
     try {
       // console.warn("custom check", { token, check, auraEntity });
