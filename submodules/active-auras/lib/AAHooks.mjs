@@ -21,7 +21,25 @@ function addToCollateSemaphore(sceneID, checkAuras, removeAuras, source) {
 // Tracks scenes where preDeleteTokenHook's removeEmittedAurasFromSource is still
 // in-flight. deleteTokenHook fires while the await is pending, so we skip the
 // removeAuras pass to avoid a double-delete race against the in-progress cleanup.
-const _sourceCleanupInProgress = new Set();
+//
+// Reference-counted (sceneId -> pending count) rather than a plain Set: a single
+// batch delete of multiple aura sources on the same scene runs several
+// removeEmittedAurasFromSource passes concurrently, and a Set keyed by sceneId
+// would let the FIRST pass to finish clear the flag while later passes are still
+// in flight. The count keeps the scene flagged until every source pass completes.
+// (The per-delete existence guards make this non-critical for correctness, but
+// it avoids needless redundant removal work mid-batch.)
+const _sourceCleanupInProgress = new Map();
+
+function markSourceCleanupStart(sceneId) {
+  _sourceCleanupInProgress.set(sceneId, (_sourceCleanupInProgress.get(sceneId) ?? 0) + 1);
+}
+
+function markSourceCleanupEnd(sceneId) {
+  const remaining = (_sourceCleanupInProgress.get(sceneId) ?? 0) - 1;
+  if (remaining > 0) _sourceCleanupInProgress.set(sceneId, remaining);
+  else _sourceCleanupInProgress.delete(sceneId);
+}
 
 export async function createTokenHook(token, _config, _id) {
   if (canvas.scene === null) {
@@ -121,16 +139,21 @@ export async function preDeleteTokenHook(token) {
     Logger.debug("preDelete, collate auras false true");
     // Flag the scene BEFORE awaiting so deleteTokenHook (which fires while we
     // await) can see the in-progress cleanup and skip its removeAuras pass.
-    _sourceCleanupInProgress.add(token.parent.id);
-    // Remove the effects this source emitted to OTHER actors first, while the
-    // document is still in the collection and the effectMap still carries the
-    // source's origins. ExtractAuraById (below) clears those origins, and the
-    // post-delete CollateAuras pass can't be relied on -- the deleted token's
-    // PIXI placeable lingers a frame, so generateConfigMap re-adds the source's
-    // aura and RemoveAppliedAuras then preserves the orphaned target effects.
-    await AAHelpers.removeEmittedAurasFromSource(token);
-    AAHelpers.ExtractAuraById(token.id, token.parent.id);
-    _sourceCleanupInProgress.delete(token.parent.id);
+    markSourceCleanupStart(token.parent.id);
+    try {
+      // Remove the effects this source emitted to OTHER actors first, while the
+      // document is still in the collection and the effectMap still carries the
+      // source's origins. ExtractAuraById (below) clears those origins, and the
+      // post-delete CollateAuras pass can't be relied on -- the deleted token's
+      // PIXI placeable lingers a frame, so generateConfigMap re-adds the source's
+      // aura and RemoveAppliedAuras then preserves the orphaned target effects.
+      await AAHelpers.removeEmittedAurasFromSource(token);
+      AAHelpers.ExtractAuraById(token.id, token.parent.id);
+    } finally {
+      // Always decrement, even if cleanup throws, so the scene can't get stuck
+      // flagged and permanently suppress deleteTokenHook's removeAuras pass.
+      markSourceCleanupEnd(token.parent.id);
+    }
   }
   await AAHelpers.removeAurasOnToken(token);
 }

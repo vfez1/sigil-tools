@@ -418,10 +418,19 @@ export class AAHelpers {
         if (eff.flags?.ActiveAuras?.applied !== true) continue;
         if (auraOrigins.some((o) => AAHelpers.originsMatch(o, eff.origin))) stale.push(eff.id);
       }
-      if (stale.length) {
+      // Filter to IDs still present on the actor just before delete. When a
+      // batch operation deletes multiple tokens at once (e.g. user selects Wabu
+      // plus Calcryx plus Aveneus and presses Delete), preDeleteTokenHook fires
+      // for each token concurrently. The targets run removeAurasOnToken in
+      // parallel with this source-side removeEmittedAurasFromSource, and the
+      // two paths race on the same effect ids -- the loser would otherwise
+      // throw "ActiveEffect X does not exist!". Re-checking actor.effects right
+      // before the delete tolerates the race without losing correctness.
+      const existing = stale.filter((id) => tActor.effects.has(id));
+      if (existing.length) {
         try {
-          Logger.debug("removeEmittedAurasFromSource deleting", { actor: tActor.name, stale });
-          await tActor.deleteEmbeddedDocuments("ActiveEffect", stale);
+          Logger.debug("removeEmittedAurasFromSource deleting", { actor: tActor.name, stale: existing });
+          await tActor.deleteEmbeddedDocuments("ActiveEffect", existing);
         } catch (err) {
           Logger.error("ERROR CAUGHT in removeEmittedAurasFromSource", err);
         }
@@ -502,6 +511,10 @@ export class AAHelpers {
           // used by RemoveCrossSceneSourceAuras for eager cross-scene
           // cleanup on source movement and scene activation.
           if (EffectsArray.some((o) => AAHelpers.originsMatch(o, testEffect.origin))) continue;
+          // Existence guard mirrors removeAurasOnToken / removeEmittedAurasFromSource:
+          // a concurrent preDelete cleanup path may have just removed this same
+          // effect id, in which case our delete would throw "does not exist".
+          if (!removeToken.actor.effects.has(testEffect._id)) continue;
           try {
             Logger.debug("RemoveAppliedAuras", { removeToken, testEffect });
             await removeToken.actor.deleteEmbeddedDocuments("ActiveEffect", [testEffect._id]);
@@ -561,10 +574,16 @@ export class AAHelpers {
         const matched = liveOriginsArr.some((o) => AAHelpers.originsMatch(o, eff.origin));
         if (!matched) stale.push(eff.id);
       }
-      if (stale.length) {
+      // Existence guard: this helper runs through the Semaphore, but the
+      // preDelete cleanup paths (removeEmittedAurasFromSource / removeAurasOnToken)
+      // are awaited directly in the hook and bypass the Semaphore, so they can
+      // delete one of these same ids while we sit on the per-actor await above.
+      // Re-check membership right before delete to stay race-tolerant.
+      const existing = stale.filter((id) => actor.effects.has(id));
+      if (existing.length) {
         try {
-          Logger.debug("RemoveStaleAurasGlobally deleting", { actor: actor.name, stale });
-          await actor.deleteEmbeddedDocuments("ActiveEffect", stale);
+          Logger.debug("RemoveStaleAurasGlobally deleting", { actor: actor.name, stale: existing });
+          await actor.deleteEmbeddedDocuments("ActiveEffect", existing);
         } catch (err) {
           Logger.error("ERROR CAUGHT in RemoveStaleAurasGlobally", err);
         }
@@ -656,10 +675,13 @@ export class AAHelpers {
         if (!sourceOrigins.some((o) => AAHelpers.originsMatch(o, eff.origin))) continue;
         stale.push(eff.id);
       }
-      if (stale.length) {
+      // Existence guard (see RemoveStaleAurasGlobally): tolerate a concurrent
+      // non-Semaphore preDelete cleanup having removed one of these ids.
+      const existing = stale.filter((id) => actor.effects.has(id));
+      if (existing.length) {
         try {
-          Logger.debug("RemoveCrossSceneSourceAuras deleting", { actor: actor.name, stale });
-          await actor.deleteEmbeddedDocuments("ActiveEffect", stale);
+          Logger.debug("RemoveCrossSceneSourceAuras deleting", { actor: actor.name, stale: existing });
+          await actor.deleteEmbeddedDocuments("ActiveEffect", existing);
         } catch (err) {
           Logger.error("ERROR CAUGHT in RemoveCrossSceneSourceAuras", err);
         }
@@ -740,12 +762,15 @@ export class AAHelpers {
       stale.push(eff.id);
     }
 
-    if (stale.length) {
+    // Existence guard (see RemoveStaleAurasGlobally): tolerate a concurrent
+    // non-Semaphore preDelete cleanup having removed one of these ids.
+    const existing = stale.filter((id) => token.actor.effects.has(id));
+    if (existing.length) {
       try {
         Logger.debug("ReconcileAppliedAurasOnToken deleting", {
-          actor: token.actor.name, scene: scene.name, stale,
+          actor: token.actor.name, scene: scene.name, stale: existing,
         });
-        await token.actor.deleteEmbeddedDocuments("ActiveEffect", stale);
+        await token.actor.deleteEmbeddedDocuments("ActiveEffect", existing);
       } catch (err) {
         Logger.error("ERROR CAUGHT in ReconcileAppliedAurasOnToken", err);
       }
@@ -760,6 +785,9 @@ export class AAHelpers {
           if (v?.flags?.ActiveAuras?.applied) return a.concat(v.id);
           else return a;
         }, []);
+        // Existence guard against concurrent cleanup paths.
+        effects = effects.filter((id) => removeToken.actor.effects.has(id));
+        if (!effects.length) continue;
         try {
           Logger.debug("RemoveAllAppliedAuras", { removeToken, effects });
           await removeToken.actor.deleteEmbeddedDocuments("ActiveEffect", effects);
@@ -980,10 +1008,19 @@ export class AAHelpers {
     }
     const auras = Array.from(token.actor.allApplicableEffects())
       .filter((i) => foundry.utils.hasProperty(i, "flags.ActiveAuras.applied")).map((i) => i.id);
-    if (!auras) return;
+    if (!auras.length) return;
+    // Filter to IDs still present on the actor just before delete. Batch token
+    // deletions (multiple tokens selected then Delete) fire preDeleteTokenHook
+    // concurrently for each token. If one of those is also an aura source, its
+    // removeEmittedAurasFromSource pass targets the same applied effects on
+    // these target actors -- the two paths race, and the loser throws
+    // "ActiveEffect X does not exist!". Re-checking actor.effects here makes
+    // the local path race-tolerant without giving up the cleanup.
+    const existing = auras.filter((id) => token.actor.effects.has(id));
+    if (!existing.length) return;
     try {
-      Logger.debug("removeAurasOnToken", { token, auras });
-      await token.actor.deleteEmbeddedDocuments("ActiveEffect", auras);
+      Logger.debug("removeAurasOnToken", { token, auras: existing });
+      await token.actor.deleteEmbeddedDocuments("ActiveEffect", existing);
     } catch (err) {
       Logger.error("ERROR CAUGHT in removeAurasOnToken", err);
     } finally {

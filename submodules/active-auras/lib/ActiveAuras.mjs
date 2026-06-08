@@ -17,7 +17,10 @@ export class ActiveAuras {
 
     if (typeof movedToken?.documentName !== "string") movedToken = movedToken?.document ?? undefined;
     if (!CONFIG.AA.GM) return;
-    const activeCombat = game.combats.filter((c) => c.active && c.started);
+    // `.some` returns a boolean. The previous `.filter(...)` returned an array,
+    // which is truthy even when empty -- so `!activeCombat` was always false and
+    // the combatOnly early-return never fired (the setting was effectively dead).
+    const activeCombat = game.combats.some((c) => c.active && c.started);
     if (getAASetting("combatOnly") && !activeCombat) {
       Logger.debug("Active Auras not active when not in combat");
       return;
