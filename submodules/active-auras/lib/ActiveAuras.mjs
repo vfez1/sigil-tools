@@ -7,9 +7,11 @@ import { getAASetting } from "../settings.mjs";
 
 export class ActiveAuras {
   /**
-   *
-   * @param {Token} movedToken - optional value for further extension, currently unused
    * Locate all auras on the canvas, create map of tokens to update, update tokens
+   *
+   * @param {Token} movedToken - optional single token to restrict evaluation to
+   * @param {string} source - for console logging
+   * @param {string} sceneID - scene to evaluate
    */
   static async MainAura(movedToken, source, sceneID) {
     Logger.debug("MainAura Params", { movedToken, source, sceneID });

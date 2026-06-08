@@ -62,6 +62,35 @@ export class AAHelpers {
     }
   }
 
+  /**
+   * Wait for every aura-source token on a scene to have a settled PIXI center.
+   *
+   * The distance check in UpdateToken builds each aura's shape/polygon from its
+   * SOURCE token's center (`canvas.tokens.get(entityId)`), not from the token
+   * being evaluated. Right after a scene switch a source's center can lag its
+   * document for several frames, so a single-token evaluation measures against a
+   * stale polygon and wrongly reports targets as out of range -- which then
+   * strips their (correct) carried-over effect. Settling the sources first makes
+   * the measurement trustworthy, so the eval can safely both apply AND remove
+   * (WYSIWYG) without false strips.
+   *
+   * Cheap when sources are already settled: waitForTokenStable returns on its
+   * first synchronous check without yielding a frame.
+   *
+   * @param {Scene} scene  the scene whose aura sources should settle
+   */
+  static async waitForAuraSourcesStable(scene) {
+    if (!scene) return;
+    const sceneMap = CONFIG.AA.Map.get(scene.id);
+    const sourceIds = new Set(
+      (sceneMap?.effects ?? []).map((e) => e.entityId).filter((id) => !!id)
+    );
+    for (const id of sourceIds) {
+      const sourceDoc = scene.tokens.get(id);
+      if (sourceDoc) await AAHelpers.waitForTokenStable(sourceDoc);
+    }
+  }
+
   static evaluateCustomCheck(token, check, auraEntity) {
     try {
       // console.warn("custom check", { token, check, auraEntity });
@@ -492,9 +521,9 @@ export class AAHelpers {
           // used by RemoveCrossSceneSourceAuras for eager cross-scene
           // cleanup on source movement and scene activation.
           if (EffectsArray.some((o) => AAHelpers.originsMatch(o, testEffect.origin))) continue;
-          // Existence guard mirrors removeAurasOnToken / removeEmittedAurasFromSource:
-          // a concurrent preDelete cleanup path may have just removed this same
-          // effect id, in which case our delete would throw "does not exist".
+          // Existence guard mirrors removeAurasOnToken: a concurrent preDelete
+          // cleanup path may have just removed this same effect id, in which
+          // case our delete would throw "does not exist".
           if (!removeToken.actor.effects.has(testEffect._id)) continue;
           try {
             Logger.debug("RemoveAppliedAuras", { removeToken, testEffect });
@@ -556,10 +585,10 @@ export class AAHelpers {
         if (!matched) stale.push(eff.id);
       }
       // Existence guard: this helper runs through the Semaphore, but the
-      // preDelete cleanup paths (removeEmittedAurasFromSource / removeAurasOnToken)
-      // are awaited directly in the hook and bypass the Semaphore, so they can
-      // delete one of these same ids while we sit on the per-actor await above.
-      // Re-check membership right before delete to stay race-tolerant.
+      // preDelete cleanup path (removeAurasOnToken) is awaited directly in the
+      // hook and bypasses the Semaphore, so it can delete one of these same ids
+      // while we sit on the per-actor await above. Re-check membership right
+      // before delete to stay race-tolerant.
       const existing = stale.filter((id) => actor.effects.has(id));
       if (existing.length) {
         try {
@@ -992,11 +1021,11 @@ export class AAHelpers {
     if (!auras.length) return;
     // Filter to IDs still present on the actor just before delete. Batch token
     // deletions (multiple tokens selected then Delete) fire preDeleteTokenHook
-    // concurrently for each token. If one of those is also an aura source, its
-    // removeEmittedAurasFromSource pass targets the same applied effects on
-    // these target actors -- the two paths race, and the loser throws
-    // "ActiveEffect X does not exist!". Re-checking actor.effects here makes
-    // the local path race-tolerant without giving up the cleanup.
+    // concurrently for each token; a Semaphore-queued sweep (e.g.
+    // RemoveStaleAurasGlobally) can also be in flight and target the same
+    // applied effects on a shared linked actor. Whichever loses the race would
+    // otherwise throw "ActiveEffect X does not exist!". Re-checking actor.effects
+    // here makes this path race-tolerant without giving up the cleanup.
     const existing = auras.filter((id) => token.actor.effects.has(id));
     if (!existing.length) return;
     try {

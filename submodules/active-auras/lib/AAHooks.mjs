@@ -83,7 +83,17 @@ export async function createTokenHook(token, _config, _id) {
     // first (both run on the same Semaphore), so the source aura is present
     // when this MainAura evaluates the new token.
     if (!isSource) {
+      // Settle BOTH the dropped token and the aura-source tokens before the
+      // single-token eval. The dropped token's center must be right so it's
+      // measured at its final position; the sources' centers must be right
+      // because the aura polygon is built from THEM. Right after a scene switch
+      // a just-placed source's center lags its document for a few frames, and
+      // evaluating against that stale polygon reports in-range targets as out of
+      // range -- which then strips their correct carried-over effect. With both
+      // settled the distance check is trustworthy, so this eval can safely apply
+      // AND remove (WYSIWYG: drag out of range -> effect goes away immediately).
       await AAHelpers.waitForTokenStable(token);
+      await AAHelpers.waitForAuraSourcesStable(token.parent);
       CONFIG.AA.Semaphore.add(ActiveAuras.MainAura, token, "createToken", token.parent.id);
     }
   } catch (error) {
