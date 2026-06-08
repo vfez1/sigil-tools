@@ -4,6 +4,7 @@ import { SETTING_NAMES, SettingsUtility } from "../../shared/settings.js";
 import { registerSettingsPanelHooks } from "../../shared/settings-panel.js";
 import { registerAllSettings } from "../../shared/settings-registry.js";
 import { AcknowledgedModeUtility } from "./ack.js";
+import { DialogUtility } from "./dialog.js";
 import { ActivityUtility } from "./activity.js";
 import { ChatUtility } from "./chat.js";
 import { AlwaysHPWidget, HPManager, applyHPDismissPatch } from "../../always-hp/always-hp.js";
@@ -82,6 +83,7 @@ export class HooksUtility {
             HooksUtility.registerChatHooks();
             HooksUtility.registerSceneControlHooks();
             HooksUtility.registerActorSheetHooks();
+            HooksUtility.registerCombatTrackerHooks();
         });
 
         registerSettingsPanelHooks();
@@ -336,6 +338,48 @@ export class HooksUtility {
                 (foundry.utils.getProperty(data, "system.attributes.death") != undefined || foundry.utils.getProperty(data, "system.attributes.hp.value"))
             ) {
                 HPManager.refresh();
+            }
+        });
+    }
+
+    static registerCombatTrackerHooks() {
+        Hooks.on("renderCombatDock", (_app, html) => {
+            const root = html instanceof HTMLElement ? html : html[0];
+            if (!root) return;
+
+            const nextTurnBtn = root.querySelector('[data-action="next-turn"]');
+            if (nextTurnBtn) {
+                nextTurnBtn.style.background = "#1a4a1a";
+                nextTurnBtn.style.borderColor = "#4caf50";
+                nextTurnBtn.style.color = "#b8ffb8";
+            }
+
+            const nextRoundBtn = root.querySelector('[data-action="next-round"]');
+            if (nextRoundBtn) {
+                nextRoundBtn.addEventListener("click", async (e) => {
+                    e.stopImmediatePropagation();
+                    const confirmed = await foundry.applications.api.DialogV2.confirm({
+                        window: { title: "Next Round" },
+                        content: "<p>Are you sure you want to advance to the next round?</p>",
+                        rejectClose: false,
+                        position: { width: 300 },
+                    });
+                    if (confirmed) game.combat?.nextRound();
+                }, true);
+            }
+
+            const prevRoundBtn = root.querySelector('[data-action="previous-round"]');
+            if (prevRoundBtn) {
+                prevRoundBtn.addEventListener("click", async (e) => {
+                    e.stopImmediatePropagation();
+                    const confirmed = await foundry.applications.api.DialogV2.confirm({
+                        window: { title: "Previous Round" },
+                        content: "<p>Are you sure you want to go back to the previous round?</p>",
+                        rejectClose: false,
+                        position: { width: 300 },
+                    });
+                    if (confirmed) game.combat?.previousRound();
+                }, true);
             }
         });
     }
