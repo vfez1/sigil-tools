@@ -44,8 +44,6 @@ export class HooksUtility {
      */
     static registerModuleHooks() {
         Hooks.once(HOOKS_CORE.INIT, () => {
-            _logHookDebug(`Initialising ${MODULE_TITLE}`);
-
             registerAllSettings();
 
             if (!isEnabled(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
@@ -98,7 +96,6 @@ export class HooksUtility {
             );
 
             HooksUtility.registerHPHooks();
-            _logHookDebug(`Loaded ${MODULE_TITLE}`);
         });
     }
 
@@ -106,8 +103,6 @@ export class HooksUtility {
      * Register roll specific hooks for module functionality.
      */
     static registerRollHooks() {
-        _logHookDebug("Registering roll hooks");
-
         Hooks.on(HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK, (config, dialog, message) => {
             RollUtility.processRoll(config, dialog, message);
             return true;
@@ -219,6 +214,17 @@ export class HooksUtility {
                 messageConfig.data.flags[MODULE_SHORT].healingScaling = usageConfig.scaling;
             }
 
+            // Some spell activities (for example save-based spells like Fireball) carry the
+            // selected upcast level in usageConfig.scaling, but dnd5e does not always persist
+            // it onto the message. Preserve it so roll-model can reconstruct damage later.
+            if (activity.item?.type === "spell" && usageConfig.scaling != null && messageConfig?.data?.flags) {
+                messageConfig.data.flags.dnd5e ??= {};
+                messageConfig.data.flags.dnd5e.scaling = usageConfig.scaling;
+                if (messageConfig.data.flags[MODULE_SHORT]) {
+                    messageConfig.data.flags[MODULE_SHORT].spellScaling = usageConfig.scaling;
+                }
+            }
+
             if (activity.hasOwnProperty(ROLL_TYPE.ATTACK) && updates.item.length > 0 && messageConfig.data) {
                 const ammo = updates.item.find((i) => i["system.quantity"]);
                 if (!ammo) return;
@@ -239,8 +245,6 @@ export class HooksUtility {
      * Register chat specific hooks for module functionality.
      */
     static registerChatHooks() {
-        _logHookDebug("Registering chat hooks");
-
         Hooks.on(HOOKS_DND5E.RENDER_CHAT_MESSAGE, (message, html) => {
             ChatUtility.processChatMessage(message, html);
             AcknowledgedModeUtility.onNewMessage(message, html);
@@ -256,7 +260,7 @@ export class HooksUtility {
                     const item = message.getAssociatedItem?.();
                     const hasChatFlavor = !!item?.system?.description?.chat?.trim();
                     const exceptions = SettingsUtility.getSettingValue(SETTING_NAMES.COLLAPSE_DESCRIPTION_EXCEPTIONS) ?? [];
-                    const inExceptions = !!item?.name && exceptions.some(e => e.toLowerCase() === item.name.toLowerCase());
+                    const inExceptions = !!item?.name && exceptions.some((e) => e.toLowerCase() === item.name.toLowerCase());
                     if (!hasChatFlavor && !inExceptions) descHeader.classList.add("collapsed");
                 }
             }
@@ -287,12 +291,9 @@ export class HooksUtility {
                 ChatUtility.updateAllSaveMultipliers();
             });
         });
-
     }
 
     static registerSceneControlHooks() {
-        _logHookDebug("Registering scene control hooks");
-
         Hooks.on("getSceneControlButtons", (controls) => {
             const tokenControls = controls.tokens ?? controls.token;
             if (!tokenControls?.tools) return;
@@ -314,8 +315,6 @@ export class HooksUtility {
     }
 
     static registerHPHooks() {
-        _logHookDebug("Registering HP widget hooks");
-
         const showDialog = game.user.getFlag(MODULE_NAME, "alwayshpShowDialog") !== false;
         if (showDialog && AlwaysHPWidget.canLoad()) HPManager.toggleApp(true);
 
@@ -354,30 +353,38 @@ export class HooksUtility {
 
             const nextRoundBtn = root.querySelector('[data-action="next-round"]');
             if (nextRoundBtn) {
-                nextRoundBtn.addEventListener("click", async (e) => {
-                    e.stopImmediatePropagation();
-                    const confirmed = await foundry.applications.api.DialogV2.confirm({
-                        window: { title: "Next Round" },
-                        content: "<p>Are you sure you want to advance to the next round?</p>",
-                        rejectClose: false,
-                        position: { width: 300 },
-                    });
-                    if (confirmed) game.combat?.nextRound();
-                }, true);
+                nextRoundBtn.addEventListener(
+                    "click",
+                    async (e) => {
+                        e.stopImmediatePropagation();
+                        const confirmed = await foundry.applications.api.DialogV2.confirm({
+                            window: { title: "Next Round" },
+                            content: "<p>Are you sure you want to advance to the next round?</p>",
+                            rejectClose: false,
+                            position: { width: 300 },
+                        });
+                        if (confirmed) game.combat?.nextRound();
+                    },
+                    true
+                );
             }
 
             const prevRoundBtn = root.querySelector('[data-action="previous-round"]');
             if (prevRoundBtn) {
-                prevRoundBtn.addEventListener("click", async (e) => {
-                    e.stopImmediatePropagation();
-                    const confirmed = await foundry.applications.api.DialogV2.confirm({
-                        window: { title: "Previous Round" },
-                        content: "<p>Are you sure you want to go back to the previous round?</p>",
-                        rejectClose: false,
-                        position: { width: 300 },
-                    });
-                    if (confirmed) game.combat?.previousRound();
-                }, true);
+                prevRoundBtn.addEventListener(
+                    "click",
+                    async (e) => {
+                        e.stopImmediatePropagation();
+                        const confirmed = await foundry.applications.api.DialogV2.confirm({
+                            window: { title: "Previous Round" },
+                            content: "<p>Are you sure you want to go back to the previous round?</p>",
+                            rejectClose: false,
+                            position: { width: 300 },
+                        });
+                        if (confirmed) game.combat?.previousRound();
+                    },
+                    true
+                );
             }
         });
     }
@@ -387,11 +394,6 @@ export class HooksUtility {
             _renderPortentRollsOnSheet(app.actor, html);
         });
     }
-
-}
-
-function _logHookDebug(_message) {
-    return;
 }
 
 function _portentDieHtml(entry, index) {
@@ -437,13 +439,14 @@ async function _rollPortentDice(actor, config) {
     await actor.setFlag(MODULE_NAME, "portentRolls", rolls);
 
     const featName = hasGreaterPortent ? "Greater Portent" : "Portent";
-    const featImg = hasGreaterPortent
-        ? "icons/magic/perception/orb-crystal-ball-scrying-blue.webp"
-        : "icons/magic/perception/orb-eye-scrying.webp";
+    const featImg = hasGreaterPortent ? "icons/magic/perception/orb-crystal-ball-scrying-blue.webp" : "icons/magic/perception/orb-eye-scrying.webp";
 
     const portentSection = _portentSectionHtml(rolls, featName, featImg);
 
-    const restMessage = game.messages.contents.slice().reverse().find((m) => m.speaker?.actor === actor.id);
+    const restMessage = game.messages.contents
+        .slice()
+        .reverse()
+        .find((m) => m.speaker?.actor === actor.id);
     if (restMessage) {
         const doc = new DOMParser().parseFromString(restMessage.content, "text/html");
         const card = doc.querySelector(".chat-card") ?? doc.body;
@@ -467,9 +470,7 @@ async function _postPortentChatCard(actor) {
 
     const hasGreaterPortent = _hasItem(actor, "Greater Portent");
     const featName = hasGreaterPortent ? "Greater Portent" : "Portent";
-    const featImg = hasGreaterPortent
-        ? "icons/magic/perception/orb-crystal-ball-scrying-blue.webp"
-        : "icons/magic/perception/orb-eye-scrying.webp";
+    const featImg = hasGreaterPortent ? "icons/magic/perception/orb-crystal-ball-scrying-blue.webp" : "icons/magic/perception/orb-eye-scrying.webp";
 
     ChatMessage.create({
         speaker: ChatMessage.getSpeaker({ actor }),
@@ -516,8 +517,7 @@ function _renderPortentRollsOnSheet(actor, html) {
     const portentRolls = actor.getFlag(MODULE_NAME, "portentRolls");
     if (!portentRolls?.length) return;
 
-    const portentItem =
-        actor.items.find((i) => i.name === "Greater Portent") ?? actor.items.find((i) => i.name === "Portent");
+    const portentItem = actor.items.find((i) => i.name === "Greater Portent") ?? actor.items.find((i) => i.name === "Portent");
     if (!portentItem) return;
 
     const root = html instanceof HTMLElement ? html : html[0];
@@ -623,18 +623,27 @@ function _applyTurnStartMarker() {
         g.lineStyle(3, 0xdd44ff, 1.0);
         const cl = Math.round(size * 0.28);
         g.moveTo(0, cl).lineTo(0, 0).lineTo(cl, 0);
-        g.moveTo(w - cl, 0).lineTo(w, 0).lineTo(w, cl);
-        g.moveTo(0, h - cl).lineTo(0, h).lineTo(cl, h);
-        g.moveTo(w - cl, h).lineTo(w, h).lineTo(w, h - cl);
+        g.moveTo(w - cl, 0)
+            .lineTo(w, 0)
+            .lineTo(w, cl);
+        g.moveTo(0, h - cl)
+            .lineTo(0, h)
+            .lineTo(cl, h);
+        g.moveTo(w - cl, h)
+            .lineTo(w, h)
+            .lineTo(w, h - cl);
 
-        const label = new PIXI.Text("S", new PIXI.TextStyle({
-            fontFamily: "serif",
-            fontSize: Math.round(size * 0.45),
-            fontWeight: "bold",
-            fill: 0xdd44ff,
-            stroke: 0x000000,
-            strokeThickness: 3,
-        }));
+        const label = new PIXI.Text(
+            "S",
+            new PIXI.TextStyle({
+                fontFamily: "serif",
+                fontSize: Math.round(size * 0.45),
+                fontWeight: "bold",
+                fill: 0xdd44ff,
+                stroke: 0x000000,
+                strokeThickness: 3,
+            })
+        );
         label.anchor.set(0.5, 0.5);
         label.x = w / 2;
         label.y = h / 2;
@@ -672,4 +681,3 @@ function _getPreventMovementHistorySetting() {
         return false;
     }
 }
-
