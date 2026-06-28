@@ -925,7 +925,10 @@ async function _processRetroAdvButtonEvent(message, event) {
         if (key === ROLL_TYPE.ABILITY_SAVE) {
             // Retroactive adv/dis on an embedded save — find the save roll by speaker name.
             const speaker = $(button).closest("[data-save-speaker]")[0]?.dataset.saveSpeaker;
-            const saveRoll = message.rolls.find(r => r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === speaker);
+            const saveRoll =
+                message.rolls.find(r => r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === speaker) ??
+                message.rolls.find(r => r instanceof CONFIG.Dice.D20Roll && !r.options?.embeddedSave) ??
+                message.rolls.find(r => r instanceof CONFIG.Dice.D20Roll);
             if (!saveRoll) return;
             await RollUtility.upgradeRoll(saveRoll, state);
             ChatUtility.updateChatMessage(message, { rolls: message.rolls });
