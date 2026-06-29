@@ -19,12 +19,7 @@
     "zoom-pan-options": {
         "middle-mouse-pan": true
     },
-    "combat-tracker-dock": {
-        "overflowStyle": "scroll",
-        "carouselStyle": "1",
-        "portraitSize": "70px"
-    },
-    "uiConfig": {
+"uiConfig": {
         "fadeOpacity": 0.9,
         "chatNotifications": "pip"
     },

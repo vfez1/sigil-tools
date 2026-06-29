@@ -7,6 +7,11 @@
             "note": "Why this is suppressed and where the warning originates."
         },
         {
+            "message": "You are accessing the global \"Token\" which is now namespaced under foundry.canvas.placeables.Token",
+            "until": "15.0",
+            "note": "Triggered by libWrapper internals when wrapping Combatant.prototype.visible at init. libWrapper's issue, not ours."
+        },
+        {
             "pattern": "senses\\.(darkvision|blindsight|tremorsense|truesight) has moved to",
             "until": "15.0",
             "note": "DnD5e 5.3 deprecation: senses.* moved to senses.ranges.*. Triggered by deepClone in RollConfigurationDialog on every damage roll. Removed in DnD5e 6.1."

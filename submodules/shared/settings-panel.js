@@ -59,13 +59,19 @@ export function registerSettingsPanelHooks() {
             if (g) { anchor.after(g); anchor = g; }
         }
 
-        // Submodule enable toggles are already at the end — no move needed.
+        // Move combat-tracker-dock settings before the submodule toggles.
+        const submodulesAnchor = group("enableActiveAuras");
+        for (const key of ["attributesMenu", "direction", "portraitSize", "lessButtons", "overflowStyle", "carouselStyle", "alignment", "floatingSize", "portraitAspect", "roundness", "attributeColor", "attributeColor2", "attributeColorPortrait", "barsPlacement", "attributeVisibility", "hideDefeated", "showDispositionColor", "showInitiativeOnPortrait", "portraitImage", "displayName", "playerPlayerPermission", "hideFirstRound", "hideEnemyInitiative", "portraitImageBorder", "portraitImageBackground", "showSystemIcons", "hideConflictingUIs", "resource", "portraitResource"]) {
+            const g = group(key);
+            if (g) submodulesAnchor.before(g);
+        }
 
         insertHeader(group("visualAurasSetup"),       "fas fa-circle-dashed", "Visual Auras");
         insertHeader(group("measurement"),            "fas fa-circle-dashed", "Active Auras");
         insertHeader(group("collapseSettings"),       "fas fa-dice-d20",      "Roll Model");
         insertHeader(group("characterFeaturesSetup"), "fas fa-user",          "Character Features");
         insertHeader(group("chatArchiveUrl"),         "fas fa-box-archive",   "Chat Archive");
+        insertHeader(group("attributesMenu"),         "fas fa-swords",        "Combat Tracker Dock");
         insertHeader(group("enableActiveAuras"),      "fas fa-puzzle-piece",  "Submodules");
     });
 }

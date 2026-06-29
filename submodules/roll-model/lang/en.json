@@ -16,6 +16,8 @@
             }
         },
         "settings": {
+            "enableCombatTrackerDock.name": "Enable: Combat Tracker Dock",
+            "enableCombatTrackerDock.hint": "Enable the Combat Tracker Dock submodule (carousel-style combat tracker overlay). Requires a reload.",
             "enableRollModel.name": "Enable: Roll Model",
             "enableRollModel.hint": "Enable the Roll Model submodule (D&D 5e roll overhaul, multi-roll display, damage buttons). Requires a reload.",
             "acknowledgedMode.name": "Acknowledged Mode",
