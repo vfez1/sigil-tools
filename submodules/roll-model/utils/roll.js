@@ -200,6 +200,14 @@ export class RollUtility {
         rollConfig.options.bonusTermLabels = _buildAttackTermLabels(outerConfig, rollConfig);
     }
 
+    static captureSaveFormulaParts(outerConfig, rollConfig, index = 0) {
+        RollUtility.captureFormulaParts(rollConfig);
+        if (!rollConfig?.parts?.length) return;
+
+        rollConfig.options ??= {};
+        rollConfig.options.bonusTermLabels = _buildSaveTermLabels(outerConfig, rollConfig);
+    }
+
     static captureDamageFormulaParts(outerConfig, rollConfig, index = 0) {
         if (!rollConfig?.parts?.length) return;
 
@@ -413,15 +421,19 @@ export class RollUtility {
             pendingOp = "+";
         }
 
+        let termLabelIdx = 0;
         const bonusStr = segments
-            .map(({ term, op }, index) => {
+            .map(({ term, op }) => {
                 const absVal = Number(term.total);
                 if (isNaN(absVal) || absVal === 0) return null;
                 const signedVal = op === "-" ? -absVal : absVal;
                 const sign = signedVal >= 0 ? "+" : "";
 
-                const termLabel = termLabels?.[index];
+                // Consume termLabels in order rather than by segment index — this handles
+                // cases where a single @-variable expands to multiple roll terms (e.g. @saveBonus = "2 + 2").
+                const termLabel = termLabels?.[termLabelIdx];
                 if (termLabel && (termLabel.value === undefined || termLabel.value === signedVal)) {
+                    termLabelIdx++;
                     return `${sign}${signedVal} (${_getFormulaDisplayLabel(termLabel.label)})`;
                 }
 
@@ -784,6 +796,47 @@ function _buildAttackTermLabels(outerConfig, rollConfig) {
         }
 
         const label = _getItemAttackBonusSourceLabel(subject, part, rollConfig.data) ?? rollConfig.options?.bonusLabels?.[i];
+        const num = Number(value);
+        if (!isNaN(num) && num !== 0) labels.push({ value: num, label: _getFormulaDisplayLabel(label) });
+    }
+
+    return labels;
+}
+
+function _buildSaveTermLabels(outerConfig, rollConfig) {
+    const labels = [];
+    const subject = _getRollSubject(outerConfig, rollConfig);
+    const actor = subject?.actor ?? subject;
+    const ability = rollConfig?.ability ?? outerConfig?.ability;
+
+    // Global save bonus path (system.bonuses.abilities.save)
+    const globalSavePath = "system.bonuses.abilities.save";
+    const globalSaveEffects = _getActiveEffectValueLabelsForChange(actor, globalSavePath, rollConfig.data);
+    const globalSaveQueue = [...globalSaveEffects];
+
+    // Per-ability save bonus path (e.g. system.abilities.dex.bonuses.save)
+    const abilitySavePath = ability ? `system.abilities.${ability}.bonuses.save` : null;
+    const abilitySaveEffects = abilitySavePath ? _getActiveEffectValueLabelsForChange(actor, abilitySavePath, rollConfig.data) : [];
+    const abilitySaveQueue = [...abilitySaveEffects];
+
+    for (let i = 0; i < rollConfig.parts.length; i++) {
+        const part = rollConfig.parts[i];
+        const value = rollConfig.options?.bonusResolved?.[i];
+        if (value === null || value === undefined) continue;
+
+        const variable = _getFormulaVariable(part);
+
+        // Global save bonus — expand into per-effect labels
+        if (variable === "saveBonus" || part === `@${ability}SaveBonus`) {
+            const queue = variable === "saveBonus" ? globalSaveQueue : abilitySaveQueue;
+            labels.push(..._buildExpandedFormulaTermLabels(
+                foundry.utils.getProperty(rollConfig.data ?? {}, variable) ?? value,
+                queue
+            ));
+            continue;
+        }
+
+        const label = rollConfig.options?.bonusLabels?.[i];
         const num = Number(value);
         if (!isNaN(num) && num !== 0) labels.push({ value: num, label: _getFormulaDisplayLabel(label) });
     }

@@ -445,6 +445,13 @@ async function _injectContent(message, type, html) {
             html.find(".dice-total").replaceWith(render);
             html.find(".dice-tooltip").prepend(html.find(".dice-formula"));
 
+            if (type === ROLL_TYPE.ABILITY_SAVE) {
+                const labeledFormula = RollUtility.buildLabeledFormula(roll);
+                if (labeledFormula) {
+                    html.find(".dice-formula").text(labeledFormula);
+                }
+            }
+
             if (message.flags[MODULE_SHORT].isConcentration) {
                 await _injectBreakConcentrationButton(message, html);
             }

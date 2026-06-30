@@ -17,6 +17,7 @@ export const HOOKS_CORE = {
 export const HOOKS_DND5E = {
     PRE_ROLL_ABILITY_CHECK: "dnd5e.preRollAbilityCheckV2",
     PRE_ROLL_SAVING_THROW: "dnd5e.preRollSavingThrowV2",
+    POST_BUILD_SAVING_THROW_ROLL_CONFIG: "dnd5e.postBuildSavingThrowRollConfig",
     PRE_ROLL_SKILL: "dnd5e.preRollSkillV2",
     PRE_ROLL_TOOL_CHECK: "dnd5e.preRollToolV2",
     PRE_ROLL_ATTACK: "dnd5e.preRollAttackV2",
@@ -162,6 +163,10 @@ export class HooksUtility {
         // so writing bonusParts/bonusData here makes them available at render time.
         Hooks.on(HOOKS_DND5E.POST_BUILD_ATTACK_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
             RollUtility.captureAttackFormulaParts(outerConfig, rollConfig, index);
+        });
+
+        Hooks.on(HOOKS_DND5E.POST_BUILD_SAVING_THROW_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
+            RollUtility.captureSaveFormulaParts(outerConfig, rollConfig, index);
         });
 
         Hooks.on(HOOKS_DND5E.PRE_ROLL_DAMAGE, (config, dialog, message) => {
