@@ -62,9 +62,6 @@ async function onDeleteToken(tokenDoc, options, userId) {
 
 async function onUpdateToken(tokenDoc, changes, options, userId) {
     if (!game.user.isGM) return;
-    // Allow any user (including players owning their token) to trigger an aura refresh —
-    // only a GM can create/delete regions, so we process regardless of who made the change.
-    // Among multiple GMs, only the one whose user ID is lowest handles it to avoid double-writes.
     const activeGMs = game.users.filter(u => u.isGM && u.active).sort((a, b) => a.id.localeCompare(b.id));
     if (activeGMs[0]?.id !== game.user.id) return;
     if (options["visual-auras.skipRefresh"]) return;
