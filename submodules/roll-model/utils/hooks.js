@@ -50,6 +50,7 @@ export class HooksUtility {
             _applyTokenMovementHistoryPrevention();
             _applyTurnStartMarker();
             _applyRollModePatch();
+            _applyInitiativeRerollPatch();
             applyHPDismissPatch();
 
             game.keybindings.register(MODULE_NAME, "hp-toggle", {
@@ -520,6 +521,32 @@ function _canRefreshActorInspiration(actor) {
 
 function _hasItem(actor, itemName) {
     return actor?.items?.some((i) => i.name.toLowerCase() === itemName.toLowerCase()) ?? false;
+}
+
+function _applyInitiativeRerollPatch() {
+    libWrapper.register(
+        MODULE_NAME,
+        "Actor.prototype.rollInitiative",
+        async function (wrapped, options = {}, rollOptions = {}) {
+            if (game.combat) {
+                const combatants = this.isToken
+                    ? this.getActiveTokens(false, true).reduce(
+                          (arr, t) => arr.concat(game.combat.getCombatantsByToken(t.id)),
+                          []
+                      )
+                    : game.combat.getCombatantsByActor(this.id);
+                const toReset = combatants.filter((c) => c.initiative !== null);
+                if (toReset.length) {
+                    await game.combat.updateEmbeddedDocuments(
+                        "Combatant",
+                        toReset.map((c) => ({ _id: c.id, initiative: null }))
+                    );
+                }
+            }
+            return wrapped(options, rollOptions);
+        },
+        "WRAPPER"
+    );
 }
 
 function _applyRollModePatch() {
