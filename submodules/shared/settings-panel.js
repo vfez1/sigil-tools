@@ -61,9 +61,11 @@ export function registerSettingsPanelHooks() {
 
         // Move combat-tracker-dock settings before the submodule toggles.
         const submodulesAnchor = group("enableActiveAuras");
-        for (const key of ["attributesMenu", "direction", "portraitSize", "lessButtons", "overflowStyle", "carouselStyle", "alignment", "floatingSize", "portraitAspect", "roundness", "attributeColor", "attributeColor2", "attributeColorPortrait", "barsPlacement", "attributeVisibility", "hideDefeated", "showDispositionColor", "showInitiativeOnPortrait", "portraitImage", "displayName", "playerPlayerPermission", "hideFirstRound", "hideEnemyInitiative", "portraitImageBorder", "portraitImageBackground", "showSystemIcons", "hideConflictingUIs", "resource", "portraitResource"]) {
-            const g = group(key);
-            if (g) submodulesAnchor.before(g);
+        if (submodulesAnchor) {
+            for (const key of ["attributesMenu", "direction", "portraitSize", "lessButtons", "overflowStyle", "carouselStyle", "alignment", "floatingSize", "portraitAspect", "roundness", "attributeColor", "attributeColor2", "attributeColorPortrait", "barsPlacement", "attributeVisibility", "hideDefeated", "showDispositionColor", "showInitiativeOnPortrait", "portraitImage", "displayName", "playerPlayerPermission", "hideFirstRound", "hideEnemyInitiative", "portraitImageBorder", "portraitImageBackground", "showSystemIcons", "hideConflictingUIs", "resource", "portraitResource"]) {
+                const g = group(key);
+                if (g) submodulesAnchor.before(g);
+            }
         }
 
         insertHeader(group("visualAurasSetup"),       "fas fa-circle-dashed", "Visual Auras");
