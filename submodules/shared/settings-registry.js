@@ -29,7 +29,7 @@ export function registerAllSettings() {
     game.settings.register(MODULE_NAME, SETTING_NAMES.SHOW_TURN_START_MARKER, {
         name: label(SETTING_NAMES.SHOW_TURN_START_MARKER, "name"),
         hint: label(SETTING_NAMES.SHOW_TURN_START_MARKER, "hint"),
-        scope: "world", config: true, type: String, default: "pcs",
+        scope: "world", config: true, type: String, default: "all",
         choices: {
             pcs: label(SETTING_NAMES.SHOW_TURN_START_MARKER, "pcs"),
             all: label(SETTING_NAMES.SHOW_TURN_START_MARKER, "all"),
