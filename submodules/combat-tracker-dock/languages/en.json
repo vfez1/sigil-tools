@@ -1,4 +1,13 @@
 {
+    "sigil-tools": {
+        "configureCarousel": "Configure Carousel",
+        "combatConfig": {
+            "portraitResource": {
+                "label": "Portrait Bar",
+                "hint": "Resource bar that will be shown as a overlay on top of the portrait image, set to 'None' to disable."
+            }
+        }
+    },
     "combat-tracker-dock": {
         "configureCarousel": "Configure Carousel",
         "combat-dock": {

@@ -356,7 +356,7 @@ export function registerSettings() {
         scope: "world",
         config: true,
         type: new foundry.data.fields.FilePathField({categories: ["IMAGE"]}),
-        default: "modules/combat-tracker-dock/assets/border.png",
+        default: "modules/sigil-tools/submodules/combat-tracker-dock/assets/border.png",
         onChange: function () {
             setPortraitImageBorder();
             ui.combatDock?.refresh();
