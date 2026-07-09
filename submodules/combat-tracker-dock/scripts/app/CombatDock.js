@@ -236,19 +236,31 @@ export class CombatDock extends HandlebarsApplication {
             aspect: aspect,
         };
         const verticalSize = max * aspect;
-        if (!this.autoFit) return document.documentElement.style.setProperty("--combatant-portrait-size", max + "px");
 
         const sizeModifier = game.settings.get(MODULE_ID, "floatingSize");
         const combatantCount = this.sortedCombatants.length + (combatantRevived ? 1 : 0);
         let maxSpace, portraitSize;
         if (this.isVertical) {
             maxSpace = window.innerHeight * sizeModifier / 100;
+            portraitSize = Math.min(verticalSize, Math.floor(maxSpace / combatantCount)) / aspect;
         } else if (this.isDocked) {
-            maxSpace = document.getElementById("ui-top").getBoundingClientRect().width * 0.9;
+            const uiTopWidth = document.getElementById("ui-top").getBoundingClientRect().width;
+            const leftButtons = this.element?.querySelector(".buttons-container.left");
+            const rightButtons = this.element?.querySelector(".buttons-container.right");
+            const buttonsWidth = (leftButtons?.offsetWidth ?? 0) + (rightButtons?.offsetWidth ?? 0);
+            maxSpace = uiTopWidth - buttonsWidth;
+            portraitSize = Math.min(max, Math.floor(maxSpace / combatantCount));
+            if (!this.autoFit) {
+                // Still clamp to available space even when autofit is off
+                document.documentElement.style.setProperty("--combatant-portrait-size", (portraitSize / 1.2) + "px");
+                return;
+            }
         } else {
             maxSpace = window.innerWidth * sizeModifier / 100;
+            portraitSize = Math.min(max, Math.floor(maxSpace / combatantCount));
         }
-        portraitSize = this.isVertical ? Math.min(verticalSize, Math.floor(maxSpace / combatantCount)) / aspect : Math.min(max, Math.floor(maxSpace / combatantCount));
+
+        if (!this.autoFit) return document.documentElement.style.setProperty("--combatant-portrait-size", max + "px");
 
         document.documentElement.style.setProperty("--combatant-portrait-size", portraitSize / (this.isVertical ? 1 : 1.2) + "px");
     }

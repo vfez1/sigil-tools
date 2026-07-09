@@ -7,8 +7,8 @@ A custom all-in-one FoundryVTT module for a private D&D 5e campaign. It is **not
 - **Module ID:** `sigil-tools`
 - **Flag/lang namespace:** `rm` (`MODULE_SHORT`)
 - **Display title:** Roll Model
-- **Server:** `digital-ocean-foundry:/opt/foundrydata/Data/modules/sigil-tools/`
-- **Deploy workflow:** `scp` changed files to the server path above. Use `/deploy` (`.claude/commands/deploy.md`) for this.
+- **Server:** `foundry@138.197.228.125:/opt/foundrydata/Data/modules/sigil-tools/`
+- **Deploy workflow:** `scp` changed files to the server path above. Use `/deploy` (`.claude/commands/deploy.md`) for this. If `scp` auth fails, fall back to `"C:\Program Files\PuTTY\pscp.exe"` (PuTTY has the saved key).
 
 ---
 
