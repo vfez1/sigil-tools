@@ -422,13 +422,6 @@
   ],
   "Other": [
     "system",
-    "StatusEffect",
-    "StatusEffectLabel",
-    "StatusEffectName",
-    "flags.dae",
-    "flags.dae.onUpdateSource",
-    "flags.dae.onUpdateTarget",
-    
     "system.favorites",
     "system.attributes.movement.air",
     "system.attributes.movement.land",
