@@ -98,9 +98,19 @@ class AttributeDropdown {
     attach(input) {
         if (input.dataset.eacAttached) return;
         input.dataset.eacAttached = "1";
-        input.addEventListener("input",  () => { this.currentInput = input; this._update(); });
+        input.addEventListener("input",  () => { this.currentInput = input; this._update(); this._validate(input); });
         input.addEventListener("click",  () => { this.currentInput = input; this._update(); });
         input.addEventListener("focus",  () => { this.currentInput = input; this._update(); });
+        this._validate(input);
+    }
+
+    _validate(input) {
+        const val = input.value.trim();
+        if (val && !getFields().includes(val)) {
+            input.style.outline = "1px solid #c0392b";
+        } else {
+            input.style.outline = "";
+        }
     }
 
     _update() {
@@ -201,6 +211,7 @@ class AttributeDropdown {
         if (path && this.currentInput) {
             this.currentInput.value = path;
             this.currentInput.dispatchEvent(new Event("change", { bubbles: true }));
+            this._validate(this.currentInput);
         }
         this.hide();
     }
@@ -261,11 +272,28 @@ function attachKeyInputs(el, dropdown) {
     });
 }
 
+const EAC_STYLE_ID = "eac-changes-style";
+
+function injectChangesStyle() {
+    if (document.getElementById(EAC_STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = EAC_STYLE_ID;
+    style.textContent = `
+        .tab.changes header,
+        .tab.changes ol.scrollable {
+            grid-template-columns: 260px 112px 112px 64px 16px !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 function onRenderActiveEffectConfig(app, html) {
     const el = html instanceof jQuery ? html[0] : html;
 
     if (!app._eacDropdown) {
         app._eacDropdown = new AttributeDropdown();
+        app.setPosition({ width: 680 });
+        injectChangesStyle();
         app.element?.addEventListener("close", () => {
             app._eacDropdown?.destroy();
             delete app._eacDropdown;
