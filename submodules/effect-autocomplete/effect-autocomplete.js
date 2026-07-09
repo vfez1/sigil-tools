@@ -4,6 +4,7 @@ const SETTING_KEY = "enableEffectAutocomplete";
 
 export function registerEffectAutocompleteHooks() {
     if (!isEnabled(SETTING_KEY)) return;
+    Hooks.once("ready", () => initFields());
     Hooks.on("renderActiveEffectConfig", onRenderActiveEffectConfig);
 }
 
@@ -11,91 +12,22 @@ export function registerEffectAutocompleteHooks() {
 
 let _fields = null;
 
-function getFields() {
-    if (_fields) return _fields;
-
+async function initFields() {
+    if (_fields) return;
+    const data = await foundry.utils.fetchJsonWithTimeout(
+        "modules/sigil-tools/submodules/effect-autocomplete/field-data.json"
+    );
+    const SKIP = new Set(["Hidden", "Macros"]);
     const paths = new Set();
-
-    // Walk the dnd5e actor data model schema to collect dot-paths
-    const schema = game.system?.model?.Actor;
-    if (schema) {
-        for (const [actorType, model] of Object.entries(schema)) {
-            collectPaths(model, "system", paths);
-        }
+    for (const [category, keys] of Object.entries(data)) {
+        if (SKIP.has(category)) continue;
+        for (const key of keys) paths.add(key);
     }
-
-    // Supplement with common paths the schema walk may not surface (roll formulas, flags, etc.)
-    const extras = [
-        "system.attributes.ac.value",
-        "system.attributes.ac.bonus",
-        "system.attributes.hp.value",
-        "system.attributes.hp.max",
-        "system.attributes.hp.tempmax",
-        "system.attributes.init.bonus",
-        "system.attributes.init.value",
-        "system.attributes.movement.walk",
-        "system.attributes.movement.fly",
-        "system.attributes.movement.swim",
-        "system.attributes.movement.climb",
-        "system.attributes.movement.burrow",
-        "system.attributes.spelldc",
-        "system.attributes.spellcasting",
-        "system.attributes.exhaustion",
-        "system.attributes.concentration.limit",
-        "system.attributes.concentration.bonuses.save",
-        "system.details.cr",
-        "system.details.level",
-        "system.traits.size",
-        "ATL.width",
-        "ATL.height",
-        "ATL.light.bright",
-        "ATL.light.dim",
-        "ATL.light.angle",
-        "ATL.light.color",
-        "ATL.light.alpha",
-        "ATL.sight.range",
-        "flags.midi-qol.advantage.ability.all",
-        "flags.midi-qol.advantage.attack.all",
-        "flags.midi-qol.disadvantage.ability.all",
-        "flags.midi-qol.disadvantage.attack.all",
-        "flags.midi-qol.grants.advantage.attack.all",
-        "flags.dnd5e.initiativeAdv",
-        "flags.dnd5e.initiativeAlert",
-        "flags.dnd5e.jackOfAllTrades",
-        "flags.dnd5e.remarkableAthlete",
-        "flags.dnd5e.tavernBrawlerFists",
-    ];
-
-    for (const path of extras) paths.add(path);
-
-    // Also add ability/skill modifier paths from the live actor schemas
-    for (const ability of ["str", "dex", "con", "int", "wis", "cha"]) {
-        paths.add(`system.abilities.${ability}.value`);
-        paths.add(`system.abilities.${ability}.proficient`);
-        paths.add(`system.abilities.${ability}.bonuses.check`);
-        paths.add(`system.abilities.${ability}.bonuses.save`);
-    }
-
-    for (const skill of ["acr","ani","arc","ath","dec","his","ins","itm","inv","med","nat","prc","prf","per","rel","slt","ste","sur"]) {
-        paths.add(`system.skills.${skill}.value`);
-        paths.add(`system.skills.${skill}.bonuses.check`);
-        paths.add(`system.skills.${skill}.bonuses.passive`);
-    }
-
     _fields = Array.from(paths).sort();
-    return _fields;
 }
 
-function collectPaths(obj, prefix, out, depth = 0) {
-    if (depth > 6 || obj === null || typeof obj !== "object") return;
-    for (const [key, val] of Object.entries(obj)) {
-        if (key.startsWith("_") || key === "schema") continue;
-        const path = `${prefix}.${key}`;
-        out.add(path);
-        if (val && typeof val === "object" && !Array.isArray(val)) {
-            collectPaths(val, path, out, depth + 1);
-        }
-    }
+function getFields() {
+    return _fields ?? [];
 }
 
 // ── Dropdown ──────────────────────────────────────────────────────────────────
@@ -111,10 +43,11 @@ class AttributeDropdown {
     }
 
     attach(input) {
-        this.currentInput = input;
-        input.addEventListener("input", () => this._update());
-        input.addEventListener("click", () => this._update());
-        input.addEventListener("focus", () => this._update());
+        if (input.dataset.eacAttached) return;
+        input.dataset.eacAttached = "1";
+        input.addEventListener("input",  () => { this.currentInput = input; this._update(); });
+        input.addEventListener("click",  () => { this.currentInput = input; this._update(); });
+        input.addEventListener("focus",  () => { this.currentInput = input; this._update(); });
     }
 
     _update() {
@@ -140,6 +73,25 @@ class AttributeDropdown {
             item.className = "eac-option" + (i === 0 ? " selected" : "");
             item.textContent = path;
             item.dataset.index = i;
+            Object.assign(item.style, {
+                padding: "4px 8px",
+                cursor: "pointer",
+                color: i === 0 ? "#f0e6d2" : "#ccc",
+                background: i === 0 ? "rgba(255,200,100,0.15)" : "transparent",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+            });
+            item.addEventListener("mouseover", () => {
+                item.style.background = "rgba(255,200,100,0.15)";
+                item.style.color = "#f0e6d2";
+            });
+            item.addEventListener("mouseout", () => {
+                if (!item.classList.contains("selected")) {
+                    item.style.background = "transparent";
+                    item.style.color = "#ccc";
+                }
+            });
             item.addEventListener("mousedown", (e) => {
                 e.preventDefault();
                 this._apply(i);
@@ -154,6 +106,18 @@ class AttributeDropdown {
     _createElement() {
         this.el = document.createElement("div");
         this.el.className = "eac-dropdown";
+        Object.assign(this.el.style, {
+            position: "fixed",
+            zIndex: "10000",
+            background: "#1e1e1e",
+            border: "1px solid #555",
+            borderRadius: "4px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.6)",
+            overflowY: "auto",
+            fontFamily: "monospace",
+            fontSize: "0.8rem",
+            display: "none",
+        });
         document.body.appendChild(this.el);
         document.addEventListener("click", this._onDocClick);
         document.addEventListener("keydown", this._onKeyDown);
@@ -164,7 +128,7 @@ class AttributeDropdown {
         const rect = this.currentInput.getBoundingClientRect();
         const maxH = Math.min(300, window.innerHeight - rect.bottom - 8);
         this.el.style.left = rect.left + "px";
-        this.el.style.top = (rect.bottom + window.scrollY) + "px";
+        this.el.style.top = rect.bottom + "px";
         this.el.style.width = Math.max(rect.width, 280) + "px";
         this.el.style.maxHeight = maxH + "px";
     }
@@ -234,40 +198,26 @@ class AttributeDropdown {
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-function onRenderActiveEffectConfig(app, html) {
-    const el = html instanceof jQuery ? html[0] : html;
+function attachKeyInputs(el, dropdown) {
     const inputs = el.querySelectorAll('.tab[data-tab="changes"] input[type="text"]');
-    if (!inputs.length) return;
-
-    const dropdown = new AttributeDropdown();
-
     inputs.forEach(input => {
-        // Only attach to the key column (first text input per row)
         const row = input.closest("li, tr, .effect-change");
         if (!row) return;
-        const firstText = row.querySelector('input[type="text"]');
-        if (input !== firstText) return;
+        if (input !== row.querySelector('input[type="text"]')) return;
         dropdown.attach(input);
     });
+}
 
-    // Reattach if the sheet re-renders (new row added etc.)
-    const observer = new MutationObserver(() => {
-        const newInputs = el.querySelectorAll('.tab[data-tab="changes"] input[type="text"]');
-        newInputs.forEach(input => {
-            if (input.dataset.eacAttached) return;
-            const row = input.closest("li, tr, .effect-change");
-            if (!row) return;
-            const firstText = row.querySelector('input[type="text"]');
-            if (input !== firstText) return;
-            input.dataset.eacAttached = "1";
-            dropdown.attach(input);
-        });
-    });
-    observer.observe(el, { childList: true, subtree: true });
+function onRenderActiveEffectConfig(app, html) {
+    const el = html instanceof jQuery ? html[0] : html;
 
-    // Cleanup on close
-    app.element?.addEventListener("close", () => {
-        observer.disconnect();
-        dropdown.destroy();
-    }, { once: true });
+    if (!app._eacDropdown) {
+        app._eacDropdown = new AttributeDropdown();
+        app.element?.addEventListener("close", () => {
+            app._eacDropdown?.destroy();
+            delete app._eacDropdown;
+        }, { once: true });
+    }
+
+    attachKeyInputs(el, app._eacDropdown);
 }
