@@ -1,0 +1,27 @@
+.eac-dropdown {
+    position: absolute;
+    z-index: 10000;
+    background: #1e1e1e;
+    border: 1px solid #555;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.8rem;
+    display: none;
+}
+
+.eac-dropdown .eac-option {
+    padding: 4px 8px;
+    cursor: pointer;
+    color: #ccc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.eac-dropdown .eac-option:hover,
+.eac-dropdown .eac-option.selected {
+    background: rgba(255, 200, 100, 0.15);
+    color: #f0e6d2;
+}

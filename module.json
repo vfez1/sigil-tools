@@ -27,7 +27,8 @@
         "submodules/character-features/character-features.css",
         "submodules/effectmacro/styles/styles.css",
         "submodules/visual-auras/visual-auras.css",
-        "submodules/combat-tracker-dock/styles/module.css"
+        "submodules/combat-tracker-dock/styles/module.css",
+        "submodules/effect-autocomplete/effect-autocomplete.css"
     ],
     "languages": [
         { "lang": "en", "name": "English", "path": "submodules/roll-model/lang/en.json" },

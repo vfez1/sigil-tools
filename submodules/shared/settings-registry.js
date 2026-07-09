@@ -117,6 +117,7 @@ export function registerAllSettings() {
     // ── Submodule toggles (alphabetical) ─────────────────────────────────────
 
     registerToggle(SETTING_NAMES.ENABLE_ACTIVE_AURAS);
+    registerToggle(SETTING_NAMES.ENABLE_EFFECT_AUTOCOMPLETE);
     registerToggle(SETTING_NAMES.ENABLE_CHARACTER_FEATURES);
     registerToggle(SETTING_NAMES.ENABLE_CHAT_ARCHIVE);
     registerToggle(SETTING_NAMES.ENABLE_EFFECT_MACRO);

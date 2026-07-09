@@ -13,6 +13,7 @@ export const SETTING_NAMES = {
     ENABLE_CHARACTER_FEATURES: "enableCharacterFeatures",
     ENABLE_VISUAL_AURAS: "enableVisualAuras",
     ENABLE_CHAT_ARCHIVE: "enableChatArchive",
+    ENABLE_EFFECT_AUTOCOMPLETE: "enableEffectAutocomplete",
 };
 
 export class SettingsUtility {
