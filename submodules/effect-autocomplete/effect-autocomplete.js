@@ -4,7 +4,7 @@ const SETTING_KEY = "enableEffectAutocomplete";
 
 export function registerEffectAutocompleteHooks() {
     if (!isEnabled(SETTING_KEY)) return;
-    Hooks.once("ready", () => initFields());
+    Hooks.once("ready", initFields);
     Hooks.on("renderActiveEffectConfig", onRenderActiveEffectConfig);
 }
 
@@ -12,19 +12,72 @@ export function registerEffectAutocompleteHooks() {
 
 let _fields = null;
 
-async function initFields() {
+function initFields() {
     if (_fields) return;
-    const data = await foundry.utils.fetchJsonWithTimeout(
-        "modules/sigil-tools/submodules/effect-autocomplete/field-data.json"
-    );
-    const SKIP = new Set(["Hidden", "Macros"]);
-    const paths = new Set();
-    for (const [category, keys] of Object.entries(data)) {
-        if (SKIP.has(category)) continue;
-        for (const key of keys) paths.add(key);
-    }
-    _fields = Array.from(paths).sort();
+    const paths = [];
+    const schema = CONFIG.Actor.dataModels.character?.schema?.fields;
+    if (schema) walkFields(schema, "system", paths);
+    // flags.dnd5e — stable hardcoded list of feat flags
+    for (const key of DND5E_FLAGS) paths.push(key);
+    _fields = [...new Set(paths)].filter(p => !p.includes("<key>")).sort();
 }
+
+function walkFields(fields, prefix, paths) {
+    for (const [key, field] of Object.entries(fields)) {
+        const path = prefix ? `${prefix}.${key}` : key;
+        const typeName = field.constructor?.name ?? "";
+        if (field.fields) {
+            walkFields(field.fields, path, paths);
+        } else if (typeName === "MappingField" || typeName === "DocumentCollection") {
+            const elementFields = field.model?.schema?.fields ?? field.element?.fields;
+            const knownKeys = getMappingKeys(path);
+            if (elementFields && knownKeys) {
+                for (const k of knownKeys) walkFields(elementFields, `${path}.${k}`, paths);
+            } else if (!elementFields && knownKeys) {
+                for (const k of knownKeys) paths.push(`${path}.${k}`);
+            } else if (elementFields) {
+                walkFields(elementFields, `${path}.<key>`, paths);
+            } else {
+                paths.push(path);
+            }
+        } else {
+            paths.push(path);
+        }
+    }
+}
+
+function getMappingKeys(path) {
+    if (path === "system.abilities")                return Object.keys(CONFIG.DND5E.abilities);
+    if (path === "system.skills")                   return Object.keys(CONFIG.DND5E.skills);
+    if (path === "system.tools")                    return Object.keys(CONFIG.DND5E.toolIds ?? CONFIG.DND5E.tools ?? {});
+    if (path === "system.spells")                   return ["spell1","spell2","spell3","spell4","spell5","spell6","spell7","spell8","spell9","pact"];
+    if (path === "system.currency")                 return Object.keys(CONFIG.DND5E.currencies);
+    if (path === "system.attributes.senses.ranges") return Object.keys(CONFIG.DND5E.senses);
+    if (path === "system.traits.dm.amount")         return Object.keys(CONFIG.DND5E.damageTypes);
+    if (path === "system.traits.languages.communication") return null;
+    return null;
+}
+
+const DND5E_FLAGS = [
+    "flags.dnd5e.DamageBonusMacro",
+    "flags.dnd5e.diamondSoul",
+    "flags.dnd5e.elvenAccuracy",
+    "flags.dnd5e.halflingLucky",
+    "flags.dnd5e.initiativeAdv",
+    "flags.dnd5e.initiativeAlert",
+    "flags.dnd5e.initiativeDisadv",
+    "flags.dnd5e.initiativeHalfProficiency",
+    "flags.dnd5e.jackOfAllTrades",
+    "flags.dnd5e.meleeCriticalDamageDice",
+    "flags.dnd5e.observantFeat",
+    "flags.dnd5e.powerfulBuild",
+    "flags.dnd5e.reliableTalent",
+    "flags.dnd5e.remarkableAthlete",
+    "flags.dnd5e.spellCriticalThreshold",
+    "flags.dnd5e.spellSniper",
+    "flags.dnd5e.tavernBrawlerFeat",
+    "flags.dnd5e.weaponCriticalThreshold",
+];
 
 function getFields() {
     return _fields ?? [];
