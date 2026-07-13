@@ -142,11 +142,18 @@ export class ActivityUtility {
         // usageConfig in the ACTIVITY_CONSUMPTION hook and saved as flags[MODULE_SHORT].healingScaling.
         activityItem.flags.dnd5e.scaling = dnd5eScaling ?? flags.healingScaling;
 
+        // Cantrips scale by character level (not upcast), so dnd5e writes scaling=0 to the
+        // message flags (no spell slot consumed). Passing 0 to rollDamage short-circuits the
+        // `rollConfig.scaling ?? rollData.scaling` fallback in _processDamagePart, causing the
+        // base formula to be returned unchanged. Pass undefined instead so rollData.scaling
+        // (which uses scalingIncrease → cantripLevel) is used.
+        const isCantrip = activityItem.type === "spell" && activityItem.system?.level === 0;
+
         const usageConfig = {
             isCritical: flags.isCritical ?? false,
             attackMode: flags.versatile ? "twoHanded" : undefined,
             ammunition: actor.items.get(flags.ammunition),
-            scaling: activityItem.flags.dnd5e.scaling,
+            scaling: isCantrip ? undefined : activityItem.flags.dnd5e.scaling,
         };
 
         const dialogConfig = {
