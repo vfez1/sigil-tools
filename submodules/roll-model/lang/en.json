@@ -58,12 +58,14 @@
         "chat": {
             "buttons": {
                 "rollCrit": "Click to roll critical damage.",
+                "rollMax": "Click to maximize damage.",
                 "rollAdvantage": "Click to roll with advantage.",
                 "rollDisadvantage": "Click to roll with disadvantage.",
                 "repeat": "Click to repeat the quick roll."
             },
             "prompts": {
                 "retroCrit": "Upgrade to Crit?",
+                "retroMax": "Maximize damage?",
                 "retroAdv": "Roll {target}?"
             },
             "hide": "???"

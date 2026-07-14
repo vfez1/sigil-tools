@@ -240,6 +240,17 @@ export class ChatUtility {
                 return;
             }
 
+            if (data.type === "retroDamage") {
+                const message = game.messages.get(data.messageId);
+                if (!message) return;
+                const updatedRolls = data.rollsJSON.map(r => CONFIG.Dice.DamageRoll.fromData(r));
+                const rolls = message.rolls.map(r =>
+                    r instanceof CONFIG.Dice.DamageRoll ? updatedRolls.shift() ?? r : r
+                );
+                await ChatUtility.updateChatMessage(message, { flags: data.flags, rolls });
+                return;
+            }
+
             if (data.type !== "embeddedSave") return;
 
             const message = game.messages.get(data.messageId);
@@ -307,15 +318,16 @@ export class ChatUtility {
  * @private
  */
 function _onOverlayHover(message, html) {
-    const hasPermission = game.user.isGM || message?.isAuthor;
-    const isItem = message.flags.dnd5e?.use !== undefined;
+    const actor = message.getAssociatedActor?.();
+    const hasPermission = game.user.isGM || message?.isAuthor || actor?.isOwner;
+    const isItem = message.flags.dnd5e?.activity !== undefined;
 
     // Save-section overlays are handled by per-section hover in _injectOverlayRetroButtons
     const saveOverlays = html.find("[data-save-speaker] .rm-overlay");
     html.find(".rm-overlay").not(saveOverlays).show();
     const saveMultiRollOverlays = html.find("[data-save-speaker] .rm-overlay-multiroll");
     html.find(".rm-overlay-multiroll").not(saveMultiRollOverlays).toggle(hasPermission && !ChatUtility.isMessageMultiRoll(message));
-    html.find(".rm-overlay-crit").toggle(hasPermission && isItem && !ChatUtility.isMessageCritical(message));
+    html.find(".rm-overlay-crit").toggle(hasPermission && isItem);
 }
 
 /**
@@ -779,9 +791,12 @@ async function _injectOverlayRetroButtons(message, html) {
 
     html.find(".rm-damage .dice-total").append($(overlayCrit));
 
-    // Handle clicking the multi-roll overlay buttons
-    html.find(".rm-overlay-crit div").click(async (event) => {
+    html.find(".rm-overlay-crit div[data-type='crit']").click(async (event) => {
         await _processRetroCritButtonEvent(message, event);
+    });
+
+    html.find(".rm-overlay-crit div[data-type='max']").click(async (event) => {
+        await _processRetroMaxButtonEvent(message, event);
     });
 
     // Save-section adv/dis overlays: show only when hovering the specific save section.
@@ -1013,9 +1028,17 @@ async function _processRetroCritButtonEvent(message, event) {
         if (!confirmed) return;
 
         message.flags[MODULE_SHORT].isCritical = true;
+        message.flags[MODULE_SHORT].isMaximized = false;
 
+        // Snapshot originals on first use; always restore before applying so CRIT and MAX don't stack.
+        _snapshotBaseRolls(message);
+        _restoreBaseRolls(message);
+
+        // Filter AFTER restore so we get the fresh roll objects, not the old maxed ones.
         const rolls = message.rolls.filter((r) => r instanceof CONFIG.Dice.DamageRoll);
-        const crits = await ActivityUtility.getDamageFromMessage(message);
+        const crits = message.flags[MODULE_SHORT].isHealing
+            ? await ActivityUtility.getHealingFromMessage(message)
+            : await ActivityUtility.getDamageFromMessage(message);
 
         for (let i = 0; i < rolls.length; i++) {
             const baseRoll = rolls[i];
@@ -1033,12 +1056,88 @@ async function _processRetroCritButtonEvent(message, event) {
             message.rolls[message.rolls.indexOf(baseRoll)] = critRoll;
         }
 
-        ChatUtility.updateChatMessage(message, {
-            flags: message.flags,
-            rolls: message.rolls,
-        });
+        _applyDamageRollUpdate(message);
 
         CoreUtility.playRollSound();
+    }
+}
+
+/**
+ * Processes and handles a retroactive maximize button click event.
+ * Sets every die result to its maximum face value and recalculates totals.
+ * @param {ChatMessage} message The chat message for which an event is being processed.
+ * @param {Event} event The originating event of the button click.
+ * @private
+ */
+async function _processRetroMaxButtonEvent(message, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const button = event.currentTarget;
+    if (button.dataset.action !== "rm-retro") return;
+
+    const dialogOptions = {
+        width: 100,
+        top: event ? event.clientY - 50 : null,
+        left: window.innerWidth - 510,
+    };
+
+    const confirmed = await DialogUtility.getConfirmDialog(CoreUtility.localize(`${MODULE_SHORT}.chat.prompts.retroMax`), dialogOptions);
+    if (!confirmed) return;
+
+    message.flags[MODULE_SHORT].isMaximized = true;
+    message.flags[MODULE_SHORT].isCritical = false;
+
+    // Snapshot originals on first use; always restore before applying so CRIT and MAX don't stack.
+    _snapshotBaseRolls(message);
+    _restoreBaseRolls(message);
+
+    const rolls = message.rolls.filter((r) => r instanceof CONFIG.Dice.DamageRoll);
+
+    for (const roll of rolls) {
+        for (const term of roll.terms) {
+            if (!(term instanceof foundry.dice.terms.Die)) continue;
+            for (const result of term.results) {
+                result.result = term.faces;
+            }
+        }
+        RollUtility.resetRollGetters(roll);
+    }
+
+    _applyDamageRollUpdate(message);
+
+    CoreUtility.playRollSound();
+}
+
+function _snapshotBaseRolls(message) {
+    if (message.flags[MODULE_SHORT].baseRollsJSON) return;
+    const damageRolls = message.rolls.filter(r => r instanceof CONFIG.Dice.DamageRoll);
+    message.flags[MODULE_SHORT].baseRollsJSON = damageRolls.map(r => foundry.utils.deepClone(r.toJSON()));
+}
+
+function _restoreBaseRolls(message) {
+    const snapshots = message.flags[MODULE_SHORT].baseRollsJSON;
+    if (!snapshots) return;
+    const restored = snapshots.map(j => CONFIG.Dice.DamageRoll.fromData(foundry.utils.deepClone(j)));
+    let idx = 0;
+    for (let i = 0; i < message.rolls.length; i++) {
+        if (message.rolls[i] instanceof CONFIG.Dice.DamageRoll) {
+            message.rolls[i] = restored[idx++];
+        }
+    }
+}
+
+function _applyDamageRollUpdate(message) {
+    if (message.isOwner) {
+        ChatUtility.updateChatMessage(message, { flags: message.flags, rolls: message.rolls });
+    } else {
+        const damageRolls = message.rolls.filter(r => r instanceof CONFIG.Dice.DamageRoll);
+        game.socket.emit(`module.${MODULE_NAME}`, {
+            type: "retroDamage",
+            messageId: message.id,
+            flags: foundry.utils.deepClone(message.flags),
+            rollsJSON: damageRolls.map(r => r.toJSON()),
+        });
     }
 }
 

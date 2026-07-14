@@ -174,6 +174,27 @@ export class ActivityUtility {
         return activity.rollDamage(usageConfig, dialogConfig, messageConfig);
     }
 
+    static getHealingFromMessage(message) {
+        const activity = message.getAssociatedActivity();
+
+        const flags = (message.flags ?? message.data?.flags)?.[MODULE_SHORT] ?? {};
+
+        const activityItem = activity.item;
+        activityItem.flags.dnd5e ??= {};
+        activityItem.flags.dnd5e.scaling = (message.flags ?? message.data?.flags)?.dnd5e?.scaling ?? flags.healingScaling;
+
+        const usageConfig = {
+            isCritical: flags.isCritical ?? false,
+            scaling: activityItem.flags.dnd5e.scaling,
+        };
+
+        const dialogConfig = { configure: false };
+        const messageConfig = { create: false, data: { flags: {} } };
+        messageConfig.data.flags[MODULE_SHORT] = { quickRoll: true };
+
+        return activity.rollDamage(usageConfig, dialogConfig, messageConfig);
+    }
+
     static getFormulaFromMessage(message) {
         const activity = message.getAssociatedActivity();
         activity.item.flags.dnd5e ??= {};

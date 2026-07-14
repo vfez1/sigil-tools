@@ -11,5 +11,6 @@ export const TEMPLATE = {
     OPTIONS: "rm-options.html",
     BUTTON: "rm-button.html",
     OVERLAY_MULTIROLL: "rm-overlay-multiroll.html",
-    OVERLAY_CRIT: "rm-overlay-crit.html"
+    OVERLAY_CRIT: "rm-overlay-crit.html",
+    OVERLAY_MAX: "rm-overlay-max.html"
 }

@@ -314,9 +314,23 @@ damage-application button.rm-already-applied::before {
     color: var(--color-text-dark-5);
 }
 
-.rm-overlay i:hover {
+.rm-overlay i:hover,
+.rm-overlay span:hover {
     cursor: pointer;
     text-shadow: 0 0 10px var(--color-shadow-primary);
+}
+
+.rm-overlay-crit {
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 0 8px;
+}
+
+.rm-overlay-crit div {
+    width: auto;
+    font-size: var(--font-size-11);
+    font-weight: bold;
+    letter-spacing: 0.03em;
 }
 
 .rm-overlay-header {
