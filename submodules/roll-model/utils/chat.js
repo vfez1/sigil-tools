@@ -228,6 +228,18 @@ export class ChatUtility {
     static registerSaveSocketListener() {
         game.socket.on(`module.${MODULE_NAME}`, async (data) => {
             if (!game.user.isGM) return;
+
+            if (data.type === "retroSave") {
+                const message = game.messages.get(data.messageId);
+                if (!message) return;
+                const upgradedRoll = CONFIG.Dice.D20Roll.fromData(data.rollJSON);
+                const rolls = message.rolls.map(r =>
+                    (r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === data.speaker) ? upgradedRoll : r
+                );
+                await ChatUtility.updateChatMessage(message, { rolls });
+                return;
+            }
+
             if (data.type !== "embeddedSave") return;
 
             const message = game.messages.get(data.messageId);
@@ -772,13 +784,16 @@ async function _injectOverlayRetroButtons(message, html) {
         await _processRetroCritButtonEvent(message, event);
     });
 
-    // Save-section adv/dis overlays: show only when hovering the specific save section
-    const hasPermission = game.user.isGM || message?.isAuthor;
+    // Save-section adv/dis overlays: show only when hovering the specific save section.
+    // Permission is per-section: GM always, or the player who owns the saving actor.
     html.find("[data-save-speaker]").each((_, section) => {
         const $section = $(section);
+        const speakerName = section.dataset.saveSpeaker;
+        const savingActor = game.actors?.find(a => a.name === speakerName);
+        const canReroll = game.user.isGM || message?.isAuthor || savingActor?.isOwner;
         $section.hover(
             () => {
-                if (!hasPermission) return;
+                if (!canReroll) return;
                 $section.find(".rm-overlay-multiroll").show();
             },
             () => {
@@ -938,7 +953,17 @@ async function _processRetroAdvButtonEvent(message, event) {
                 message.rolls.find(r => r instanceof CONFIG.Dice.D20Roll);
             if (!saveRoll) return;
             await RollUtility.upgradeRoll(saveRoll, state);
-            ChatUtility.updateChatMessage(message, { rolls: message.rolls });
+            if (message.isOwner) {
+                ChatUtility.updateChatMessage(message, { rolls: message.rolls });
+            } else {
+                // Player owns the saving actor but not the activity message — ask GM to update.
+                game.socket.emit(`module.${MODULE_NAME}`, {
+                    type: "retroSave",
+                    messageId: message.id,
+                    speaker,
+                    rollJSON: saveRoll.toJSON(),
+                });
+            }
         } else {
             message.flags[MODULE_SHORT].advantage = state === ROLL_STATE.ADV;
             message.flags[MODULE_SHORT].disadvantage = state === ROLL_STATE.DIS;
