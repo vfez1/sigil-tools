@@ -15,31 +15,57 @@ let _fields = null;
 function initFields() {
     if (_fields) return;
     const paths = [];
-    const schema = CONFIG.Actor.dataModels.character?.schema?.fields;
-    if (schema) walkFields(schema, "system", paths);
-    // flags.dnd5e — stable hardcoded list of feat flags
+    const visited = new Set();
+
+    // Actor (character) schema
+    const actorSchema = CONFIG.Actor.dataModels.character?.schema?.fields;
+    if (actorSchema) walkFields(actorSchema, "system", paths, visited);
+
+    // Item schemas — union of all item types
+    for (const model of Object.values(CONFIG.Item.dataModels ?? {})) {
+        const schema = model?.schema?.fields;
+        if (schema) walkFields(schema, "system", paths, visited);
+    }
+
+    // Activity schemas — bracket-notation paths used by enchantment effects
+    for (const [typeName, config] of Object.entries(CONFIG.DND5E?.activityTypes ?? {})) {
+        const schema = config.documentClass?.schema?.fields;
+        if (schema) walkFields(schema, `activities[${typeName}]`, paths, visited);
+    }
+
+    // Document-level properties not in any system schema
+    paths.push("name");
+
+    // Virtual paths and feat flags not present in any schema
+    for (const key of DND5E_VIRTUAL) paths.push(key);
     for (const key of DND5E_FLAGS) paths.push(key);
+
     _fields = [...new Set(paths)].filter(p => !p.includes("<key>")).sort();
 }
 
-function walkFields(fields, prefix, paths) {
+function walkFields(fields, prefix, paths, visited = new Set()) {
+    if (visited.has(fields)) return;
+    visited.add(fields);
     for (const [key, field] of Object.entries(fields)) {
         const path = prefix ? `${prefix}.${key}` : key;
         const typeName = field.constructor?.name ?? "";
         if (field.fields) {
-            walkFields(field.fields, path, paths);
+            walkFields(field.fields, path, paths, visited);
         } else if (typeName === "MappingField" || typeName === "DocumentCollection") {
             const elementFields = field.model?.schema?.fields ?? field.element?.fields;
             const knownKeys = getMappingKeys(path);
             if (elementFields && knownKeys) {
-                for (const k of knownKeys) walkFields(elementFields, `${path}.${k}`, paths);
+                for (const k of knownKeys) walkFields(elementFields, `${path}.${k}`, paths, visited);
             } else if (!elementFields && knownKeys) {
                 for (const k of knownKeys) paths.push(`${path}.${k}`);
             } else if (elementFields) {
-                walkFields(elementFields, `${path}.<key>`, paths);
+                walkFields(elementFields, `${path}.<key>`, paths, visited);
             } else {
                 paths.push(path);
             }
+        } else if (field.model?.schema?.fields) {
+            // EmbeddedDataField (e.g. DamageField) — recurse into the embedded model's schema
+            walkFields(field.model.schema.fields, path, paths, visited);
         } else {
             paths.push(path);
         }
@@ -57,6 +83,22 @@ function getMappingKeys(path) {
     if (path === "system.traits.languages.communication") return null;
     return null;
 }
+
+// Virtual paths from EnchantmentData._applyLegacy — handled by dnd5e effect
+// application code, not schema fields
+const DND5E_VIRTUAL = [
+    "system.ability",
+    "system.attack.bonus",
+    "system.attack.flat",
+    "system.damage.bonus",
+    "system.damage.parts",
+    "system.damage.types",
+    "system.save.dc",
+    "system.save.scaling",
+    // deprecated since 5.1, still valid until 6.0
+    "system.preparation.mode",
+    "system.preparation.prepared",
+];
 
 const DND5E_FLAGS = [
     "flags.dnd5e.DamageBonusMacro",
