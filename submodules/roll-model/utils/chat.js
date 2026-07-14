@@ -1254,6 +1254,11 @@ async function _injectEmbeddedSave(message, html) {
         rollHTML.find(".dice-total").replaceWith(render);
         rollHTML.find(".dice-tooltip").prepend(rollHTML.find(".dice-formula"));
 
+        const labeledFormula = RollUtility.buildLabeledFormula(saveRoll);
+        if (labeledFormula) {
+            rollHTML.find(".dice-formula").text(labeledFormula);
+        }
+
         const sectionHTML = $(await RenderUtility.render(TEMPLATE.SECTION, {
             section: `rm-section-${ROLL_TYPE.ABILITY_SAVE}`,
             title: speakerName,
