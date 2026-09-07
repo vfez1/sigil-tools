@@ -176,3 +176,16 @@
     padding-right: 0.5rem;
     white-space: nowrap;
 }
+
+/* Token config aura table has 5 real columns (name, color, radius, enabled, hidden) - a
+   different 5-column layout than the shared .va-pt-header/.va-pt-row default (also used by
+   the setup app's preset table), so it needs its own column widths. */
+.va-tc-wrap .va-pt-header,
+.va-tc-wrap .va-pt-row {
+    grid-template-columns: 1fr 3.5rem 5rem 4.5rem 4.5rem !important;
+}
+
+.va-tc-wrap .va-pt-header span:nth-child(4),
+.va-tc-wrap .va-pt-header span:nth-child(5) {
+    text-align: right;
+}

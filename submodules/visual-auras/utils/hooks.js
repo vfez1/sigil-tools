@@ -67,7 +67,8 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
     if (options["visual-auras.skipRefresh"]) return;
 
     const flatChanges = foundry.utils.flattenObject(changes);
-    if (!("flags.sigil-tools.visualAuras.disabled" in flatChanges)) return;
+    if (!("flags.sigil-tools.visualAuras.disabled" in flatChanges)
+        && !("flags.sigil-tools.visualAuras.hidden" in flatChanges)) return;
 
     await refreshTokenAuras(tokenDoc);
 }
@@ -169,15 +170,20 @@ async function onRenderTokenConfig(tokenConfig, element, isPlaced) {
     }
 
     const disabledIds = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];
+    const hiddenIds = tokenDoc.getFlag("sigil-tools", "visualAuras.hidden") ?? [];
 
     const rows = presets.map(p => {
         const enabled = !disabledIds.includes(p.id);
+        const visible = !hiddenIds.includes(p.id);
         return `<div class="va-pt-row">
             <span class="va-pt-name">${p.name}</span>
             <span class="va-color-swatch" style="background:${p.color};"></span>
             <span class="va-pt-radius">${p.radius} ft</span>
             <div class="va-pt-controls">
                 <input type="checkbox" data-va-toggle data-preset-id="${p.id}" ${enabled ? "checked" : ""} title="${enabled ? "Disable" : "Enable"} this aura" />
+            </div>
+            <div class="va-pt-controls">
+                <input type="checkbox" data-va-visible data-preset-id="${p.id}" ${visible ? "checked" : ""} title="${visible ? "Hide" : "Show"} this aura on this token only" />
             </div>
         </div>`;
     }).join("");
@@ -188,11 +194,12 @@ async function onRenderTokenConfig(tokenConfig, element, isPlaced) {
                 <span>Name</span>
                 <span>Color</span>
                 <span>Radius</span>
-                <span></span>
+                <span>Enabled</span>
+                <span>Visible</span>
             </div>
             ${rows}
         </div>
-        <p class="va-tc-note">Toggle auras for this token. Changes take effect immediately.</p>
+        <p class="va-tc-note">Toggle auras for this token. Unchecking Visible suppresses the aura on this token only, even if enabled. Changes take effect immediately.</p>
     </div>`;
 
     vaTab.querySelectorAll("[data-va-toggle]").forEach(cb => {
@@ -203,6 +210,17 @@ async function onRenderTokenConfig(tokenConfig, element, isPlaced) {
                 ? current.filter(pid => pid !== id)
                 : [...current.filter(pid => pid !== id), id];
             await tokenDoc.setFlag("sigil-tools", "visualAuras.disabled", newDisabled);
+        });
+    });
+
+    vaTab.querySelectorAll("[data-va-visible]").forEach(cb => {
+        cb.addEventListener("change", async () => {
+            const id = cb.dataset.presetId;
+            const current = tokenDoc.getFlag("sigil-tools", "visualAuras.hidden") ?? [];
+            const newHidden = cb.checked
+                ? current.filter(pid => pid !== id)
+                : [...current.filter(pid => pid !== id), id];
+            await tokenDoc.setFlag("sigil-tools", "visualAuras.hidden", newHidden);
         });
     });
 }

@@ -22,9 +22,12 @@ export function getPresetsForToken(tokenDoc) {
     if (!actorPresets.length) return [];
 
     const disabledIds = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];
-    if (!disabledIds.length) return actorPresets;
+    // Hidden is a purely visual, per-token override: even an enabled preset produces no
+    // region on a token where it's hidden.
+    const hiddenIds = tokenDoc.getFlag("sigil-tools", "visualAuras.hidden") ?? [];
+    if (!disabledIds.length && !hiddenIds.length) return actorPresets;
 
-    return actorPresets.filter(p => !disabledIds.includes(p.id));
+    return actorPresets.filter(p => !disabledIds.includes(p.id) && !hiddenIds.includes(p.id));
 }
 
 export function buildRegionData(preset, token) {
