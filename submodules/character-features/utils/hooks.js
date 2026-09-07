@@ -76,7 +76,11 @@ async function _applyAttunementToggle(actor, nowAttuned, effectConfigs) {
         }
     }
 
+    // This hook fires on every connected client, not just the one with permission to write
+    // (e.g. GM or the actor's owner) — skip parents the current user can't actually update,
+    // instead of letting Foundry throw a permission error for every other connected client.
     for (const [parent, updates] of updatesByParent) {
+        if (!parent.isOwner) continue;
         await parent.updateEmbeddedDocuments("ActiveEffect", updates);
     }
 
@@ -140,7 +144,9 @@ async function _applyWildshapeEffectToggle(actor, isWildShaping, attunementActor
         }
     }
 
+    // Same reasoning as _applyAttunementToggle: only act on parents this client can write to.
     for (const [parent, updates] of updatesByParent) {
+        if (!parent.isOwner) continue;
         await parent.updateEmbeddedDocuments("ActiveEffect", updates);
     }
 
