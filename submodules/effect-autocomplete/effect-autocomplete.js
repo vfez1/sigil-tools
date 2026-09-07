@@ -15,22 +15,32 @@ let _fields = null;
 function initFields() {
     if (_fields) return;
     const paths = [];
-    const visited = new Set();
+
+    // Each top-level schema gets its OWN visited set. walkFields's cycle guard only needs to
+    // stop infinite recursion within a single schema tree — sharing one Set across independent
+    // top-level schemas is wrong, because unrelated schemas can reference-share a nested field
+    // container (e.g. Actor's prototypeToken reuses TokenDocument's field definitions), which
+    // would silently skip the second schema entirely once the first walk had already visited it.
 
     // Actor (character) schema
     const actorSchema = CONFIG.Actor.dataModels.character?.schema?.fields;
-    if (actorSchema) walkFields(actorSchema, "system", paths, visited);
+    if (actorSchema) walkFields(actorSchema, "system", paths, new Set());
+
+    // Token document schema — effects can target the placed/prototype token directly
+    // (e.g. "token.sight.range", "token.light.range") separately from actor senses data.
+    const tokenSchema = CONFIG.Token?.documentClass?.schema?.fields;
+    if (tokenSchema) walkFields(tokenSchema, "token", paths, new Set());
 
     // Item schemas — union of all item types
     for (const model of Object.values(CONFIG.Item.dataModels ?? {})) {
         const schema = model?.schema?.fields;
-        if (schema) walkFields(schema, "system", paths, visited);
+        if (schema) walkFields(schema, "system", paths, new Set());
     }
 
     // Activity schemas — bracket-notation paths used by enchantment effects
     for (const [typeName, config] of Object.entries(CONFIG.DND5E?.activityTypes ?? {})) {
         const schema = config.documentClass?.schema?.fields;
-        if (schema) walkFields(schema, `activities[${typeName}]`, paths, visited);
+        if (schema) walkFields(schema, `activities[${typeName}]`, paths, new Set());
     }
 
     // Document-level properties not in any system schema
@@ -63,8 +73,13 @@ function walkFields(fields, prefix, paths, visited = new Set()) {
             } else {
                 paths.push(path);
             }
-        } else if (field.model?.schema?.fields) {
-            // EmbeddedDataField (e.g. DamageField) — recurse into the embedded model's schema
+        } else if (typeName === "EmbeddedDataField" && field.model?.schema?.fields) {
+            // EmbeddedDataField (e.g. DamageField) — recurse into the embedded model's schema.
+            // NOT ForeignDocumentField (e.g. actorId, container): those also expose a
+            // `.model` pointing at the referenced Document class (so `.model.schema.fields`
+            // resolves too), but recursing there walks the ENTIRE referenced document's schema
+            // (Actor -> items -> effects -> ... ) as if it were nested data, producing deep,
+            // useless cross-document paths instead of stopping at the reference itself.
             walkFields(field.model.schema.fields, path, paths, visited);
         } else {
             paths.push(path);
