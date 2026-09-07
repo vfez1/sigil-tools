@@ -66,8 +66,31 @@ PC-specific automation. Entry point: `character-features.js` (imported from `rol
 - Default config (Wabu): Dueling + Natural Armor toggle OFF; Improved Circle Forms + Lunar Transformation toggle ON (Lunar Transformation requires Cloak of the Lunar Guardian attunement).
 - To add a new character: add a tab in `CharacterSetupApp.js` + template section in `setup.hbs`, and extend `DEFAULT_CONFIG` in `settings.js`.
 
-### grid-aware-auras (`submodules/grid-aware-auras/`)
-Grid-accurate aura shapes on tokens with configurable effect/macro automation. Has a preset manager. Also owns the `renderSettingsConfig` hook (`loader.js`) that injects styled section headers into the sigil-tools settings panel.
+### visual-auras (`submodules/visual-auras/`)
+Home-grown replacement for the old third-party `grid-aware-auras` module (removed). Renders token auras as native v13/v14 `Region` documents instead of a custom shape-drawing layer. Entry point: `visual-auras.js` (imported from `roll-model.js`), gated by `enableVisualAuras`.
+
+- Preset-based: presets define name/color/radius/effect-linkage, configured via `VisualAuraSetupApp` (world settings menu) and per-actor via `VisualAuraActorConfigApp`.
+- Injects an "Auras" tab into token config sheets (placed + prototype) for per-token enable/disable overrides (`flags.sigil-tools.visualAuras.disabled`).
+- `createToken`/`deleteToken`/`canvasReady` hooks create, clean up, and reconcile the `Region` documents per scene; reconciliation also re-derives state from live Active Effects so auras don't go stale on scenes that weren't active when an effect toggled.
+- Syncs with `ActiveAuras`-linked effects (`flags.ActiveAuras.visualAuraPreset`) so an aura preset auto-enables/disables when its controlling effect is created/deleted/toggled.
+- GM-authoritative: most hooks early-return for non-GMs or non-primary GMs (lowest user id among active GMs) to avoid duplicate region writes.
+
+### chat-archive (`submodules/chat-archive/`)
+Auto-archives old chat messages to an external server to keep the local chat log from growing unbounded (mitigates the client lag from long-session chat-log DOM accumulation). Entry point: `chat-archive.js` (imported from `roll-model.js`), gated by `enableChatArchive`.
+
+- On every `createChatMessage` (and once at `ready`), trims `game.messages` down to `chatArchiveKeepCount` by POSTing the oldest messages' rendered HTML to `chatArchiveUrl`, then deletes them locally once the server confirms.
+- Waits for roll-model's async attack/damage section injection to finish before capturing a message's HTML, so archived cards aren't missing content.
+- GM-only; re-entrancy guarded so overlapping `createChatMessage` events don't trigger concurrent archive runs.
+
+### effect-autocomplete (`submodules/effect-autocomplete/`)
+Adds an autocomplete/validate dropdown to the Active Effect Config "Changes" key field. Entry point: `effect-autocomplete.js` (imported from `roll-model.js`), gated by `enableEffectAutocomplete`.
+
+- Builds a flat list of valid effect-change key paths once on `ready` by walking the Actor (character) and Item data model schemas (prefixed `system.`), the `TokenDocument` schema (prefixed `token.`), and DND5E activity schemas (bracket-notation, for enchantment effects) — plus a hardcoded list of virtual paths (`DND5E_VIRTUAL`, e.g. `system.save.dc`) and known `flags.dnd5e.*` toggles (`DND5E_FLAGS`) that don't appear in any schema.
+- `walkFields` recurses `SchemaField`s and `EmbeddedDataField`s; `MappingField`/`DocumentCollection` fields (e.g. `system.abilities`, `system.skills`) are expanded via a hardcoded key list in `getMappingKeys` since the valid keys aren't derivable from the schema alone. Cycle-safe via a shared `visited` set.
+- Hooks `renderActiveEffectConfig`: attaches a filtered dropdown + red-outline invalid-key styling to each key input in the Changes tab.
+
+### combat-tracker-dock (`submodules/combat-tracker-dock/`)
+Vendored third-party module ("Carousel Combat Tracker" by theripper93) — a carousel-style combat tracker UI, spiritual successor to Combat Carousel. Loaded unconditionally as its own top-level esmodule in `module.json` (not gated by a sigil-tools enable toggle like the other submodules). Has its own `renderSettingsConfig` hook (`scripts/config.js`) for its settings.
 
 ### effectmacro (`submodules/effectmacro/`)
 Runs macros from active effects on various triggers (onCreate, onDelete, onEnable, etc.).
@@ -92,7 +115,7 @@ Dev utility for auto-loading a specific scene.
 - **Enable toggles** for each submodule are registered in `shared/settings.js` (`SETTING_NAMES.ENABLE_*`). The settings UI panel groups these at the bottom under a "Submodules" header via `shared/settings-panel.js`.
 - **Settings panel section headers** are injected by `shared/settings-panel.js` in a `renderSettingsConfig` hook. Add new sections there when adding submodule-specific settings.
 - **Lang strings** live in `lang/en.json` under the `rm` key (matching `MODULE_SHORT`). Keys follow the pattern `rm.settings.<settingKey>.name` / `.hint`.
-- **No build step** for custom code — plain ES modules loaded directly. `grid-aware-auras/dist/module.js` is the exception (pre-built).
+- **No build step** — plain ES modules loaded directly, including vendored third-party submodules (`effectmacro`, `combat-tracker-dock`).
 - **Flags** on documents use `MODULE_SHORT` (`rm`) as the namespace.
 - **libWrapper** is used for patching core Foundry methods (e.g. roll mode patch for v14 compatibility).
 - **Socket** (`module.sigil-tools`) is used for player→GM communication (e.g. ACK mode damage stamping).
@@ -102,6 +125,7 @@ Dev utility for auto-loading a specific scene.
 ## PC characters (campaign-specific)
 
 - **Wabu** — Moon Druid. Has Wild Shape with Improved Circle Forms and Lunar Transformation (Cloak of the Lunar Guardian, needs attunement). The character-features wildshape toggle was originally written for this character.
+- **Sheyla** (Iliad) — Barbarian. Has Relentless Rage, whose save DC is formula-driven (`10 + uses.spent * 5`, resets to 10 on rest) rather than flat — relevant if working on `roll-model`'s embedded-save flow (`chat.js` `_processSaveButtonEvent`).
 - Other players use features like Portent, GWM, Potent Spellcasting, Celestial Revelation, Raven Queen Inspiration.
 
 ---
