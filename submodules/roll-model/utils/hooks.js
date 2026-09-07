@@ -172,6 +172,15 @@ export class HooksUtility {
         });
 
         Hooks.on(HOOKS_DND5E.PRE_ROLL_DAMAGE, (config, dialog, message) => {
+            // Activity-driven damage (normal weapon rolls) already has flags set by processActivity
+            // via PRE_USE_ACTIVITY earlier in the same pipeline. A bare damage enricher with no
+            // associated activity (e.g. a weapon mastery's [[/damage ...]] link) never goes through
+            // that hook, so flags[MODULE_SHORT] would otherwise never exist — process it here instead,
+            // same as the ability-check/save/skill/tool hooks above do for their own standalone rolls.
+            if (!message.data?.flags?.[MODULE_SHORT]) {
+                RollUtility.processRoll(config, dialog, message);
+            }
+
             if (!message.data?.flags || !message.data.flags[MODULE_SHORT]?.quickRoll) return true;
 
             for (const roll of config.rolls) {
