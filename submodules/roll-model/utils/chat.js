@@ -1290,7 +1290,15 @@ async function _processSaveButtonEvent(message, button, event) {
 
     const activityObj = message.getAssociatedActivity?.();
     const dcRaw = activityObj?.save?.dc;
-    const dc = typeof dcRaw === "number" ? dcRaw : dcRaw?.value ?? dcRaw?.flat ?? undefined;
+    const liveDc = typeof dcRaw === "number" ? dcRaw : dcRaw?.value ?? dcRaw?.flat ?? undefined;
+
+    // Some DCs (e.g. Relentless Rage's "10 + uses spent * 5") are formula-driven off a
+    // resource that can change between when this card was posted and when the button is
+    // clicked. Re-deriving the DC live would silently judge the roll against a value that
+    // no longer matches what's printed on the button, so prefer the DC baked into the
+    // button's own label at render time and only fall back to the live value if it can't be read.
+    const printedDc = parseInt(button.textContent?.match(/\d+/)?.[0], 10);
+    const dc = Number.isFinite(printedDc) ? printedDc : liveDc;
 
     const isAdvantage = CoreUtility.areKeysPressed(event, "skipDialogAdvantage");
     const isDisadvantage = CoreUtility.areKeysPressed(event, "skipDialogDisadvantage");
