@@ -22,6 +22,7 @@ const foundryGlobals = {
     Region: "readonly",
     Scene: "readonly",
     Token: "readonly",
+    TokenDocument: "readonly",
     User: "readonly",
     // Applications
     Dialog: "readonly",
@@ -30,14 +31,19 @@ const foundryGlobals = {
     Roll: "readonly",
     // jQuery
     $: "readonly",
+    jQuery: "readonly",
     // Foundry utilities
     fromUuid: "readonly",
     fromUuidSync: "readonly",
     CanvasAnimation: "readonly",
+    Color: "readonly",
+    FormDataExtended: "readonly",
     Ray: "readonly",
     PIXI: "readonly",
+    renderTemplate: "readonly",
     // Third-party / module globals
     effectmacro: "readonly",
+    Handlebars: "readonly",
     libWrapper: "readonly",
     socketlib: "readonly",
     dnd5e: "readonly",
@@ -48,6 +54,8 @@ export default [
         ignores: [
             "_temp/**",
             "node_modules/**",
+            // Vendored third-party bundle, not edited by hand.
+            "submodules/combat-tracker-dock/scripts/sortable.js",
         ],
     },
     {

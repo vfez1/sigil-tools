@@ -403,7 +403,6 @@ export function addColorPicker(input, { value, opacity = false } = {}) {
 
     textInput.classList.add("color-picker-added");
     textInput.classList.add("color");
-    const parent = textInput.parentElement;
 
     value ??= textInput.value || "#000000ff";
 
@@ -441,5 +440,5 @@ export function addColorPicker(input, { value, opacity = false } = {}) {
     });
 
     textInput.after(colorPickerElement);
-    opacity && colorPickerElement.after(alphaPickerElement);
+    if (opacity) colorPickerElement.after(alphaPickerElement);
 }

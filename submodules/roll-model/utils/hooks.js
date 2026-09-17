@@ -1,4 +1,4 @@
-import { MODULE_NAME, MODULE_SHORT, MODULE_TITLE } from "../../shared/const.js";
+import { MODULE_NAME, MODULE_SHORT } from "../../shared/const.js";
 import { isEnabled } from "../../shared/enable.js";
 import { SETTING_NAMES, SettingsUtility } from "../../shared/settings.js";
 import { registerSettingsPanelHooks } from "../../shared/settings-panel.js";

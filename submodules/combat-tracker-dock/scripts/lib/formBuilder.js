@@ -422,8 +422,6 @@ export class FormHelper extends foundry.applications.api.HandlebarsApplicationMi
         super({ actions, ...data.options });
         FormHelper.registerPartial();
         this.menu = data.settingsMenu;
-        this.resolve;
-        this.reject;
         this.promise = new Promise((resolve, reject) => {
             this.resolve = resolve;
             this.reject = reject;
@@ -553,7 +551,6 @@ export class FormHelper extends foundry.applications.api.HandlebarsApplicationMi
 
     _onChangeForm(formConfig, event) {
         super._onChangeForm(formConfig, event);
-        const formData = new FormDataExtended(this.element);
     }
 
     getFormData() {
