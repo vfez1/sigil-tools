@@ -63,11 +63,11 @@ export class CombatDock extends HandlebarsApplication {
     }
 
     get trueCarousel() {
-        return game.settings.get(MODULE_ID, "carouselStyle") < 2;
+        return true;
     }
 
     get leftAligned() {
-        return game.settings.get(MODULE_ID, "carouselStyle") == 1;
+        return true;
     }
 
     get autoFit() {
@@ -237,7 +237,7 @@ export class CombatDock extends HandlebarsApplication {
         };
         const verticalSize = max * aspect;
 
-        const sizeModifier = game.settings.get(MODULE_ID, "floatingSize");
+        const sizeModifier = 60;
         const combatantCount = this.sortedCombatants.length + (combatantRevived ? 1 : 0);
         let maxSpace, portraitSize;
         if (this.isVertical) {
@@ -250,11 +250,6 @@ export class CombatDock extends HandlebarsApplication {
             const buttonsWidth = (leftButtons?.offsetWidth ?? 0) + (rightButtons?.offsetWidth ?? 0);
             maxSpace = uiTopWidth - buttonsWidth;
             portraitSize = Math.min(max, Math.floor(maxSpace / combatantCount));
-            if (!this.autoFit) {
-                // Still clamp to available space even when autofit is off
-                document.documentElement.style.setProperty("--combatant-portrait-size", (portraitSize / 1.2) + "px");
-                return;
-            }
         } else {
             maxSpace = window.innerWidth * sizeModifier / 100;
             portraitSize = Math.min(max, Math.floor(maxSpace / combatantCount));
@@ -498,10 +493,9 @@ export class CombatDock extends HandlebarsApplication {
 
     centerCurrentCombatant() {
         if(!this.element) return;
-        const carouselStyle = game.settings.get(MODULE_ID, "carouselStyle");
         const combatantsEl = this.element.querySelector("#combatants");
         if (this.trueCarousel) {
-            if (carouselStyle == 1) {
+            if (this.leftAligned) {
                 return combatantsEl.scrollTo({
                     top: 0,
                     left: 0,

@@ -33,10 +33,6 @@
                 }
             },
             "integration": "Integration",
-            "floatingSize": {
-                "name": "Floating Size",
-                "hint": "The size of the floating window. The larger the value, the larger the window will be. This will not affect the Horizontal (Docked) mode."
-            },
             "portraitSize": {
                 "name": "Carousel Size",
                 "hint": "The maximum size of the portraits in the carousel. Note that the size of the portraits will be automatically reduced if there are too many combatants to fit on the screen.",
@@ -53,15 +49,6 @@
             "lessButtons": {
                 "name": "Less Buttons",
                 "hint": "Show less buttons in the combat tracker. Hides Reset Initiative, Settings, Previous Round, Next Round."
-            },
-            "carouselStyle": {
-                "name": "Carousel Style",
-                "hint": "The way portraits are placed and move in the carousel: Carousel - Centered: The Active Combatant is at the Center of the carousel, the other combatants rotate around it.\n- Carousel - Left: The Active Combatant is at the Left of the carousel, the other combatants rotate around it.\n- No Carousel: Combatants are always displayed in initiative order and the active combatant moves around while combatants remain in the same position.",
-                "choices": {
-                    "centerCarousel": "Carousel - Centered",
-                    "leftCarousel": "Carousel - Left",
-                    "basic": "No Carousel"
-                }
             },
             "overflowStyle": {
                 "name": "Overflow Style",
@@ -103,7 +90,7 @@
             },
             "roundness": {
                 "name": "Roundness",
-                "hint": "The roundness of the portraits and tooltips.",
+                "hint": "The roundness of the portraits.",
                 "choices": {
                     "sharp": "Sharp",
                     "soft": "Soft",
@@ -128,19 +115,19 @@
             },
             "attributeColor": {
                 "name": "Attribute Color",
-                "hint": "The color of the main tracked attribute text and bar in the carousel. You can use any valid CSS color value (eg. #ff0000, red, rgba(255,0,0,0.5), etc)."
+                "hint": "The color of the primary resource's text and bar on the portrait (the main resource, e.g. HP, set in the Combat Tracker Configuration). You can use any valid CSS color value (eg. #ff0000, red, rgba(255,0,0,0.5), etc)."
             },
             "attributeColor2": {
                 "name": "Secondary Attribute Color",
-                "hint": "The color of the secondary tracked attribute text and bar in the carousel. You can use any valid CSS color value (eg. #ff0000, red, rgba(255,0,0,0.5), etc)."
+                "hint": "The color of the secondary resource's text and bar on the portrait (the Secondary Resource setting, e.g. a spell slot or class resource). You can use any valid CSS color value (eg. #ff0000, red, rgba(255,0,0,0.5), etc)."
             },
             "attributeColorPortrait": {
                 "name": "Portrait Attribute Color",
-                "hint": "The color of the tracked attribute portrait overlay bar. You can use any valid CSS color value (eg. #ff0000, red, rgba(255,0,0,0.5), etc)."
+                "hint": "The color of the Portrait Resource overlay bar shown on top of the portrait image. You can use any valid CSS color value (eg. #ff0000, red, rgba(255,0,0,0.5), etc)."
             },
             "barsPlacement": {
                 "name": "Bars Placement",
-                "hint": "The placement of the tracked attributes bars in the carousel.",
+                "hint": "The placement of the primary and secondary resource bars on the portrait.",
                 "choices": {
                     "left": "Left",
                     "right": "Right",
@@ -149,7 +136,7 @@
             },
             "attributeVisibility": {
                 "name": "Attribute Visibility",
-                "hint": "The visibility of the tracked attributes in the carousel.",
+                "hint": "Whether the primary/secondary resource values show as text, as bars, or both on the portrait.",
                 "choices": {
                     "text": "Text Only",
                     "bars": "Bars Only",
@@ -158,16 +145,7 @@
             },
             "playerPlayerPermission": {
                 "name": "Always Show Player Info",
-                "hint": "Allow all players to see the tracked attributes, tooltip information and system icons of other players."
-            },
-            "displayDescriptions": {
-                "name": "Show Descriptions",
-                "hint": "Show active effects descriptions in the tooltip.",
-                "choices": {
-                    "none": "None",
-                    "owner": "Owner/Observer",
-                    "all": "Everyone"
-                }
+                "hint": "Allow all players to see the primary/secondary/portrait resource bars on other players' portraits, even without Observer permission on that actor."
             },
             "portraitImage": {
                 "name": "Portrait Image",
@@ -181,29 +159,6 @@
                 "name": "Portrait Background",
                 "hint": "The background image behind the portrait that will be visible if the portrait is transparent or doesn't fill the space."
             },
-            "showSystemIcons": {
-                "name": "Show System Icons",
-                "hint": "Show the system icons below the tracked resource, tooltip or both. Keep in mind that this requires a system specific implementation and will only work on select systems.",
-                "choices": {
-                    "none": "None",
-                    "tooltip": "Tooltip",
-                    "resource": "Portrait",
-                    "both": "Both"
-                }
-            },
-            "hideConflictingUIs": {
-                "name": "Hide Conflicting UIs",
-                "hint": "Automatically hide other UIs docked to the top of the screen when the Combat Tracker Dock is visible to avoid UI clutter."
-            },
-            "displayName": {
-                "name": "Display Name",
-                "hint": "Whether or not to display the name of the combatant in the tooltip. 'Based on Token' will display the name only if the player can see the name of the token.",
-                "choices": {
-                    "default": "Always",
-                    "token": "Based on Token",
-                    "owner": "Based on Ownership"
-                }
-            },
             "hideFirstRound": {
                 "name": "Hide Until First Turn",
                 "hint": "Hide enemies until they have taken their first turn in combat. (Requires LibWrapper to hide them in the core combat tracker as well.)"
@@ -211,29 +166,6 @@
             "hideEnemyInitiative": {
                 "name": "Hide Enemy Initiative",
                 "hint": "Hide enemy initiative in the tooltip and portrait."
-            },
-            "attributesMenu": {
-                "name": "Tooltip Attributes",
-                "label": "Configure Attributes",
-                "hint": "Configure custom attributes to show in the tooltip.",
-                "reset": "Reset to Default",
-                "resetWarning": "Are you sure you want to reset the attributes to their default values?",
-                "form": {
-                    "attr": {
-                        "name": "Attribute",
-                        "choose": "Choose Attribute"
-                    },
-                    "icon": {
-                        "name": "Icon"
-                    },
-                    "units": {
-                        "name": "Units"
-                    },
-                    "save": "Save & Close",
-                    "add": "Add Attribute",
-                    "reset": "Reset Defaults",
-                    "notes": "Leave the Attribute field blank to remove it."
-                }
             },
             "resource": {
                 "name": "Secondary Resource",

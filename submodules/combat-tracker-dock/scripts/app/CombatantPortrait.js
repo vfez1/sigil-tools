@@ -1,5 +1,5 @@
 import { MODULE_ID, TEMPLATE_PATH } from "../main.js";
-import { getInitiativeDisplay, getSystemIcons } from "../systems.js";
+import { getInitiativeDisplay } from "../systems.js";
 
 export class CombatantPortrait {
     constructor(combatant) {
@@ -28,14 +28,6 @@ export class CombatantPortrait {
     get img() {
         const useActor = game.settings.get(MODULE_ID, "portraitImage") === "actor";
         return (useActor ? this.combatant.actor?.img : this.combatant.img) ?? this.combatant.img;
-    }
-
-    get name() {
-        if (this.combatant.isOwner) return this.combatant.name;
-        const displayName = game.settings.get(MODULE_ID, "displayName");
-        if (displayName === "owner") return this.combatant.isOwner ? this.combatant.name : "???";
-        if (displayName === "default") return this.combatant.name;
-        return [CONST.TOKEN_DISPLAY_MODES.HOVER, CONST.TOKEN_DISPLAY_MODES.ALWAYS].includes(this.token?.document?.displayName) ? this.combatant.name : "???";
     }
 
     get firstTurnHidden() {
@@ -72,18 +64,6 @@ export class CombatantPortrait {
     }
     activateListeners() {
         this.element.querySelector(".combatant-wrapper").addEventListener("click", this._onCombatantMouseDown.bind(this));
-
-        (this.element.querySelectorAll(".system-icon") ?? []).forEach((iconEl, index) => {
-            const systemIcons = this._systemIcons;
-            const icon = systemIcons[index];
-            if (icon.callback && icon.enabled) {
-                iconEl.addEventListener("click", async (event) => {
-                    event.stopPropagation();
-                    event.stopImmediatePropagation();
-                    icon.callback(event, this.combatant, index, icon.id);
-                });
-            }
-        });
 
         if(!this.actor?.isOwner) return;
 
@@ -264,21 +244,6 @@ export class CombatantPortrait {
         const hasPermission = this.hasPermission;
         if (!hasPermission && !this._hasTakenTurn) return null;
         if (!combatant.visible && !game.user.isGM) return null;
-        const trackedAttributes = game.settings
-            .get(MODULE_ID, "attributes")
-            .map((a) => {
-                const resourceData = this.getResource(a.attr);
-                const iconHasExtension = a.icon.includes(".");
-                return {
-                    ...resourceData,
-                    icon: iconHasExtension ? `<img src="${a.icon}" />` : `<i class="${a.icon} icon"></i>`,
-                    units: a.units || "",
-                };
-            })
-            .filter((a) => a.value !== null && a.value !== undefined);
-
-        const systemIcons = this.getSystemIcons();
-        const systemIconCount = systemIcons.resource?.length ?? 0;
 
         const attributesVisibility = game.settings.get(MODULE_ID, "attributeVisibility");
 
@@ -292,7 +257,6 @@ export class CombatantPortrait {
         initiativeData.isRollIconImg = initiativeData.rollIcon.includes(".");
         const turn = {
             id: combatant.id,
-            name: this.name,
             img: this.img,
             active: this.combat.turns.indexOf(combatant) === this.combat.turn,
             owner: combatant.isOwner,
@@ -316,9 +280,6 @@ export class CombatantPortrait {
             showBars: attributesVisibility == "bars" || attributesVisibility == "both",
             showText: attributesVisibility == "text" || attributesVisibility == "both",
             canPing: combatant.sceneId === canvas.scene?.id && game.user.hasPermission("PING_CANVAS"),
-            attributes: trackedAttributes,
-            resSystemIcons: systemIcons.resource,
-            systemIconsSizeMulti: clamp(0.03, 1/(systemIconCount * 2) ,0.1),
             barsOrder: null,
         };
         if (turn.initiative !== null && !Number.isInteger(turn.initiative)) hasDecimals = true;
@@ -327,7 +288,6 @@ export class CombatantPortrait {
 
         // Actor and Token status effects
         turn.effects = new Set();
-        turn.hasAttributes = trackedAttributes.length > 0;
         if (combatant.actor) {
             for (const effect of combatant.actor.temporaryEffects) {
                 if (effect.statuses.has(CONFIG.specialStatusEffects.DEFEATED)) turn.defeated = true;
@@ -352,27 +312,6 @@ export class CombatantPortrait {
             turn.initiativeData.value = "?";
         }
         return turn;
-    }
-
-    getSystemIcons() {
-        try {
-            const sett = game.settings.get(MODULE_ID, "showSystemIcons");
-            const icons = sett > 0 ? getSystemIcons(this.combatant) : [];
-            const hasPermission = this.hasPermission;
-            icons.forEach((icon) => {
-                if (icon.callback) icon.hasCallback = true;
-                icon.visible ??= hasPermission;
-            });
-            this._systemIcons = icons;
-            if (!icons || !icons?.length) return { resource: null, tooltip: null };
-            return {
-                resource: sett >= 2 ? icons : null,
-                tooltip: sett == 1 || sett == 3 ? icons : null,
-            };
-        } catch (e) {
-            console.error(e);
-            return { resource: null, tooltip: null };
-        }
     }
 
     getInitiativeDisplay() {
@@ -402,5 +341,3 @@ export class CombatantPortrait {
         this.element?.remove();
     }
 }
-
-const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
