@@ -1008,6 +1008,49 @@ h4.dice-total.ignored > .total {
 
 /* ===== end Embedded Saves Block ===== */
 
+/* ===== Item property tags row (collapsible) =====
+   dnd5e's "rows.properties" icon-row (fa-tag + ul.pills) is collapsed by default — see
+   hooks.js registerChatHooks. The row itself stays visible as a click target (tag icon + caret);
+   only the pill list is hidden. All pills are kept, none are filtered. */
+.chat-log .message .chat-card > .icon-row.rm-tags,
+.chat-popout .message .chat-card > .icon-row.rm-tags {
+    cursor: pointer;
+}
+
+/* Discreet "expand tags" / "collapse tags" toggle, pushed to the row's right edge. */
+.icon-row.rm-tags > .rm-tags-toggle {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    font-size: 9px;
+    font-style: italic;
+    opacity: 0.55;
+    color: var(--color-text-dark-secondary, #4b4a44);
+    user-select: none;
+    transition: opacity 0.15s;
+}
+
+.icon-row.rm-tags:hover > .rm-tags-toggle {
+    opacity: 0.85;
+}
+
+.icon-row.rm-tags .rm-tags-caret {
+    font-size: 8px;
+    transition: transform 0.15s;
+}
+
+.icon-row.rm-tags.collapsed .rm-tags-caret {
+    transform: rotate(-90deg);
+}
+
+.icon-row.rm-tags.collapsed > ul.pills {
+    display: none;
+}
+
+/* ===== end Item property tags row ===== */
+
 /* ===== Collapse Settings App ===== */
 
 .rm-collapse-settings {

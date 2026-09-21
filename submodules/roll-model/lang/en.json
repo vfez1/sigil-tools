@@ -56,6 +56,8 @@
             }
         },
         "chat": {
+            "expandTags": "expand tags",
+            "collapseTags": "collapse tags",
             "buttons": {
                 "rollCrit": "Click to roll critical damage.",
                 "rollMax": "Click to maximize damage.",

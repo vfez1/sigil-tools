@@ -12,6 +12,7 @@
         "gridAlignedSquareTemplates": true,
         "autoCollapseItemCards": false,
         "autoCollapseChatTrays": "manual",
+        "chatCardSummary": true,
         "chatLogTheme": "light",
         "allowPolymorphing": true,
         "allowSummoning": true,

@@ -38,6 +38,9 @@ export const HOOKS_DND5E = {
     RENDER_ACTOR_SHEET: "renderActorSheet5e",
 };
 
+/** Message ids whose property-tags row the user has expanded (survives dnd5e re-renders). */
+const _expandedTagRows = new Set();
+
 /**
  * Utility class to handle registering listeners for hooks needed throughout the module.
  */
@@ -376,17 +379,59 @@ export class HooksUtility {
             AcknowledgedModeUtility.applyAcknowledgedStyle(message, html);
             _attachPortentClickHandlers(message, html);
 
-            // Collapse spell description by default.
-            // Keep expanded if: item has chat flavor text, or item name is in the exceptions list.
+            // Collapse the item description on usage cards by default.
+            // Keep expanded if: the item has a chat description (or the activity has its own
+            // description, which dnd5e shows in the same slot), or the item name is in the exceptions list.
+            // dnd5e 6.0 markup (templates/chat/parts/card-face.hbs): the header carries
+            // data-action="toggleDescription" and #toggleDescription toggles "collapsed" on both the
+            // header (chevron) and the sibling "section.card-description.collapsible" (content).
             {
                 const root = html instanceof HTMLElement ? html : html[0];
-                const descHeader = root?.querySelector(".card-header.description.collapsible");
-                if (descHeader) {
+                const descHeader = root?.querySelector('.card-header[data-action="toggleDescription"]');
+                const descBody = root?.querySelector(".card-description.collapsible");
+                if (descHeader && descBody) {
                     const item = message.getAssociatedItem?.();
-                    const hasChatFlavor = !!item?.system?.description?.chat?.trim();
+                    const activity = message.getAssociatedActivity?.();
+                    const hasChatDescription =
+                        !!item?.system?.description?.chat?.trim() || !!activity?.description?.value?.trim();
                     const exceptions = SettingsUtility.getSettingValue(SETTING_NAMES.COLLAPSE_DESCRIPTION_EXCEPTIONS) ?? [];
                     const inExceptions = !!item?.name && exceptions.some((e) => e.toLowerCase() === item.name.toLowerCase());
-                    if (!hasChatFlavor && !inExceptions) descHeader.classList.add("collapsed");
+                    if (!hasChatDescription && !inExceptions) {
+                        descHeader.classList.add("collapsed");
+                        descBody.classList.add("collapsed");
+                    }
+                }
+            }
+
+            // Collapse the item property tags row (dnd5e's "rows.properties": section.icon-row with
+            // an fa-tag icon + ul.pills) by default. All pills stay in the DOM — nothing is filtered —
+            // they're just hidden behind a click on the row. Expanded state is remembered per message
+            // so dnd5e's re-render on update doesn't snap it shut again.
+            {
+                const root = html instanceof HTMLElement ? html : html[0];
+                const rows = root?.querySelectorAll(".chat-card > .icon-row:has(> i.fa-tag):has(> ul.pills)") ?? [];
+                for (const row of rows) {
+                    if (row.classList.contains("rm-tags")) continue;
+                    row.classList.add("rm-tags");
+                    const toggle = document.createElement("span");
+                    toggle.className = "rm-tags-toggle";
+                    toggle.innerHTML = '<span class="rm-tags-toggle-label"></span><i class="fa-solid fa-chevron-down rm-tags-caret" inert></i>';
+                    row.append(toggle);
+                    const setCollapsed = (collapsed) => {
+                        row.classList.toggle("collapsed", collapsed);
+                        toggle.querySelector(".rm-tags-toggle-label").textContent = game.i18n.localize(
+                            collapsed ? "rm.chat.expandTags" : "rm.chat.collapseTags",
+                        );
+                    };
+                    setCollapsed(!_expandedTagRows.has(message.id));
+                    row.addEventListener("click", (event) => {
+                        // Clicks on a pill (e.g. a future interactive tag) shouldn't toggle the row.
+                        if (event.target.closest(".pill")) return;
+                        const collapsed = !row.classList.contains("collapsed");
+                        setCollapsed(collapsed);
+                        if (collapsed) _expandedTagRows.delete(message.id);
+                        else _expandedTagRows.add(message.id);
+                    });
                 }
             }
 
