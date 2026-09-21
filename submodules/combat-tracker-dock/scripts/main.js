@@ -2,7 +2,7 @@ import { initConfig } from './config.js';
 import {registerSettings} from './settings.js';
 import {CombatDock} from './app/CombatDock.js';
 import {CombatantPortrait} from './app/CombatantPortrait.js';
-import {defaultAttributesConfig, generateDescription} from './systems.js';
+import {generateDescription} from './systems.js';
 import { showWelcome } from './lib/welcome.js';
 
 export const MODULE_ID = 'sigil-tools';
@@ -18,7 +18,6 @@ Hooks.once('init', function () {
     CONFIG.combatTrackerDock = {
         CombatDock,
         CombatantPortrait,
-        defaultAttributesConfig,
         generateDescription,
         INTRO_ANIMATION_DURATION: 1000,
         INTRO_ANIMATION_DELAY: 0.25,

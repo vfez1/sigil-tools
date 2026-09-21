@@ -1,31 +1,12 @@
-import { AttributesConfig } from "./app/AttributesConfig.js";
 import {registerSystemSettings} from "./systems.js";
 import { MODULE_ID } from "./main.js";
 
 export function registerSettings() {
-    game.settings.register(MODULE_ID, "attributes", {
-        scope: "world",
-        config: false,
-        type: Array,
-        default: CONFIG.combatTrackerDock.defaultAttributesConfig()[game.system.id] ?? [],
-        onChange: () => ui.combatDock?.refresh(),
-    });
-
     game.settings.register(MODULE_ID, "events", {
         scope: "world",
         config: false,
         type: Array,
         default: [],
-    });
-
-    game.settings.registerMenu(MODULE_ID, "attributesMenu", {
-        name: game.i18n.localize("combat-tracker-dock.settings.attributesMenu.name"),
-        label: game.i18n.localize("combat-tracker-dock.settings.attributesMenu.label"),
-        hint: game.i18n.localize("combat-tracker-dock.settings.attributesMenu.hint"),
-        icon: "fas fa-cogs",
-        scope: "world",
-        restricted: true,
-        type: AttributesConfig,
     });
 
     game.settings.register(MODULE_ID, "direction", {
@@ -79,7 +60,7 @@ export function registerSettings() {
         scope: "client",
         config: true,
         type: Boolean,
-        default: false,
+        default: true,
         onChange: () => ui.combatDock?.render(),
     });
 
@@ -103,21 +84,6 @@ export function registerSettings() {
         },
     });
 
-    game.settings.register(MODULE_ID, "carouselStyle", {
-        name: "combat-tracker-dock.settings.carouselStyle.name",
-        hint: "combat-tracker-dock.settings.carouselStyle.hint",
-        scope: "world",
-        config: true,
-        type: Number,
-        choices: {
-            0: "combat-tracker-dock.settings.carouselStyle.choices.centerCarousel",
-            1: "combat-tracker-dock.settings.carouselStyle.choices.leftCarousel",
-            2: "combat-tracker-dock.settings.carouselStyle.choices.basic",
-        },
-        default: 1,
-        onChange: () => ui.combatDock?.refresh(),
-    });
-
     game.settings.register(MODULE_ID, "alignment", {
         name: "combat-tracker-dock.settings.alignment.name",
         hint: "combat-tracker-dock.settings.alignment.hint",
@@ -135,24 +101,6 @@ export function registerSettings() {
             setFlex();
             ui.combatDock?.refresh();
         },
-    });
-
-    game.settings.register(MODULE_ID, "floatingSize", {
-        name: "combat-tracker-dock.settings.floatingSize.name",
-        hint: "combat-tracker-dock.settings.floatingSize.hint",
-        scope: "world",
-        config: true,
-        type: Number,
-        default: 60,
-        range: {
-            min: 30,
-            max: 100,
-            step: 1,
-        },
-        onChange: () => {
-            setFloatingSize();
-            ui.combatDock?.refresh();
-        }
     });
 
     game.settings.register(MODULE_ID, "portraitAspect", {
@@ -305,21 +253,6 @@ export function registerSettings() {
         onChange: () => ui.combatDock?.refresh(),
     });
 
-    game.settings.register(MODULE_ID, "displayName", {
-        name: "combat-tracker-dock.settings.displayName.name",
-        hint: "combat-tracker-dock.settings.displayName.hint",
-        scope: "world",
-        config: true,
-        type: String,
-        choices: {
-            default: "combat-tracker-dock.settings.displayName.choices.default",
-            token: "combat-tracker-dock.settings.displayName.choices.token",
-            owner: "combat-tracker-dock.settings.displayName.choices.owner",
-        },
-        default: "default",
-        onChange: () => ui.combatDock?.refresh(),
-    });
-
     game.settings.register(MODULE_ID, "playerPlayerPermission", {
         name: "combat-tracker-dock.settings.playerPlayerPermission.name",
         hint: "combat-tracker-dock.settings.playerPlayerPermission.hint",
@@ -354,7 +287,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.portraitImageBorder.name",
         hint: "combat-tracker-dock.settings.portraitImageBorder.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: new foundry.data.fields.FilePathField({categories: ["IMAGE"]}),
         default: "modules/sigil-tools/submodules/combat-tracker-dock/assets/border.png",
         onChange: function () {
@@ -367,39 +300,13 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.portraitImageBackground.name",
         hint: "combat-tracker-dock.settings.portraitImageBackground.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: new foundry.data.fields.FilePathField({categories: ["IMAGE"]}),
         default: "ui/denim075.png",
         onChange: function () {
             setPortraitImageBackground();
             ui.combatDock?.refresh();
         },
-    });
-
-    game.settings.register(MODULE_ID, "showSystemIcons", {
-        name: "combat-tracker-dock.settings.showSystemIcons.name",
-        hint: "combat-tracker-dock.settings.showSystemIcons.hint",
-        scope: "world",
-        config: true,
-        type: Number,
-        choices: {
-            0: "combat-tracker-dock.settings.showSystemIcons.choices.none",
-            1: "combat-tracker-dock.settings.showSystemIcons.choices.tooltip",
-            2: "combat-tracker-dock.settings.showSystemIcons.choices.resource",
-            3: "combat-tracker-dock.settings.showSystemIcons.choices.both",
-        },
-        default: 1,
-        onChange: () => ui.combatDock?.refresh(),
-    });
-
-    game.settings.register(MODULE_ID, "hideConflictingUIs", {
-        name: "combat-tracker-dock.settings.hideConflictingUIs.name",
-        hint: "combat-tracker-dock.settings.hideConflictingUIs.hint",
-        scope: "world",
-        config: true,
-        type: Boolean,
-        default: true,
-        onChange: () => setHideConflictingUIs(),
     });
 
     registerSystemSettings();
@@ -410,7 +317,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.resource.name",
         hint: "combat-tracker-dock.settings.resource.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: String,
         default: "",
         onChange: () => ui.combatDock?.refresh(),
@@ -420,7 +327,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.portraitResource.name",
         hint: "combat-tracker-dock.settings.portraitResource.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: String,
         default: "",
         onChange: () => ui.combatDock?.refresh(),
@@ -437,13 +344,7 @@ function setAllSettings() {
     setAttributeColor();
     setPortraitImageBorder();
     setPortraitImageBackground();
-    setHideConflictingUIs();
-    setFloatingSize();
-}
-
-function setFloatingSize() {
-    const floatingSize = game.settings.get(MODULE_ID, "floatingSize");
-    document.documentElement.style.setProperty("--carousel-floating-size", floatingSize + "%");
+    document.documentElement.style.setProperty("--carousel-floating-size", "60%");
 }
 
 function setPortraitSize() {
@@ -470,11 +371,6 @@ function setPortraitImageBorder() {
 function setPortraitImageBackground() {
     let portraitImageBackground = game.settings.get(MODULE_ID, "portraitImageBackground");
     document.documentElement.style.setProperty("--combatant-portrait-image-background", `url('${portraitImageBackground}')`);
-}
-
-function setHideConflictingUIs() {
-    const hideConflictingUIs = game.settings.get(MODULE_ID, "hideConflictingUIs");
-    document.querySelector("#ui-top")?.classList.toggle("ctd-hide-conflicting-uis", hideConflictingUIs);
 }
 
 function setRoundness() {
