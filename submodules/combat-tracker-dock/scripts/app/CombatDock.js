@@ -63,11 +63,11 @@ export class CombatDock extends HandlebarsApplication {
     }
 
     get trueCarousel() {
-        return true;
+        return game.settings.get(MODULE_ID, "carouselStyle") < 2;
     }
 
     get leftAligned() {
-        return true;
+        return game.settings.get(MODULE_ID, "carouselStyle") == 1;
     }
 
     get autoFit() {

@@ -84,6 +84,21 @@ export function registerSettings() {
         },
     });
 
+    game.settings.register(MODULE_ID, "carouselStyle", {
+        name: "combat-tracker-dock.settings.carouselStyle.name",
+        hint: "combat-tracker-dock.settings.carouselStyle.hint",
+        scope: "world",
+        config: true,
+        type: Number,
+        choices: {
+            0: "combat-tracker-dock.settings.carouselStyle.choices.centerCarousel",
+            1: "combat-tracker-dock.settings.carouselStyle.choices.leftCarousel",
+            2: "combat-tracker-dock.settings.carouselStyle.choices.basic",
+        },
+        default: 1,
+        onChange: () => ui.combatDock?.refresh(),
+    });
+
     game.settings.register(MODULE_ID, "alignment", {
         name: "combat-tracker-dock.settings.alignment.name",
         hint: "combat-tracker-dock.settings.alignment.hint",
@@ -107,7 +122,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.portraitAspect.name",
         hint: "combat-tracker-dock.settings.portraitAspect.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: Number,
         choices: {
             1: "combat-tracker-dock.settings.portraitAspect.choices.square",
@@ -125,7 +140,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.roundness.name",
         hint: "combat-tracker-dock.settings.roundness.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: String,
         choices: {
             "0%": "combat-tracker-dock.settings.roundness.choices.sharp",
@@ -143,7 +158,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.attributeColor.name",
         hint: "combat-tracker-dock.settings.attributeColor.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: new foundry.data.fields.ColorField(),
         default: "#41AA7D",
         onChange: () => {
@@ -156,7 +171,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.attributeColor2.name",
         hint: "combat-tracker-dock.settings.attributeColor2.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: new foundry.data.fields.ColorField(),
         default: "#ffcd00",
         onChange: () => {
@@ -169,7 +184,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.attributeColorPortrait.name",
         hint: "combat-tracker-dock.settings.attributeColorPortrait.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: new foundry.data.fields.ColorField(),
         default: "#e62121",
         onChange: () => {
@@ -182,7 +197,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.barsPlacement.name",
         hint: "combat-tracker-dock.settings.barsPlacement.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: String,
         choices: {
             left: "combat-tracker-dock.settings.barsPlacement.choices.left",
@@ -197,7 +212,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.attributeVisibility.name",
         hint: "combat-tracker-dock.settings.attributeVisibility.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: String,
         choices: {
             text: "combat-tracker-dock.settings.attributeVisibility.choices.text",
@@ -243,7 +258,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.portraitImage.name",
         hint: "combat-tracker-dock.settings.portraitImage.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: String,
         choices: {
             actor: "combat-tracker-dock.settings.portraitImage.choices.actor",
@@ -257,7 +272,7 @@ export function registerSettings() {
         name: "combat-tracker-dock.settings.playerPlayerPermission.name",
         hint: "combat-tracker-dock.settings.playerPlayerPermission.hint",
         scope: "world",
-        config: true,
+        config: false,
         type: Boolean,
         default: false,
         onChange: () => ui.combatDock?.refresh(),
