@@ -12,8 +12,10 @@
         "gridAlignedSquareTemplates": true,
         "autoCollapseItemCards": false,
         "autoCollapseChatTrays": "manual",
+        "chatLogTheme": "light",
         "allowPolymorphing": true,
         "allowSummoning": true,
+        "allowPlayerDamageTray": true,
         "defaultSkills": ["acr", "ani", "arc", "ath", "dec", "his", "ins", "itm", "inv", "med", "nat", "prc", "prf", "per", "rel", "slt", "ste", "sur"]
     },
     "zoom-pan-options": {

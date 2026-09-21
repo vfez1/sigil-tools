@@ -9,6 +9,7 @@ import { ChatUtility } from "./chat.js";
 import { AlwaysHPWidget, HPManager, applyHPDismissPatch } from "../../always-hp/always-hp.js";
 import { ROLL_TYPE, RollUtility } from "./roll.js";
 import { registerEffectAutocompleteHooks } from "../../effect-autocomplete/effect-autocomplete.js";
+import { LogUtility } from "./log.js";
 
 export const HOOKS_CORE = {
     INIT: "init",
@@ -19,6 +20,7 @@ export const HOOKS_DND5E = {
     PRE_ROLL_ABILITY_CHECK: "dnd5e.preRollAbilityCheckV2",
     PRE_ROLL_SAVING_THROW: "dnd5e.preRollSavingThrowV2",
     POST_BUILD_SAVING_THROW_ROLL_CONFIG: "dnd5e.postBuildSavingThrowRollConfig",
+    POST_BUILD_ABILITY_CHECK_ROLL_CONFIG: "dnd5e.postBuildAbilityCheckRollConfig",
     PRE_ROLL_SKILL: "dnd5e.preRollSkillV2",
     PRE_ROLL_TOOL_CHECK: "dnd5e.preRollToolV2",
     PRE_ROLL_ATTACK: "dnd5e.preRollAttackV2",
@@ -105,50 +107,115 @@ export class HooksUtility {
      * Register roll specific hooks for module functionality.
      */
     static registerRollHooks() {
+        LogUtility.log(`[RM DEBUG] registerRollHooks() called — registering all dnd5e roll hooks now.`);
+
         Hooks.on(HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK, (config, dialog, message) => {
-            RollUtility.processRoll(config, dialog, message);
+            LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK}`);
+            try {
+                RollUtility.processRoll(config, dialog, message);
+            } catch (e) {
+                LogUtility.logError(`[RM DEBUG] EXCEPTION in ${HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK} handler: ${e?.message}`, { ui: false });
+                console.error(e);
+            }
             return true;
         });
 
         Hooks.on(HOOKS_DND5E.PRE_ROLL_SAVING_THROW, (config, dialog, message) => {
-            RollUtility.processRoll(config, dialog, message);
+            LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.PRE_ROLL_SAVING_THROW}`);
+
+            // One save per token per card: dnd5e's Save button creates a fresh save message (and
+            // summary row) every press. If this token already has one on the originating card,
+            // refuse the roll — rerolls go through the row's adv/dis buttons instead.
+            try {
+                const origin = message?.data?.system?.origin ? game.messages.get(message.data.system.origin) : null;
+                const spk = message?.data?.speaker ?? {};
+                const tokenUuid = spk.scene && spk.token ? `Scene.${spk.scene}.Token.${spk.token}` : null;
+                if (origin && tokenUuid) {
+                    const existing = origin.getAssociatedRolls?.("save")?.find((m) => m.getAssociatedToken?.()?.uuid === tokenUuid);
+                    if (existing) {
+                        const name = fromUuidSync(tokenUuid)?.name ?? "This token";
+                        ui.notifications.warn(`${name} has already rolled this save. Use the row's advantage/disadvantage buttons to reroll.`);
+                        LogUtility.log(`[RM DEBUG] ${HOOKS_DND5E.PRE_ROLL_SAVING_THROW}: blocked duplicate save for ${tokenUuid} on ${origin.id} (existing ${existing.id})`);
+                        return false;
+                    }
+                }
+            } catch (e) {
+                LogUtility.logError(`[RM DEBUG] duplicate-save check failed: ${e?.message}`, { ui: false });
+                console.error(e);
+            }
+
+            try {
+                RollUtility.processRoll(config, dialog, message);
+            } catch (e) {
+                LogUtility.logError(`[RM DEBUG] EXCEPTION in ${HOOKS_DND5E.PRE_ROLL_SAVING_THROW} handler: ${e?.message}`, { ui: false });
+                console.error(e);
+            }
             return true;
         });
 
         Hooks.on(HOOKS_DND5E.PRE_ROLL_SKILL, (config, dialog, message) => {
-            RollUtility.processRoll(config, dialog, message);
+            LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.PRE_ROLL_SKILL}`);
+            try {
+                RollUtility.processRoll(config, dialog, message);
+            } catch (e) {
+                LogUtility.logError(`[RM DEBUG] EXCEPTION in ${HOOKS_DND5E.PRE_ROLL_SKILL} handler: ${e?.message}`, { ui: false });
+                console.error(e);
+            }
             return true;
         });
 
         Hooks.on(HOOKS_DND5E.PRE_ROLL_TOOL_CHECK, (config, dialog, message) => {
-            RollUtility.processRoll(config, dialog, message);
+            LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.PRE_ROLL_TOOL_CHECK}`);
+            try {
+                RollUtility.processRoll(config, dialog, message);
+            } catch (e) {
+                LogUtility.logError(`[RM DEBUG] EXCEPTION in ${HOOKS_DND5E.PRE_ROLL_TOOL_CHECK} handler: ${e?.message}`, { ui: false });
+                console.error(e);
+            }
             return true;
         });
 
         Hooks.on(HOOKS_DND5E.PRE_USE_ACTIVITY, (activity, usageConfig, dialogConfig, messageConfig) => {
-            RollUtility.processActivity(usageConfig, dialogConfig, messageConfig);
-            ActivityUtility.setRenderFlags(activity, messageConfig);
+            LogUtility.log(
+                `[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.PRE_USE_ACTIVITY} activity="${activity?.name}" (${activity?.type}) item="${activity?.item?.name}"`
+            );
+            try {
+                RollUtility.processActivity(usageConfig, dialogConfig, messageConfig);
+                ActivityUtility.setRenderFlags(activity, messageConfig);
 
-            const hasGWM = activity.actor?.items.some((i) => i.type === "feat" && i.name.toLowerCase() === "great weapon master");
-            const isHeavy = activity.item?.system?.properties?.has("hvy") ?? false;
-            if (hasGWM && isHeavy) {
-                messageConfig.data.flags[MODULE_SHORT].gwmEligible = true;
-                messageConfig.data.flags[MODULE_SHORT].gwmActive = true;
-            }
+                const hasGWM = activity.actor?.items.some((i) => i.type === "feat" && i.name.toLowerCase() === "great weapon master");
+                const isHeavy = activity.item?.system?.properties?.has("hvy") ?? false;
+                if (hasGWM && isHeavy) {
+                    messageConfig.data.flags[MODULE_SHORT].gwmEligible = true;
+                    messageConfig.data.flags[MODULE_SHORT].gwmActive = true;
+                }
 
-            const hasAttackActivity = activity.hasOwnProperty(ROLL_TYPE.ATTACK);
-            const celestialRevelationInfo = hasAttackActivity ? RollUtility.getCelestialShroudEffect(activity.actor) : null;
-            if (celestialRevelationInfo) {
-                messageConfig.data.flags[MODULE_SHORT].celestialRevelationEligible = true;
-                messageConfig.data.flags[MODULE_SHORT].celestialRevelationDamageType = celestialRevelationInfo.damageType;
-                messageConfig.data.flags[MODULE_SHORT].celestialRevelationActive = false;
+                const hasAttackActivity = activity.hasOwnProperty(ROLL_TYPE.ATTACK);
+                const celestialRevelationInfo = hasAttackActivity ? RollUtility.getCelestialShroudEffect(activity.actor) : null;
+                if (celestialRevelationInfo) {
+                    messageConfig.data.flags[MODULE_SHORT].celestialRevelationEligible = true;
+                    messageConfig.data.flags[MODULE_SHORT].celestialRevelationDamageType = celestialRevelationInfo.damageType;
+                    messageConfig.data.flags[MODULE_SHORT].celestialRevelationActive = false;
+                }
+
+                LogUtility.log(`[RM DEBUG] ${HOOKS_DND5E.PRE_USE_ACTIVITY} handler DONE. flags=${JSON.stringify(messageConfig.data.flags[MODULE_SHORT])}`);
+            } catch (e) {
+                LogUtility.logError(`[RM DEBUG] EXCEPTION in ${HOOKS_DND5E.PRE_USE_ACTIVITY} handler: ${e?.message}`, { ui: false });
+                console.error(e);
             }
 
             return true;
         });
 
         Hooks.on(HOOKS_DND5E.PRE_ROLL_ATTACK, (config, dialog, message) => {
-            if (!message.data?.flags || !message.data.flags[MODULE_SHORT]?.quickRoll) return true;
+            LogUtility.log(
+                `[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.PRE_ROLL_ATTACK} message.data.flags[rm]=${JSON.stringify(message.data?.flags?.[MODULE_SHORT])}`
+            );
+
+            if (!message.data?.flags || !message.data.flags[MODULE_SHORT]?.quickRoll) {
+                LogUtility.log(`[RM DEBUG] ${HOOKS_DND5E.PRE_ROLL_ATTACK}: not a quickRoll (or no rm flags at all) — skipping fast-forward.`);
+                return true;
+            }
 
             for (const roll of config.rolls) {
                 roll.options.advantage ??= config.advantage;
@@ -164,24 +231,49 @@ export class HooksUtility {
         // rollConfig.options is the same reference that becomes roll.options on the D20Roll,
         // so writing bonusParts/bonusData here makes them available at render time.
         Hooks.on(HOOKS_DND5E.POST_BUILD_ATTACK_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
+            LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.POST_BUILD_ATTACK_ROLL_CONFIG} index=${index} parts=${JSON.stringify(rollConfig?.parts)}`);
             RollUtility.captureAttackFormulaParts(outerConfig, rollConfig, index);
         });
 
+        // Ability, skill and tool checks all carry the "abilityCheck" hook name, so one hook covers them.
+        Hooks.on(HOOKS_DND5E.POST_BUILD_ABILITY_CHECK_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
+            LogUtility.log(
+                `[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.POST_BUILD_ABILITY_CHECK_ROLL_CONFIG} index=${index} parts=${JSON.stringify(rollConfig?.parts)}`
+            );
+            RollUtility.captureCheckFormulaParts(outerConfig, rollConfig, index);
+        });
+
         Hooks.on(HOOKS_DND5E.POST_BUILD_SAVING_THROW_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
+            LogUtility.log(
+                `[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.POST_BUILD_SAVING_THROW_ROLL_CONFIG} index=${index} parts=${JSON.stringify(rollConfig?.parts)}`
+            );
             RollUtility.captureSaveFormulaParts(outerConfig, rollConfig, index);
         });
 
         Hooks.on(HOOKS_DND5E.PRE_ROLL_DAMAGE, (config, dialog, message) => {
+            LogUtility.log(
+                `[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.PRE_ROLL_DAMAGE} message.data.flags=${_safeKeysLocal(message.data?.flags)} rm=${JSON.stringify(message.data?.flags?.[MODULE_SHORT])}`
+            );
+
             // Activity-driven damage (normal weapon rolls) already has flags set by processActivity
             // via PRE_USE_ACTIVITY earlier in the same pipeline. A bare damage enricher with no
             // associated activity (e.g. a weapon mastery's [[/damage ...]] link) never goes through
             // that hook, so flags[MODULE_SHORT] would otherwise never exist — process it here instead,
             // same as the ability-check/save/skill/tool hooks above do for their own standalone rolls.
             if (!message.data?.flags?.[MODULE_SHORT]) {
-                RollUtility.processRoll(config, dialog, message);
+                LogUtility.log(`[RM DEBUG] ${HOOKS_DND5E.PRE_ROLL_DAMAGE}: no rm flags yet — this is a standalone damage roll, calling processRoll().`);
+                try {
+                    RollUtility.processRoll(config, dialog, message);
+                } catch (e) {
+                    LogUtility.logError(`[RM DEBUG] EXCEPTION in ${HOOKS_DND5E.PRE_ROLL_DAMAGE} processRoll fallback: ${e?.message}`, { ui: false });
+                    console.error(e);
+                }
             }
 
-            if (!message.data?.flags || !message.data.flags[MODULE_SHORT]?.quickRoll) return true;
+            if (!message.data?.flags || !message.data.flags[MODULE_SHORT]?.quickRoll) {
+                LogUtility.log(`[RM DEBUG] ${HOOKS_DND5E.PRE_ROLL_DAMAGE}: not a quickRoll — skipping fast-forward.`);
+                return true;
+            }
 
             for (const roll of config.rolls) {
                 roll.options ??= {};
@@ -195,6 +287,7 @@ export class HooksUtility {
         });
 
         Hooks.on(HOOKS_DND5E.POST_BUILD_DAMAGE_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
+            LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.POST_BUILD_DAMAGE_ROLL_CONFIG} index=${index} parts=${JSON.stringify(rollConfig?.parts)}`);
             RollUtility.applyGWMDamageBonus(outerConfig, rollConfig, index);
             RollUtility.applyElementalFuryPotentSpellcastingDamageBonus(outerConfig, rollConfig, index);
             RollUtility.injectLunarRadianceType(outerConfig, rollConfig);
@@ -203,6 +296,7 @@ export class HooksUtility {
         });
 
         Hooks.on(HOOKS_DND5E.POST_DAMAGE_ROLL_CONFIGURATION, (rolls, config, dialog, message) => {
+            LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.POST_DAMAGE_ROLL_CONFIGURATION} rollCount=${rolls?.length}`);
             RollUtility.captureDamageRollSources(rolls, config);
         });
 
@@ -221,6 +315,9 @@ export class HooksUtility {
         });
 
         Hooks.on(HOOKS_DND5E.ACTIVITY_CONSUMPTION, (activity, usageConfig, messageConfig, updates) => {
+            LogUtility.log(
+                `[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.ACTIVITY_CONSUMPTION} activity="${activity?.name}" type=${activity?.type} scaling=${usageConfig?.scaling}`
+            );
             // For pool-based heal activities (e.g. Lay on Hands), dnd5e does not persist
             // the user-chosen healing amount to message.flags.dnd5e.scaling.  Capture it
             // here (after the dialog, usageConfig.scaling holds the chosen value) so that
@@ -251,8 +348,10 @@ export class HooksUtility {
         // Ensures that the post use hook from RSR registers last so that it doesn't block other modules
         setTimeout(() => {
             Hooks.on(HOOKS_DND5E.POST_USE_ACTIVITY, (activity, usageConfig, results) => {
+                LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.POST_USE_ACTIVITY} (late-registered blocker) activity="${activity?.name}"`);
                 return false;
             });
+            LogUtility.log(`[RM DEBUG] Late ${HOOKS_DND5E.POST_USE_ACTIVITY} blocker hook registered (after 15s delay).`);
         }, 15000);
     }
 
@@ -260,7 +359,18 @@ export class HooksUtility {
      * Register chat specific hooks for module functionality.
      */
     static registerChatHooks() {
+        // Visibility diagnostics: confirms whether this client receives the author's
+        // "processed" update at all, and whether Foundry re-renders the message for it.
+        Hooks.on("updateChatMessage", (message, changes, options, userId) => {
+            LogUtility.log(
+                `[RM DEBUG] core updateChatMessage messageId=${message?.id} byUser=${userId} thisUser=${game.user?.name} changedKeys=${JSON.stringify(Object.keys(changes ?? {}))} rmProcessedNow=${message?.flags?.[MODULE_SHORT]?.processed}`
+            );
+        });
+
         Hooks.on(HOOKS_DND5E.RENDER_CHAT_MESSAGE, (message, html) => {
+            LogUtility.log(
+                `[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.RENDER_CHAT_MESSAGE} messageId=${message?.id} flags[rm]=${JSON.stringify(message?.flags?.[MODULE_SHORT])}`
+            );
             ChatUtility.processChatMessage(message, html);
             AcknowledgedModeUtility.onNewMessage(message, html);
             AcknowledgedModeUtility.applyAcknowledgedStyle(message, html);
@@ -297,7 +407,8 @@ export class HooksUtility {
 
         AcknowledgedModeUtility.registerApplyListener();
         AcknowledgedModeUtility.registerSocketListener();
-        ChatUtility.registerSaveListener();
+        // roll-model's own save-button interception (embedded saves) is retired on dnd5e 6.0: the
+        // system now rolls per-target saves itself and lists them as summary rows on the usage card.
         ChatUtility.registerSaveSocketListener();
 
         Hooks.on("controlToken", () => {
@@ -360,6 +471,16 @@ export class HooksUtility {
         Hooks.on("renderCharacterActorSheet", (app, html) => {
             _renderPortentRollsOnSheet(app.actor, html);
         });
+    }
+}
+
+function _safeKeysLocal(obj) {
+    if (obj === undefined) return "undefined";
+    if (obj === null) return "null";
+    try {
+        return `{${Object.keys(obj).join(",")}}`;
+    } catch {
+        return String(obj);
     }
 }
 

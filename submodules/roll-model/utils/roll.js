@@ -57,7 +57,26 @@ const FORMULA_LABEL_ALIASES = {
  */
 export class RollUtility {
     static processRoll(config, dialog, message) {
-        if (message.data.flags[MODULE_SHORT]?.processed) return;
+        LogUtility.log(
+            `[RM DEBUG] processRoll ENTER hookNames=${JSON.stringify(config?.hookNames)} ` +
+                `message.data=${_safeKeys(message?.data)} message.data.flags=${_safeKeys(message?.data?.flags)} ` +
+                `alreadyProcessed=${message?.data?.flags?.[MODULE_SHORT]?.processed}`
+        );
+
+        if (message.data.flags?.[MODULE_SHORT]?.processed) {
+            LogUtility.log(`[RM DEBUG] processRoll EXIT (already processed)`);
+            return;
+        }
+
+        // dnd5e 6.0: message.data is no longer guaranteed to carry a `flags` object at this
+        // point in the pipeline (it used to). Without this guard, `message.data.flags[MODULE_SHORT] = ...`
+        // below throws "Cannot set properties of undefined", which Hooks.call swallows into a
+        // console error and silently kills roll-model's entire interception chain.
+        message.data ??= {};
+        message.data.flags ??= {};
+        if (!message.data.flags) {
+            LogUtility.logWarning(`[RM DEBUG] processRoll: message.data.flags was missing, had to create it. This is the dnd5e 6.0 breakage.`, { ui: false });
+        }
 
         const keys = {
             normal: CoreUtility.areKeysPressed(config.event, "skipDialogNormal"),
@@ -78,9 +97,26 @@ export class RollUtility {
             isConcentration: config.isConcentration,
             processed: true,
         };
+
+        LogUtility.log(
+            `[RM DEBUG] processRoll EXIT dialog.configure=${dialog.configure} flags=${JSON.stringify(message.data.flags[MODULE_SHORT])}`
+        );
     }
 
     static processActivity(usageConfig, dialogConfig, messageConfig) {
+        LogUtility.log(
+            `[RM DEBUG] processActivity ENTER hasSpell=${usageConfig?.hasOwnProperty?.("spell")} scaling=${usageConfig?.scaling} ` +
+                `messageConfig.data=${_safeKeys(messageConfig?.data)} messageConfig.data.flags=${_safeKeys(messageConfig?.data?.flags)}`
+        );
+
+        // Same dnd5e 6.0 issue as processRoll above: preUseActivity's messageConfig.data has no
+        // `flags` key yet (it's added later in _createUsageMessage). Guard before assigning into it.
+        messageConfig.data ??= {};
+        messageConfig.data.flags ??= {};
+        if (!messageConfig.data.flags) {
+            LogUtility.logWarning(`[RM DEBUG] processActivity: messageConfig.data.flags was missing, had to create it. This is the dnd5e 6.0 breakage.`, { ui: false });
+        }
+
         const keys = {
             normal: CoreUtility.areKeysPressed(usageConfig.event, "skipDialogNormal"),
             advantage: CoreUtility.areKeysPressed(usageConfig.event, "skipDialogAdvantage"),
@@ -103,6 +139,10 @@ export class RollUtility {
             versatile: versatile,
             processed: !fastForward,
         };
+
+        LogUtility.log(
+            `[RM DEBUG] processActivity EXIT dialogConfig.configure=${dialogConfig.configure} flags=${JSON.stringify(messageConfig.data.flags[MODULE_SHORT])}`
+        );
     }
 
     /**
@@ -121,11 +161,21 @@ export class RollUtility {
             const d20BaseTerm = roll.terms.find((d) => d.faces === 20);
             const d20Additional = await new Roll(`${forcedDiceCount - d20BaseTerm.number}d20${d20BaseTerm.modifiers.join("")}`).evaluate();
 
-            const d20Forced = new foundry.dice.terms.Die({
+            // Preserve the die's class and options: dnd5e's D20Die#isCriticalSuccess/Failure read
+            // criticalSuccess/criticalFailure off the *term* options (copied there by
+            // D20Roll#configureModifiers). Rebuilding as a bare Die with no options silently turned
+            // a natural 20 into a non-crit after a retroactive adv/dis upgrade.
+            const DieClass = d20BaseTerm.constructor;
+            const d20Forced = new DieClass({
                 number: forcedDiceCount,
                 faces: 20,
                 results: [...d20BaseTerm.results, ...d20Additional.dice[0].results],
                 modifiers: d20BaseTerm.modifiers,
+                options: {
+                    ...foundry.utils.deepClone(d20BaseTerm.options ?? {}),
+                    criticalSuccess: d20BaseTerm.options?.criticalSuccess ?? roll.options.criticalSuccess,
+                    criticalFailure: d20BaseTerm.options?.criticalFailure ?? roll.options.criticalFailure,
+                },
             });
 
             roll.terms[roll.terms.indexOf(d20BaseTerm)] = d20Forced;
@@ -160,14 +210,72 @@ export class RollUtility {
         const upgradedRoll = await RollUtility.ensureMultiRoll(roll);
 
         const d20BaseTerm = upgradedRoll.terms.find((d) => d.faces === 20);
+
+        // Crit thresholds live on the die term (see D20Roll#configureModifiers); make sure they are
+        // present so isCritical/isFumble keep working after the upgrade.
+        d20BaseTerm.options ??= {};
+        d20BaseTerm.options.criticalSuccess ??= upgradedRoll.options.criticalSuccess;
+        d20BaseTerm.options.criticalFailure ??= upgradedRoll.options.criticalFailure;
+
+        // Re-applicable: drop any previous keep modifier and un-discard every die so switching
+        // between advantage and disadvantage on an already-upgraded roll re-evaluates cleanly
+        // instead of stacking "kh" + "kl". dnd5e 6.0's D20Die tags the die with "adv"/"dis"
+        // modifiers instead (D20Die#applyAdvantage) — strip those as well, or the formula reads
+        // "2d20diskh" with both modifiers applied.
+        d20BaseTerm.modifiers = d20BaseTerm.modifiers.filter((m) => !RollUtility._isAdvantageModifier(m));
+        for (const result of d20BaseTerm.results) {
+            result.active = true;
+            delete result.discarded;
+        }
+
         d20BaseTerm.keep(targetState);
         d20BaseTerm.modifiers.push(targetState);
 
         upgradedRoll.options.advantageMode =
             targetState === ROLL_STATE.ADV ? CONFIG.Dice.D20Roll.ADV_MODE.ADVANTAGE : CONFIG.Dice.D20Roll.ADV_MODE.DISADVANTAGE;
+        // The die term carries its own copy of the mode in 6.0.
+        d20BaseTerm.options.advantageMode = upgradedRoll.options.advantageMode;
 
         RollUtility.resetRollGetters(upgradedRoll);
         return upgradedRoll;
+    }
+
+    /**
+     * Reverts an advantage/disadvantage roll back to a normal single-d20 roll, keeping the die that
+     * was rolled first (ensureMultiRoll appends the extra die after the original one).
+     * @param {Roll} roll The roll to downgrade.
+     * @returns {Roll} The same roll, now a normal roll.
+     */
+    static downgradeRoll(roll) {
+        if (!roll) return roll;
+        const d20BaseTerm = roll.terms.find((d) => d.faces === 20);
+        if (!d20BaseTerm) return roll;
+
+        const first = d20BaseTerm.results[0];
+        if (first) {
+            first.active = true;
+            delete first.discarded;
+        }
+
+        const DieClass = d20BaseTerm.constructor;
+        roll.terms[roll.terms.indexOf(d20BaseTerm)] = new DieClass({
+            number: 1,
+            faces: 20,
+            results: first ? [first] : [],
+            modifiers: d20BaseTerm.modifiers.filter((m) => !RollUtility._isAdvantageModifier(m)),
+            options: { ...foundry.utils.deepClone(d20BaseTerm.options ?? {}), advantageMode: CONFIG.Dice.D20Roll.ADV_MODE.NORMAL },
+        });
+
+        roll.options.advantageMode = CONFIG.Dice.D20Roll.ADV_MODE.NORMAL;
+        roll.options.advantage = false;
+        roll.options.disadvantage = false;
+        RollUtility.resetRollGetters(roll);
+        return roll;
+    }
+
+    /** kh/kl (core keep modifiers) and adv/adv2/dis (dnd5e 6.0 D20Die modifiers). */
+    static _isAdvantageModifier(m) {
+        return m === ROLL_STATE.ADV || m === ROLL_STATE.DIS || m.startsWith("adv") || m.startsWith("dis");
     }
 
     static resetRollGetters(roll) {
@@ -206,6 +314,14 @@ export class RollUtility {
 
         rollConfig.options ??= {};
         rollConfig.options.bonusTermLabels = _buildSaveTermLabels(outerConfig, rollConfig);
+    }
+
+    static captureCheckFormulaParts(outerConfig, rollConfig, index = 0) {
+        RollUtility.captureFormulaParts(rollConfig);
+        if (!rollConfig?.parts?.length) return;
+
+        rollConfig.options ??= {};
+        rollConfig.options.bonusTermLabels = _buildCheckTermLabels(outerConfig, rollConfig);
     }
 
     static captureDamageFormulaParts(outerConfig, rollConfig, index = 0) {
@@ -376,6 +492,26 @@ export class RollUtility {
      * @returns {string|null}
      */
     static buildLabeledFormula(roll) {
+        const bonuses = RollUtility.buildLabeledBonuses(roll);
+        if (!bonuses) return null;
+
+        const d20Term = roll.terms.find((t) => t.faces === 20);
+        const base = d20Term ? d20Term.expression : "1d20";
+
+        const bonusStr = bonuses
+            .map(({ value, label }) => `${value >= 0 ? "+" : ""}${value}${label ? ` (${label})` : ""}`)
+            .join(" ");
+
+        return bonusStr ? `${base} ${bonusStr}` : null;
+    }
+
+    /**
+     * Structured form of buildLabeledFormula: every non-d20 term of a D20Roll as a signed value with
+     * the display label of the source it came from (null when unknown). Zero-valued terms are skipped.
+     * @param {Roll} roll The evaluated D20Roll.
+     * @returns {{value: number, label: string|null}[]|null}
+     */
+    static buildLabeledBonuses(roll) {
         if (!roll) return null;
 
         const parts = roll.options?.bonusParts;
@@ -384,9 +520,6 @@ export class RollUtility {
         const termLabels = roll.options?.bonusTermLabels;
 
         if (!parts?.length) return null;
-
-        const d20Term = roll.terms.find((t) => t.faces === 20);
-        const base = d20Term ? d20Term.expression : "1d20";
 
         // Map resolved value → queued display labels (skip zeros — they don't appear in the formula)
         // bonusLabels holds the formula string for expression-valued parts (e.g. "max(1, 6)")
@@ -422,29 +555,25 @@ export class RollUtility {
         }
 
         let termLabelIdx = 0;
-        const bonusStr = segments
+        return segments
             .map(({ term, op }) => {
                 const absVal = Number(term.total);
                 if (isNaN(absVal) || absVal === 0) return null;
                 const signedVal = op === "-" ? -absVal : absVal;
-                const sign = signedVal >= 0 ? "+" : "";
 
                 // Consume termLabels in order rather than by segment index — this handles
                 // cases where a single @-variable expands to multiple roll terms (e.g. @saveBonus = "2 + 2").
                 const termLabel = termLabels?.[termLabelIdx];
                 if (termLabel && (termLabel.value === undefined || termLabel.value === signedVal)) {
                     termLabelIdx++;
-                    return `${sign}${signedVal} (${_getFormulaDisplayLabel(termLabel.label)})`;
+                    return { value: signedVal, label: _getFormulaDisplayLabel(termLabel.label) };
                 }
 
                 const labels = labelQueue.get(signedVal);
-                if (labels?.length) return `${sign}${signedVal} (${labels.shift()})`;
-                return `${sign}${signedVal}`;
+                if (labels?.length) return { value: signedVal, label: labels.shift() };
+                return { value: signedVal, label: null };
             })
-            .filter(Boolean)
-            .join(" ");
-
-        return bonusStr ? `${base} ${bonusStr}` : null;
+            .filter(Boolean);
     }
 
     /**
@@ -454,6 +583,23 @@ export class RollUtility {
      * @returns {string|null}
      */
     static buildLabeledDamageFormula(roll) {
+        const segments = RollUtility.buildLabeledDamageSegments(roll);
+        if (!segments?.length) return null;
+
+        return segments
+            .map(({ op, expression, label }, i) => {
+                const sign = i === 0 && op === "+" ? "" : `${op} `;
+                return `${sign}${expression}${label ? ` (${label})` : ""}`;
+            })
+            .join(" ");
+    }
+
+    /**
+     * Structured form of buildLabeledDamageFormula: one entry per non-zero term of a DamageRoll.
+     * @param {Roll} roll The evaluated DamageRoll.
+     * @returns {{op: string, expression: string, label: string|null, isDie: boolean, value: number, term: object}[]|null}
+     */
+    static buildLabeledDamageSegments(roll) {
         if (!roll) return null;
 
         const labels = _buildFormulaLabelQueue(roll);
@@ -495,13 +641,19 @@ export class RollUtility {
                       orderedLabel.label ??
                       _getExpressionLabel(expression, displayExpression) ??
                       (orderedLabel.matched ? null : _getDamageTermLabel(term, labels, pendingOp)));
-            const sign = segments.length === 0 && pendingOp === "+" ? "" : `${pendingOp} `;
-            segments.push(`${sign}${displayExpression}${label ? ` (${label})` : ""}`);
+            segments.push({
+                op: pendingOp,
+                expression: displayExpression,
+                label: label ?? null,
+                isDie: term instanceof foundry.dice.terms.Die,
+                value: signedValue,
+                term,
+            });
             termIndex++;
             pendingOp = "+";
         }
 
-        return segments.length ? segments.join(" ") : null;
+        return segments;
     }
 
     /**
@@ -517,6 +669,16 @@ export class RollUtility {
         const { crit, fumble } = _countCritsFumbles(die, options);
 
         return _getCritResult(crit, fumble);
+    }
+}
+
+function _safeKeys(obj) {
+    if (obj === undefined) return "undefined";
+    if (obj === null) return "null";
+    try {
+        return `{${Object.keys(obj).join(",")}}`;
+    } catch {
+        return String(obj);
     }
 }
 
@@ -775,7 +937,9 @@ function _buildAttackTermLabels(outerConfig, rollConfig) {
         if (value === null || value === undefined) continue;
 
         const variable = _getFormulaVariable(part);
-        if (variable === "actorBonus") {
+        // dnd5e 6.0 packs effect-driven attack bonuses into "@ruleBonus" (e.g. "1 + 2"); pre-6.0
+        // exposed them as "@actorBonus". Expand either into one label per contributing effect.
+        if (variable === "actorBonus" || variable === "ruleBonus") {
             labels.push(..._buildExpandedFormulaTermLabels(foundry.utils.getProperty(rollConfig.data ?? {}, variable) ?? value, actorBonusQueue));
             continue;
         }
@@ -826,9 +990,10 @@ function _buildSaveTermLabels(outerConfig, rollConfig) {
 
         const variable = _getFormulaVariable(part);
 
-        // Global save bonus — expand into per-effect labels
-        if (variable === "saveBonus" || part === `@${ability}SaveBonus`) {
-            const queue = variable === "saveBonus" ? globalSaveQueue : abilitySaveQueue;
+        // Global save bonus — expand into per-effect labels ("@ruleBonus" is the 6.0 packing of the
+        // same effect-driven bonuses; try the per-ability queue first, then the global one).
+        if (variable === "saveBonus" || variable === "ruleBonus" || part === `@${ability}SaveBonus`) {
+            const queue = variable === "saveBonus" ? globalSaveQueue : variable === "ruleBonus" ? [...abilitySaveQueue, ...globalSaveQueue] : abilitySaveQueue;
             labels.push(..._buildExpandedFormulaTermLabels(
                 foundry.utils.getProperty(rollConfig.data ?? {}, variable) ?? value,
                 queue
@@ -844,9 +1009,70 @@ function _buildSaveTermLabels(outerConfig, rollConfig) {
     return labels;
 }
 
+/**
+ * Ability/skill/tool check term labels. dnd5e 6.0 builds these rolls from "@mod", "@prof",
+ * "@extraBonus" and "@ruleBonus" (Actor5e#_buildSkillToolConfig / _buildAbilityCheckConfig), where
+ * "@ruleBonus" packs every effect-driven bonus. Expand that one into one line per effect, matched
+ * against the change keys such bonuses are written to (both the 6.0 roll-modification fields and
+ * the pre-6.0 bonuses.* paths, which migrated effects may still use); the rest keep their part label.
+ */
+function _buildCheckTermLabels(outerConfig, rollConfig) {
+    const labels = [];
+    const subject = _getRollSubject(outerConfig, rollConfig);
+    const actor = subject?.actor ?? subject;
+    const ability = rollConfig?.data?.abilityId ?? rollConfig?.ability ?? outerConfig?.ability;
+    const skill = outerConfig?.skill ?? rollConfig?.skill;
+    const tool = outerConfig?.tool ?? rollConfig?.tool;
+    const isInitiative = rollConfig?.data?.roll?.type === "initiative";
+
+    const paths = [
+        isInitiative ? "system.attributes.init.roll.bonus" : null,
+        isInitiative ? "system.attributes.init.bonus" : null,
+        ability ? `system.abilities.${ability}.check.roll.bonus` : null,
+        ability ? `system.abilities.${ability}.bonuses.check` : null,
+        skill ? `system.skills.${skill}.roll.bonus` : null,
+        skill ? `system.skills.${skill}.bonuses.check` : null,
+        tool ? `system.tools.${tool}.roll.bonus` : null,
+        tool ? `system.tools.${tool}.bonuses.check` : null,
+        skill ? "system.rolls.ability.skill.bonus" : null,
+        skill ? "system.bonuses.abilities.skill" : null,
+        tool ? "system.rolls.ability.tool.bonus" : null,
+        "system.rolls.ability.check.bonus",
+        "system.bonuses.abilities.check",
+    ].filter(Boolean);
+    const effectQueue = paths.flatMap((p) => _getActiveEffectValueLabelsForChange(actor, p, rollConfig.data));
+    LogUtility.log(`[RM DEBUG] _buildCheckTermLabels ability=${ability} skill=${skill} tool=${tool} parts=${JSON.stringify(rollConfig.parts)} effectLabels=${JSON.stringify(effectQueue)}`);
+
+    for (let i = 0; i < rollConfig.parts.length; i++) {
+        const part = rollConfig.parts[i];
+        const value = rollConfig.options?.bonusResolved?.[i];
+        if (value === null || value === undefined) continue;
+
+        const variable = _getFormulaVariable(part);
+        if (variable === "ruleBonus" || variable === "checkBonus" || variable === "skillBonus" || variable === "toolBonus") {
+            labels.push(..._buildExpandedFormulaTermLabels(foundry.utils.getProperty(rollConfig.data ?? {}, variable) ?? value, effectQueue));
+            continue;
+        }
+
+        const label = rollConfig.options?.bonusLabels?.[i];
+        const num = Number(value);
+        if (!isNaN(num) && num !== 0) labels.push({ value: num, label: _getFormulaDisplayLabel(label) });
+    }
+
+    return labels;
+}
+
 function _buildExpandedFormulaTermLabels(formula, effectQueue) {
     const terms = [];
     const formulaRoll = Roll.create(String(formula));
+    // Function/parenthetical terms (e.g. dnd5e's "max(0, 7 - 2)" rule bonuses) only have a total
+    // once evaluated; plain numeric terms already do. Deterministic formulas evaluate synchronously,
+    // and anything with dice in it just keeps whatever totals it has.
+    try {
+        formulaRoll.evaluateSync({ strict: false });
+    } catch (e) {
+        LogUtility.log(`[RM DEBUG] _buildExpandedFormulaTermLabels: could not evaluate "${formula}": ${e?.message}`);
+    }
     let pendingOp = "+";
 
     for (const term of formulaRoll.terms) {

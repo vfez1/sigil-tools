@@ -91,7 +91,8 @@
     font-weight: bold;
 }
 
-.rm-ack-badge .rm-ack-damage {
+.rm-ack-badge .rm-ack-damage,
+.rm-summary-damage {
     display: inline-block;
     padding: 0 5px;
     border-radius: 10px;
@@ -100,32 +101,149 @@
     line-height: 1.7;
 }
 
-.rm-ack-badge .rm-ack-damage.rm-ack-temp {
+/* dnd5e save-summary rows on a usage card: fixed-width result and applied-damage columns so
+   the values line up across rows; the token-name pill takes the remaining width. Clicking the
+   row opens its breakdown popover (see chat.js _injectSummaryRows). */
+.card-summary.rm-summary .save-summary {
+    cursor: pointer;
+}
+
+.card-summary.rm-summary .save-summary > ul {
+    flex: 1;
+    min-inline-size: 0;
+    margin-inline-start: 0;
+    justify-content: start;
+}
+
+.card-summary.rm-summary .save-summary button.dice-roll {
+    flex: 0 0 64px;
+    justify-content: end;
+}
+
+/* Titled separator above the save rows — dnd5e's tray-label look (dashed rule either side of an
+   icon + small-caps text), minus the pointer/caret since it doesn't collapse anything. */
+.message-content .rm-summary-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin: 4px -8px 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-11);
+    font-weight: normal;
+}
+
+.message-content .rm-summary-label > span {
+    flex: none;
+}
+
+.message-content .rm-summary-label > i {
+    color: var(--dnd5e-color-gold);
+}
+
+.message-content .rm-summary-label::before,
+.message-content .rm-summary-label::after {
+    content: "";
+    flex-basis: 50%;
+    border-block-start: 1px dashed var(--dnd5e-color-blue-gray-3);
+}
+
+/* Applied-damage rows on attack/damage cards (ack.js) have no popover to open. */
+.card-summary.rm-applied-summary .save-summary {
+    cursor: default;
+}
+
+/* The label replaces the first row's own dashed top rule. */
+.message-content .rm-summary-label + .card-summary {
+    border-block-start: none;
+    margin-block-start: 0;
+    padding-block-start: 2px;
+}
+
+/* Base d20 chips column (both dice for adv/dis, discarded one dimmed). The .rm-bd-die chip
+   styles are scoped to .rm-breakdown, so restate them here. */
+.card-summary.rm-summary .save-summary .rm-summary-dice {
+    display: flex;
+    justify-content: end;
+    gap: 3px;
+    flex: 0 0 44px;
+}
+
+.card-summary.rm-summary .save-summary .rm-summary-dice .rm-bd-die {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 18px;
+    block-size: 18px;
+    padding: 0 3px;
+    border: 1px solid var(--dnd5e-color-gold);
+    border-radius: 3px;
+    font-family: var(--dnd5e-font-roboto-slab);
+    font-size: var(--font-size-11);
+    font-weight: bold;
+}
+
+.card-summary.rm-summary .save-summary .rm-summary-dice .rm-bd-die.discarded {
+    opacity: 0.4;
+    text-decoration: line-through;
+}
+
+.card-summary.rm-summary .save-summary .rm-summary-dice .rm-bd-die.crit {
+    border-color: var(--color-level-success-border, #1b8f23);
+    color: var(--color-level-success, #26b231);
+}
+
+.card-summary.rm-summary .save-summary .rm-summary-dice .rm-bd-die.fumble {
+    border-color: var(--color-level-error-border, #750003);
+    color: var(--color-level-error, #ce0707);
+}
+
+/* Applied-damage column ("−7", "+5", empty until damage is applied to that target). */
+.card-summary.rm-summary .save-summary .rm-summary-damage {
+    flex: 0 0 36px;
+    text-align: center;
+    font-family: var(--dnd5e-font-roboto-slab);
+    font-size: var(--font-size-11);
+    line-height: 1.5;
+}
+
+/* Reroll toggles at the bottom of a save row's breakdown popover. */
+.rm-breakdown .rm-bd-row.rm-bd-actions {
+    margin-block-start: 3px;
+    padding-block-start: 4px;
+    border-block-start: 1px solid var(--dnd5e-color-gold);
+}
+
+.rm-breakdown .rm-bd-actions .rm-roll-actions {
+    margin-inline-start: auto;
+}
+
+.rm-ack-damage.rm-ack-temp {
     background: rgba(60, 100, 200, 0.15);
     color: #2a4a9a;
 }
 
-.rm-ack-badge .rm-ack-damage.rm-ack-healing {
+.rm-ack-damage.rm-ack-healing {
     background: rgba(50, 150, 50, 0.18);
     color: #2a6e2a;
 }
 
-.rm-ack-badge .rm-ack-damage.rm-ack-zero {
+.rm-ack-damage.rm-ack-zero {
     background: rgba(120, 120, 120, 0.15);
     color: #505050;
 }
 
-.rm-ack-badge .rm-ack-damage.rm-ack-reduced {
+.rm-ack-damage.rm-ack-reduced {
     background: rgba(200, 110, 20, 0.18);
     color: #8a4a10;
 }
 
-.rm-ack-badge .rm-ack-damage.rm-ack-full {
+.rm-ack-damage.rm-ack-full {
     background: rgba(180, 40, 40, 0.18);
     color: #8a1a1a;
 }
 
-.rm-ack-badge .rm-ack-damage.rm-ack-vulnerable {
+.rm-ack-damage.rm-ack-vulnerable {
     background: rgba(120, 40, 180, 0.18);
     color: #6a1a9a;
 }
@@ -159,78 +277,390 @@ damage-application button.rm-already-applied::before {
     font-weight: bold;
 }
 
-/* Already-rolled state on the Save button — passed */
-.card-buttons [data-action="rollSave"].rm-already-applied {
-    opacity: 0.55;
-    background: linear-gradient(to bottom, #1e3d1e, #122612) !important;
-    border-color: #3d6b3d !important;
-    color: #8aba8a !important;
+/* Save button state for the controlled token(s) — see chat.js _updateSaveButtonState.
+   Same tint/ink pairs as the applied-damage pills on the parchment cards; full opacity so the
+   label stays legible. Selectors outrank the row's base button/label rules further down. */
+.icon-row.rm-section-save > button.rm-save-roll.rm-save-passed {
+    background: rgba(50, 150, 50, 0.18);
+    border-color: #3d8a3d;
+    color: #2a6e2a;
 }
 
-.card-buttons [data-action="rollSave"].rm-already-applied::before {
-    content: "✓ ";
-    font-weight: bold;
+.icon-row.rm-section-save > button.rm-save-roll.rm-save-failed {
+    background: rgba(180, 40, 40, 0.18);
+    border-color: #b04040;
+    color: #8a1a1a;
 }
 
-/* Already-rolled state on the Save button — failed */
-.card-buttons [data-action="rollSave"].rm-save-failed {
-    opacity: 0.85;
-    background: linear-gradient(to bottom, #8b2020, #6a1515) !important;
-    border-color: #c04040 !important;
-    color: #ffd0d0 !important;
+/* Several tokens controlled, all already rolled — neutral grey, no pass/fail verdict. */
+.icon-row.rm-section-save > button.rm-save-roll.rm-already-applied {
+    /* Noticeably darker than the parchment so it reads as "done" at a glance. */
+    background: rgba(90, 90, 90, 0.32);
+    border-color: #707070;
+    color: #3a3a3a;
 }
 
-.card-buttons [data-action="rollSave"].rm-save-failed::before {
-    content: "✗ ";
-    font-weight: bold;
+.icon-row.rm-section-save > button.rm-save-roll:is(.rm-save-passed, .rm-save-failed, .rm-already-applied) .rm-save-label,
+.icon-row.rm-section-save > button.rm-save-roll:is(.rm-save-passed, .rm-save-failed, .rm-already-applied) .rm-save-label > i {
+    color: inherit;
+}
+
+.icon-row.rm-section-save > button.rm-save-roll.rm-save-passed .rm-save-label::before,
+.icon-row.rm-section-save > button.rm-save-roll.rm-already-applied .rm-save-label::before {
+    content: "✓";
+}
+
+.icon-row.rm-section-save > button.rm-save-roll.rm-save-failed .rm-save-label::before {
+    content: "✗";
 }
 
 /* —— end Acknowledged Mode —— */
 
-.rm-multiroll {
-    display: flex;
-}
+/* ===== Attack/damage/formula section rows + roll display =====
 
-.rm-multiroll .dice-total.ignored {
-    opacity: 0.4;
-    border: 1px solid #888888;
-}
+   Rebuilt on dnd5e 6.0's own row pattern (templates/chat/parts/card-rolls.hbs):
+   "<section class='icon-row'><i class='fa-fw fa-solid ...'></i>{{roll}}</section>" — a plain,
+   single-line icon-row holding exactly one icon and one roll control (chat.less: "display:flex;
+   align-items:center; gap:8px"). rm-section.html now emits this directly instead of reusing
+   ".card-header.description" (the item-description-toggle header class), which is what broke
+   under 6.0: that class turned into a shrink-only flex row with no wrap, so the old text-label
+   column and the roll box fought over space and lost differently depending on content, and a
+   GWM/CR row nested inside it needed "flex-wrap: wrap" (which 6.0 no longer sets on it) to drop
+   onto its own line. Matching dnd5e's real pattern sidesteps all of that: the label just needs
+   to not shrink below its own text, and extra rows (GWM/CR, damage-type pills) are now plain
+   sibling elements after the icon-row instead of squeezed inside it — see _injectDamageRoll.
 
-.rm-multiroll .die-icon {
-    background-image: url(../../../../icons/svg/d20-grey.svg);
-    width: 22px;
-    line-height: 22px;
-    background-size: 22px;
-    background-repeat: no-repeat;
-    float: left;
+   The roll control itself is still roll-model's own fetch-native-HTML-and-patch-the-total
+   approach (_injectAttackRoll/_injectDamageRoll) rather than dnd5e's real "button.dice-roll":
+   dnd5e only renders that richer structure for typed "check"/"save" messages; a raw
+   Roll.toMessage() (what a bare attack/damage roll is) still renders the older
+   "div.dice-roll > div.dice-result > h4.dice-total" shape, which dnd5e's CSS doesn't reach.
+   So this file still owns that box's appearance, matching dnd5e's ".total" treatment by hand
+   below (the label + roll box being back-to-back native icon-row content is what removes the
+   overflow/wrap failure modes — the box's own styling was already close to right). */
+
+/* Fixed width (not content-sized) so every row's roll button starts at the same x and, being
+   flex:1, ends at the same right edge — attack and damage boxes come out identical in size and
+   vertically aligned regardless of label length. Longer labels ("Damage (Versatile)") ellipsize;
+   the full text is still in the row's title tooltip. */
+.rm-row-label {
+    flex: 0 0 4.5em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--dnd5e-font-roboto-condensed);
     font-weight: bold;
-    font-size: 13px;
+    font-size: var(--font-size-11);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+/* Identical fixed icon column for both icon flavours used in these rows (a FontAwesome "<i>" and
+   the <dnd5e-icon> custom element) — their natural widths differ by a couple of px, which was
+   enough to knock the attack/damage buttons out of alignment with each other. */
+[class*="rm-section-"] > i,
+[class*="rm-section-"] > dnd5e-icon {
+    flex: 0 0 16px;
+    inline-size: 16px;
     text-align: center;
-    opacity: 0.95;
-
-    position: absolute;
-    top: 50%;
-    right: 5px;
-    transform: translate(0, -50%);
 }
 
-.rm-multiroll .success .die-icon,
-.rm-multiroll .critical .die-icon {
-    filter: sepia(0.5) hue-rotate(60deg);
+/* <dnd5e-icon> is "display: contents" by default (no box — its inner SVG lays out instead), so
+   the flex-basis above would be ignored and the 14px SVG would set the column width. Give it a
+   real box so both icon flavours occupy exactly the same 16px. */
+[class*="rm-section-"] > dnd5e-icon {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.rm-multiroll .failure .die-icon,
-.rm-multiroll .fumble .die-icon {
-    filter: sepia(0.5) hue-rotate(-60deg);
+/* Roll rows are a 3-column grid (icon | label | box) so the retro-action buttons can sit on a
+   second line directly under the box column. Specificity is raised to beat dnd5e's own
+   ".chat-log .message.compact .icon-row { display:flex }". The breakdown popover is display:none
+   in flow (top layer when open), so it never occupies a grid cell. */
+.chat-log .message.compact .icon-row[class*="rm-section-"],
+.chat-popout .message.compact .icon-row[class*="rm-section-"] {
+    display: grid;
+    grid-template-columns: 16px 50px minmax(0, 1fr);
+    column-gap: 8px;
+    row-gap: 2px;
+    align-items: center;
 }
 
-.dice-result .rm-multiroll .dice-total::before,
-.dice-result .rm-multiroll .dice-total::after {
-    display: none;
+/* The label column stacks label (line 1) over its buttons (line 2); the icon and the roll box
+   span both lines so everything reads as a single row with the box vertically centred. */
+.chat-log .message.compact .icon-row[class*="rm-section-"] > :is(i, dnd5e-icon),
+.chat-popout .message.compact .icon-row[class*="rm-section-"] > :is(i, dnd5e-icon) {
+    grid-column: 1;
+    grid-row: 1 / span 2;
 }
 
-.rm-header {
-    margin-bottom: 0.25rem;
+.chat-log .message.compact .icon-row[class*="rm-section-"] > .rm-row-label,
+.chat-popout .message.compact .icon-row[class*="rm-section-"] > .rm-row-label {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+}
+
+.chat-log .message.compact .icon-row[class*="rm-section-"] > button.dice-roll,
+.chat-popout .message.compact .icon-row[class*="rm-section-"] > button.dice-roll {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+}
+
+/* Save row: the roll box itself is the button — dnd5e's compact dice-roll box, holding the
+   shield icon and the full "DC 20 Wisdom Saving Throw" label instead of a number. */
+.chat-log .message.compact .icon-row.rm-section-save > button.dice-roll.rm-save-roll,
+.chat-popout .message.compact .icon-row.rm-section-save > button.dice-roll.rm-save-roll {
+    /* No row label, so take the label column too. Taller than its text needs, to match the
+       damage box beneath it. */
+    grid-column: 2 / span 2;
+    min-block-size: 31px;
+    cursor: pointer;
+}
+
+/* Break Concentration once pressed: stays in place, disabled, in the same grey as an
+   already-rolled save button. */
+.icon-row.rm-section-save > button.dice-roll.rm-break-concentration:disabled {
+    background: rgba(90, 90, 90, 0.32);
+    border-color: #707070;
+    color: #3a3a3a;
+    cursor: default;
+    box-shadow: none;
+}
+
+.icon-row.rm-section-save > button.dice-roll.rm-break-concentration:disabled .rm-save-label,
+.icon-row.rm-section-save > button.dice-roll.rm-break-concentration:disabled .rm-save-label > i {
+    color: inherit;
+}
+
+.icon-row.rm-section-save > button.dice-roll.rm-break-concentration:disabled .rm-save-label::before {
+    content: "✓";
+}
+
+/* Hover/focus glow like dnd5e's card buttons (the compact roll box turns its own off). */
+.icon-row.rm-section-save > button.dice-roll.rm-save-roll:hover:not(:disabled),
+.icon-row.rm-section-save > button.dice-roll.rm-save-roll:focus {
+    --button-hover-border-color: var(--dnd5e-color-gold);
+    border-color: var(--dnd5e-color-gold);
+    box-shadow: 0 0 5px var(--dnd5e-color-gold);
+}
+
+.icon-row.rm-section-save .rm-save-roll .result {
+    justify-content: center;
+}
+
+.icon-row.rm-section-save .rm-save-roll .rm-save-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--dnd5e-font-roboto-condensed);
+    font-size: var(--font-size-12);
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--color-text-emphatic);
+}
+
+.icon-row.rm-section-save .rm-save-roll .rm-save-label > i {
+    font-size: var(--font-size-12);
+    color: var(--dnd5e-color-gold);
+}
+
+/* Itemised roll breakdown inside the compact-roll popover (replaces dnd5e's dice/constant blocks). */
+.message-content .roll-breakdown .rm-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 8px;
+    min-inline-size: 180px;
+    font-family: var(--dnd5e-font-roboto);
+    font-size: var(--font-size-11);
+    color: var(--color-text-primary);
+}
+
+.rm-breakdown .rm-bd-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rm-breakdown .rm-bd-label {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+}
+
+.rm-breakdown .rm-bd-diceline .rm-bd-label {
+    color: var(--color-text-primary);
+    font-weight: bold;
+}
+
+.rm-breakdown .rm-bd-value {
+    flex: 0 0 auto;
+    min-inline-size: 2.2em;
+    text-align: end;
+    font-family: var(--dnd5e-font-roboto-slab);
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+}
+
+.rm-breakdown .rm-bd-row.rm-bd-diceline {
+    flex-wrap: wrap;
+}
+
+.rm-breakdown .rm-bd-diceline .rm-bd-label {
+    flex: 0 0 auto;
+}
+
+.rm-breakdown .rm-bd-dice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-inline-start: auto;
+}
+
+/* Damage/healing type badge — dnd5e's type icon + name, in the card's text colour. */
+.rm-breakdown .rm-bd-type {
+    --rm-type-color: var(--color-text-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 5px 1px 3px;
+    border: 1px solid var(--rm-type-color);
+    border-radius: 3px;
+    color: var(--rm-type-color);
+    font-family: var(--dnd5e-font-roboto-condensed);
+    font-size: var(--font-size-10);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.rm-breakdown .rm-bd-type dnd5e-icon {
+    --icon-size: 11px;
+    --icon-fill: var(--rm-type-color);
+}
+
+.rm-breakdown .rm-bd-subtotal .rm-bd-type {
+    margin-inline-end: auto;
+}
+
+.rm-breakdown .rm-bd-die {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 18px;
+    block-size: 18px;
+    padding: 0 3px;
+    border: 1px solid var(--dnd5e-color-gold);
+    border-radius: 3px;
+    font-family: var(--dnd5e-font-roboto-slab);
+    font-size: var(--font-size-11);
+    font-weight: bold;
+}
+
+.rm-breakdown .rm-bd-die.discarded {
+    opacity: 0.4;
+    text-decoration: line-through;
+}
+
+.rm-breakdown .rm-bd-die.crit {
+    border-color: var(--color-level-success-border, #1b8f23);
+    color: var(--color-level-success, #26b231);
+}
+
+.rm-breakdown .rm-bd-die.fumble {
+    border-color: var(--color-level-error-border, #750003);
+    color: var(--color-level-error, #ce0707);
+}
+
+.rm-breakdown .rm-bd-subtotal {
+    margin-block-start: 2px;
+    padding-block-start: 3px;
+    border-block-start: 1px dotted var(--dnd5e-color-blue-gray-3, #434857);
+}
+
+.rm-breakdown .rm-bd-total {
+    margin-block-start: 3px;
+    padding-block-start: 4px;
+    border-block-start: 1px dashed var(--dnd5e-color-blue-gray-3, #434857);
+}
+
+.rm-breakdown .rm-bd-total .rm-bd-label {
+    color: var(--color-text-primary);
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: var(--font-size-10);
+    letter-spacing: 0.04em;
+}
+
+.rm-breakdown .rm-bd-total .rm-bd-value {
+    font-size: var(--font-size-13);
+}
+
+/* Discarded d20 (adv/dis) shown dimmed beside the kept one; offset is set inline per die. */
+button.dice-roll .d20die.rm-d20-discarded {
+    opacity: 0.4;
+}
+
+button.dice-roll .d20die.rm-d20-discarded > i {
+    color: var(--color-text-secondary);
+}
+
+/* Retro-action buttons under the row label (attack: adv/dis rerolls; damage: CRIT/MAX) — sized to
+   fit the 50px label column exactly (2 × 24px + 2px gap). */
+.rm-roll-actions {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    display: flex;
+    justify-content: flex-start;
+    gap: 2px;
+}
+
+.rm-roll-actions button.rm-retro {
+    --button-size: 18px;
+    block-size: 18px;
+    inline-size: 24px;
+    padding: 0;
+    font-family: var(--dnd5e-font-roboto-condensed);
+    font-size: 8px;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    line-height: 1;
+}
+
+.rm-roll-actions button.rm-retro > i {
+    font-size: 9px;
+}
+
+/* Selected state — same fill as the checked GWM/CR toggles. */
+.rm-roll-actions button.rm-retro.active {
+    --button-background-color: #3f5f8a;
+    --button-border-color: #3f5f8a;
+    --button-hover-background-color: #3f5f8a;
+    background: #3f5f8a;
+    border-color: #3f5f8a;
+    color: #efe6d8;
+}
+
+/* Breathing room above each roll row — after the description's dashed separator, and between
+   consecutive rows (attack → damage / formula). */
+[class*="rm-section-"] {
+    margin-block-start: 6px;
+}
+
+.icon-row > dnd5e-icon {
+    /* dnd5e's own icon-row rule (chat.less) only colors a bare "<i>" gold — cover the
+       <dnd5e-icon> custom element too, used for a couple of section icons here. */
+    color: var(--dnd5e-color-gold);
+    --icon-fill: var(--dnd5e-color-gold);
+    --icon-size: 14px;
 }
 
 .rm-supplement {
@@ -246,25 +676,78 @@ damage-application button.rm-already-applied::before {
     font-size: var(--font-size-10);
 }
 
-.rm-title {
-    font-family: var(--dnd5e-font-roboto);
-    font-weight: bold;
-    font-size: var(--font-size-13);
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    margin-bottom: 0.1rem;
+.dice-roll {
+    flex: 1;
+    min-width: 0;
 }
 
-.rm-subtitle {
-    font-family: var(--dnd5e-font-roboto);
-    font-style: italic;
-    font-size: var(--font-size-12);
+h4.dice-total {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 0.375rem;
+    position: relative;
+    width: 100%;
+    min-block-size: unset;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    text-align: center;
+}
+
+h4.dice-total > .total {
+    flex: 1;
+}
+
+h4.dice-total.ignored > .total {
+    opacity: 0.5;
+    border-color: var(--color-text-dark-5, #666);
+}
+
+.rm-multiroll {
+    display: flex;
+    flex: 1;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.rm-multiroll > .dice-total {
+    flex: 1;
+}
+
+/* Secondary (kept-lower/discarded) die badge, shown inline next to the primary total. */
+.rm-multiroll .die-icon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    padding: 0 0.3rem;
+    white-space: nowrap;
+    border: 1px solid var(--dnd5e-color-gold);
+    border-radius: 3px;
+    background: var(--dnd5e-background-10);
+    color: var(--color-text-secondary);
+    font-family: var(--dnd5e-font-roboto-slab);
+    font-size: var(--font-size-11);
+    font-weight: bold;
+    opacity: 0.75;
+}
+
+.rm-multiroll .success .die-icon,
+.rm-multiroll .critical .die-icon {
+    border-color: var(--color-level-success-border, #1b8f23);
+    color: var(--color-level-success, #26b231);
+    opacity: 1;
+}
+
+.rm-multiroll .failure .die-icon,
+.rm-multiroll .fumble .die-icon {
+    border-color: var(--color-level-error-border, #750003);
+    color: var(--color-level-error, #ce0707);
+    opacity: 1;
 }
 
 .rm-context {
@@ -289,6 +772,11 @@ damage-application button.rm-already-applied::before {
     line-height: 24px;
 }
 
+/* Base hover overlay: absolutely covers the roll box as the hover hit-area, but each variant
+   below docks its visible controls to ONE edge (matching dnd5e's own convention of small
+   corner/edge affordances) rather than the old default of straddling the box left/right —
+   which sat the chevrons directly on top of the total number, doubling up with the secondary
+   die badge and reading as visual noise instead of a clean hover affordance. */
 .rm-overlay {
     text-align: center !important;
     flex-grow: 1;
@@ -297,19 +785,17 @@ damage-application button.rm-already-applied::before {
     right: 0;
     top: 0;
     bottom: 0;
-    padding: 0 30%;
 
     display: flex;
-    justify-content: space-between;
     align-items: center;
     z-index: 1;
 }
 
 .rm-overlay div {
-    width: 24px;
-    height: 24px;
-    font-size: var(--font-size-14);
-    line-height: 26px;
+    width: 20px;
+    height: 20px;
+    font-size: var(--font-size-12);
+    line-height: 22px;
     padding: 0;
     color: var(--color-text-dark-5);
 }
@@ -318,6 +804,12 @@ damage-application button.rm-already-applied::before {
 .rm-overlay span:hover {
     cursor: pointer;
     text-shadow: 0 0 10px var(--color-shadow-primary);
+}
+
+.rm-overlay-multiroll {
+    justify-content: flex-end;
+    gap: 2px;
+    padding: 0 4px;
 }
 
 .rm-overlay-crit {
@@ -362,107 +854,115 @@ damage-application button.rm-already-applied::before {
 }
 
 
+/* Pill family (damage-type selector, GWM/Celestial Revelation toggles) restyled to match
+   dnd5e 6.0's native ".pill" (chat.less/elements.less): dotted border, square-ish 3px radius,
+   transparent background, Roboto Condensed — rather than roll-model's old fully-rounded
+   solid-border/filled-background pill, which no longer matched the pills sitting right above
+   them on the same card ("Weapon", "Martial", "Reach 5 ft", etc). "Active"/"checked" states
+   follow dnd5e's own ".pill.critical" formula: solid colored border + colored text, no fill. */
+
 .rm-type-selector {
     display: flex;
-    gap: 3px;
+    gap: 4px;
     justify-content: center;
     padding: 2px 0;
     flex-wrap: wrap;
 }
 
-.rm-type-pill {
-    font-family: var(--dnd5e-font-roboto);
-    font-size: var(--font-size-10);
-    padding: 1px 6px;
-    border: 1px solid var(--color-border-light-1);
-    border-radius: 10px;
+.rm-type-pill,
+.rm-gwm-toggle,
+.rm-celestial-revelation {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--dnd5e-font-roboto-condensed);
+    font-size: var(--font-size-11);
+    padding: 2px 5px;
+    border: 1px dotted var(--color-text-secondary);
+    border-radius: 3px;
     cursor: pointer;
-    background: var(--dnd5e-background-10);
-    color: var(--color-text-dark-5);
+    background: transparent;
+    color: var(--color-text-secondary);
+    user-select: none;
+}
+
+.rm-type-pill {
     text-transform: capitalize;
+    font-size: var(--font-size-12);
 }
 
-.rm-type-pill:hover {
-    background: var(--dnd5e-background-15);
-    border-color: var(--color-border-dark-1);
+.rm-type-pill:hover,
+.rm-gwm-toggle:hover,
+.rm-celestial-revelation:hover {
+    border-style: solid;
+    border-color: var(--dnd5e-color-gold);
+    color: var(--color-text-primary);
 }
 
+/* Selected damage type — same fill as the checked GWM/CR toggles and the selected retro buttons. */
 .rm-type-pill.active {
-    background: var(--dnd5e-color-gold);
-    color: var(--color-text-dark-primary);
-    border-color: var(--color-border-dark-1);
-    font-weight: bold;
+    border-style: solid;
+    border-color: #3f5f8a;
+    background: #3f5f8a;
+    color: #efe6d8;
 }
 
 .rm-hide {
     display: none !important;
 }
 
+/* A plain sibling row in ".chat-card"'s column-direction flex layout now (see the big comment
+   above ".rm-row-label") — no "flex: 0 0 100%" needed here anymore. That rule made sense when
+   this row was nested inside a row-direction flex parent (forcing it to claim the full row
+   width so it would wrap); in a column parent, "flex-basis" runs along the vertical axis, so
+   the same rule would have stretched this row to fill 100% of the card's height instead. */
 .rm-gwm-row {
-    flex: 0 0 100%;
     display: flex;
     justify-content: flex-end;
+    gap: 4px;
     padding: 4px 2px 2px;
 }
 
-.rm-gwm-toggle {
-    display: inline-flex;
-    align-items: center;
-    font-family: var(--dnd5e-font-roboto);
-    font-size: var(--font-size-10);
-    padding: 1px 6px;
-    border: 1px solid var(--color-border-light-1);
-    border-radius: 10px;
-    background: var(--dnd5e-background-10);
-    color: var(--color-text-dark-5);
-    cursor: pointer;
-    user-select: none;
-}
-
-.rm-gwm-toggle:has(input:checked) {
-    background: #d8e8ce;
-    color: var(--color-text-dark-primary);
-    border-color: #6f8f5a;
-    font-weight: bold;
-}
-
-.rm-gwm-toggle:hover {
-    background: var(--dnd5e-background-15);
-    border-color: var(--color-border-dark-1);
-}
-
-.rm-gwm-toggle input {
-    display: none;
-}
-
-.rm-celestial-revelation {
-    display: inline-flex;
-    align-items: center;
-    font-family: var(--dnd5e-font-roboto);
-    font-size: var(--font-size-10);
-    padding: 1px 6px;
-    border: 1px solid var(--color-border-light-1);
-    border-radius: 10px;
-    background: var(--dnd5e-background-10);
-    color: var(--color-text-dark-5);
-    cursor: pointer;
-    user-select: none;
-}
-
+/* Checked state: same treatment for both — dark fill (the card's text colour), light text. */
+.rm-gwm-toggle:has(input:checked),
 .rm-celestial-revelation:has(input:checked) {
-    background: #c8e8f4;
-    color: #1a4a60;
-    border-color: #7ab4cc;
-    font-weight: bold;
+    border-style: solid;
+    border-color: #3f5f8a;
+    background: #3f5f8a;
+    color: #efe6d8;
 }
 
-.rm-celestial-revelation:hover {
-    background: var(--dnd5e-background-15);
-    border-color: var(--color-border-dark-1);
-}
-
+.rm-gwm-toggle input,
 .rm-celestial-revelation input {
     display: none;
+}
+
+/* Read-only variant for users without permission to modify the message: visible, not clickable. */
+.rm-type-pill.rm-readonly,
+.rm-gwm-toggle.rm-readonly,
+.rm-celestial-revelation.rm-readonly {
+    cursor: default;
+    opacity: 0.7;
+}
+
+/* No hover feedback when read-only: unchecked stays dotted/muted, checked/active keeps its look. */
+.rm-type-pill.rm-readonly:not(.active):hover,
+.rm-gwm-toggle.rm-readonly:not(:has(input:checked)):hover,
+.rm-celestial-revelation.rm-readonly:not(:has(input:checked)):hover {
+    border-style: dotted;
+    border-color: var(--color-text-secondary);
+    color: var(--color-text-secondary);
+}
+
+.rm-gwm-toggle.rm-readonly:has(input:checked):hover,
+.rm-celestial-revelation.rm-readonly:has(input:checked):hover {
+    border-color: #3f5f8a;
+    color: #efe6d8;
+}
+
+.rm-type-pill.rm-readonly.active:hover,
+.rm-type-pill.active:hover {
+    border-color: #3f5f8a;
+    color: #efe6d8;
 }
 
 /* ===== Embedded Saves Block ===== */

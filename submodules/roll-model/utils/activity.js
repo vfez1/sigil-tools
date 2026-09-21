@@ -2,6 +2,7 @@ import { MODULE_SHORT } from "../../shared/const.js";
 import { ChatUtility } from "./chat.js";
 import { CoreUtility } from "./core.js";
 import { ROLL_TYPE, RollUtility } from "./roll.js";
+import { LogUtility } from "./log.js";
 
 /**
  * Utility class to handle quick rolling functionality for activities.
@@ -10,9 +11,17 @@ export class ActivityUtility {
     static setRenderFlags(activity, message) {
         const messageFlags = message.flags ?? message.data?.flags;
         const rmFlags = messageFlags?.[MODULE_SHORT];
-        if (!rmFlags) return;
+        LogUtility.log(`[RM DEBUG] setRenderFlags: activity="${activity?.name}" rmFlags=${JSON.stringify(rmFlags)}`);
 
-        if (!rmFlags.quickRoll) return;
+        if (!rmFlags) {
+            LogUtility.log(`[RM DEBUG] setRenderFlags EXIT: no rm flags on message at all (processActivity likely never ran or threw).`);
+            return;
+        }
+
+        if (!rmFlags.quickRoll) {
+            LogUtility.log(`[RM DEBUG] setRenderFlags EXIT: quickRoll is false (dialog will be shown, not fast-forwarded).`);
+            return;
+        }
 
         const hasAttack = activity.hasOwnProperty(ROLL_TYPE.ATTACK);
         const hasDamage = activity.hasOwnProperty(ROLL_TYPE.DAMAGE);
@@ -66,10 +75,13 @@ export class ActivityUtility {
 
     static async runActivityActions(message) {
         const flags = message.flags?.[MODULE_SHORT] ?? message.data?.flags?.[MODULE_SHORT] ?? {};
+        LogUtility.log(`[RM DEBUG] runActivityActions ENTER messageId=${message?.id} flags=${JSON.stringify(flags)}`);
         let rolledDice = false;
 
         if (flags.renderAttack) {
+            LogUtility.log(`[RM DEBUG] runActivityActions: rolling attack...`);
             const attackRolls = await ActivityUtility.getAttackFromMessage(message);
+            LogUtility.log(`[RM DEBUG] runActivityActions: attack roll count=${attackRolls?.length}`);
             _injectRollsToMessage(message, attackRolls, CONFIG.Dice.D20Roll);
             rolledDice ||= _hasDice(attackRolls);
 
@@ -77,18 +89,23 @@ export class ActivityUtility {
         }
 
         if (flags.renderDamage) {
+            LogUtility.log(`[RM DEBUG] runActivityActions: rolling damage...`);
             const damageRolls = await ActivityUtility.getDamageFromMessage(message);
+            LogUtility.log(`[RM DEBUG] runActivityActions: damage roll count=${damageRolls?.length}`);
             _injectRollsToMessage(message, damageRolls, CONFIG.Dice.DamageRoll);
             rolledDice ||= _hasDice(damageRolls);
         }
 
         if (flags.renderFormula) {
+            LogUtility.log(`[RM DEBUG] runActivityActions: rolling formula...`);
             const formulaRolls = await ActivityUtility.getFormulaFromMessage(message);
             _injectRollsToMessage(message, formulaRolls, CONFIG.Dice.BasicRoll);
             rolledDice ||= _hasDice(formulaRolls);
         }
 
         message.flags[MODULE_SHORT].processed = true;
+
+        LogUtility.log(`[RM DEBUG] runActivityActions: marking processed=true and updating chat message, rolledDice=${rolledDice}`);
 
         ChatUtility.updateChatMessage(message, {
             flags: message.flags,

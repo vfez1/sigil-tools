@@ -26,8 +26,8 @@ The core submodule. Entry point: `roll-model.js` → `HooksUtility.registerModul
 - Attack and damage sections injected into the activity card (consolidates into one card)
 - Annotated formulas on attack and damage rolls — each bonus term labelled by source (effect name, "GWM", "prof", etc.)
 - Damage type selector pills for multi-type damage (e.g. Lunar Radiance adds radiant alongside slashing); preference persisted per item via flag
-- Damage application tray injected for non-GM players (mirrors what the system gives GMs)
 - Concentration break button on concentration saves
+- dnd5e's damage-application tray appended to the combined card (6.0 only renders it on its own damage-type cards); GM always, players per dnd5e's "Allow Player Damage Application"
 - GWM toggle: adds proficiency bonus to damage, with checkbox to enable/disable post-roll
 - Celestial Revelation toggle for Aasimar characters (adds radiant damage = prof bonus)
 
