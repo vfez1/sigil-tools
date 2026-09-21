@@ -126,6 +126,16 @@ export class RollUtility {
         const versatile = CoreUtility.areModuleKeysPressed(usageConfig.event, "rollVersatile");
 
         const fastForward = !(keys.normal || (usageConfig.vanilla ?? false));
+
+        // dnd5e 6.0's Activity#use fires the activity's primary action itself after the usage
+        // card is created (_triggerSubsequentActions → an attack roll with no rm flags, so it
+        // isn't fast-forwarded and pops the vanilla roll dialog). roll-model rolls attack and
+        // damage on its own from the rendered card (runActivityActions), so opt out here. This
+        // is the supported switch — returning false from dnd5e.postUseActivity also works but
+        // short-circuits every other module's postUseActivity handler, which is why that used
+        // to be registered on a 15s timer, leaving the first attack after a reload unguarded.
+        usageConfig.subsequentActions = false;
+
         dialogConfig.configure =
             usageConfig.hasOwnProperty("spell") ||
             (usageConfig.scaling !== undefined && usageConfig.scaling !== false) ||

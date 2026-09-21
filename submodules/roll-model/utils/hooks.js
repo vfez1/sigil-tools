@@ -348,14 +348,8 @@ export class HooksUtility {
             }
         });
 
-        // Ensures that the post use hook from RSR registers last so that it doesn't block other modules
-        setTimeout(() => {
-            Hooks.on(HOOKS_DND5E.POST_USE_ACTIVITY, (activity, usageConfig, results) => {
-                LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.POST_USE_ACTIVITY} (late-registered blocker) activity="${activity?.name}"`);
-                return false;
-            });
-            LogUtility.log(`[RM DEBUG] Late ${HOOKS_DND5E.POST_USE_ACTIVITY} blocker hook registered (after 15s delay).`);
-        }, 15000);
+        // dnd5e's post-use auto-roll is opted out per activity via usageConfig.subsequentActions in
+        // RollUtility.processActivity (preUseActivity), so no postUseActivity blocker is needed.
     }
 
     /**
