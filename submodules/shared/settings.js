@@ -1,6 +1,7 @@
 import { MODULE_NAME } from "./const.js";
 
 export const SETTING_NAMES = {
+    ENABLE_DEBUG_LOGS: "enableDebugLogs",
     PREVENT_MOVEMENT_HISTORY: "preventMovementHistory",
     SHOW_TURN_START_MARKER: "showTurnStartMarker",
     ACK_MODE: "acknowledgedMode",
@@ -19,5 +20,18 @@ export const SETTING_NAMES = {
 export class SettingsUtility {
     static getSettingValue(settingKey) {
         return game.settings.get(MODULE_NAME, settingKey);
+    }
+
+    /**
+     * Whether verbose debug logging is enabled for this client. Safe to call before the setting
+     * is registered (returns false), so log calls during early init never throw.
+     * @returns {boolean}
+     */
+    static isDebugLogging() {
+        try {
+            return game.settings.get(MODULE_NAME, SETTING_NAMES.ENABLE_DEBUG_LOGS) === true;
+        } catch {
+            return false;
+        }
     }
 }

@@ -15,6 +15,11 @@
             "pattern": "senses\\.(darkvision|blindsight|tremorsense|truesight) has moved to",
             "until": "15.0",
             "note": "DnD5e 5.3 deprecation: senses.* moved to senses.ranges.*. Triggered by deepClone in RollConfigurationDialog on every damage roll. Removed in DnD5e 6.1."
+        },
+        {
+            "pattern": "MeasuredTemplate(Document)? is deprecated|Scene#templates is deprecated|CONST\\.MEASURED_TEMPLATE_TYPES is deprecated",
+            "until": "16.0",
+            "note": "Foundry v14 merged MeasuredTemplate into Region. Triggered by active-auras (CollateAuras.mjs RetrieveTemplateAuras, AAHelpers.mjs, ActiveAuras.mjs) using canvas.templates on every collate. Suppressed rather than ported: active-auras is slated for replacement by dnd5e's native auras (6.3). Removed in Foundry v16."
         }
     ]
 }

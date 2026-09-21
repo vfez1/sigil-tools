@@ -1,14 +1,16 @@
 import { MODULE_DEBUG_TAG } from "../../shared/const.js";
+import { SettingsUtility } from "../../shared/settings.js";
 
 /**
  * Utility class to handle logging to console with an attached debug tag to identify module logs.
  */
 export class LogUtility {
     /**
-     * Sends an info log to the console.
+     * Sends an info log to the console. Skipped entirely unless the "Debug Logs" setting is on.
      * @param {String} logString The string to log as an info. 
      */
     static log(logString) {
+        if (!SettingsUtility.isDebugLogging()) return;
         console.log(..._processLog(logString));
     }
 

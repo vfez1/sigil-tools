@@ -39,6 +39,11 @@ export function registerSettingsPanelHooks() {
         // registers its settings before sigil-tools, so the raw DOM order doesn't match the
         // desired layout. Reorder physically: Visual Auras → Active Auras → Roll Model →
         // Character Features → Chat Archive → Submodules.
+        // General settings go first, ahead of the Visual Auras menu buttons.
+        const debugLogs = group("enableDebugLogs");
+        const firstGroup = group("visualAurasSetup");
+        if (debugLogs && firstGroup) firstGroup.before(debugLogs);
+
         let anchor = group("visualAurasActorConfig");
 
         for (const key of ["measurement", "wall-block", "vertical-euclidean", "dead-aura", "remove-hidden-auras", "combatOnly", "scrollingAura", "debug"]) {
@@ -68,6 +73,7 @@ export function registerSettingsPanelHooks() {
             }
         }
 
+        insertHeader(group("enableDebugLogs"),        "fas fa-sliders",       "General");
         insertHeader(group("visualAurasSetup"),       "fas fa-circle-dashed", "Visual Auras");
         insertHeader(group("measurement"),            "fas fa-circle-dashed", "Active Auras");
         insertHeader(group("collapseSettings"),       "fas fa-dice-d20",      "Roll Model");

@@ -18,6 +18,16 @@ function registerToggle(key) {
 }
 
 export function registerAllSettings() {
+    // ── General ───────────────────────────────────────────────────────────────
+
+    // Client-scoped so each user decides how noisy their own console is; read live by
+    // LogUtility / override.js, so no reload is needed.
+    game.settings.register(MODULE_NAME, SETTING_NAMES.ENABLE_DEBUG_LOGS, {
+        name: label(SETTING_NAMES.ENABLE_DEBUG_LOGS, "name"),
+        hint: label(SETTING_NAMES.ENABLE_DEBUG_LOGS, "hint"),
+        scope: "client", config: true, type: Boolean, default: false,
+    });
+
     // ── Roll Model ────────────────────────────────────────────────────────────
 
     game.settings.register(MODULE_NAME, SETTING_NAMES.PREVENT_MOVEMENT_HISTORY, {

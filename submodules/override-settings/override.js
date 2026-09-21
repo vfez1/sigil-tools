@@ -1,6 +1,8 @@
 Hooks.once("ready", async () => {
     const MODULE_ID = "sigil-tools";
-    const log = (...args) => console.log(`[${MODULE_ID}]`, ...args);
+    // Verbose progress output only when the Sigil Tools "Debug Logs" client setting is on.
+    const debug = (() => { try { return game.settings.get(MODULE_ID, "enableDebugLogs") === true; } catch { return false; } })();
+    const log = (...args) => { if (debug) console.log(`[${MODULE_ID}]`, ...args); };
     const warn = (...args) => console.warn(`[${MODULE_ID}]⚠️`, ...args);
     const error = (...args) => console.error(`[${MODULE_ID}]❌`, ...args);
     // v14 renamed objectsEqual → equals; use whichever the host runtime provides.

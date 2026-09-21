@@ -16,6 +16,8 @@
             }
         },
         "settings": {
+            "enableDebugLogs.name": "Debug Logs",
+            "enableDebugLogs.hint": "Print Sigil Tools' verbose debug output to this browser's console. Off by default; warnings and errors are always shown.",
             "enableCombatTrackerDock.name": "Enable: Combat Tracker Dock",
             "enableCombatTrackerDock.hint": "Enable the Combat Tracker Dock submodule (carousel-style combat tracker overlay). Requires a reload.",
             "enableEffectAutocomplete.name": "Enable: Effect Autocomplete",
