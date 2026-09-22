@@ -6,7 +6,20 @@
                 "label": "Portrait Bar",
                 "hint": "Resource bar that will be shown as a overlay on top of the portrait image, set to 'None' to disable."
             }
-        }
+        },
+        "contextMenu": {
+            "setAsCurrent": "Set as current combatant"
+        },
+        "hotkeys": {
+            "combatPrev": {
+                "name": "Previous Turn"
+            },
+            "combatNext": {
+                "name": "Next Turn"
+            }
+        },
+        "deleteEffectTitle": "Delete Effect",
+        "deleteEffectContent": "Are you sure you want to delete the effect "
     },
     "combat-tracker-dock": {
         "configureCarousel": "Configure Carousel",
