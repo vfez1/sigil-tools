@@ -33,7 +33,7 @@ export function registerAllSettings() {
     game.settings.register(MODULE_NAME, SETTING_NAMES.PREVENT_MOVEMENT_HISTORY, {
         name: label(SETTING_NAMES.PREVENT_MOVEMENT_HISTORY, "name"),
         hint: label(SETTING_NAMES.PREVENT_MOVEMENT_HISTORY, "hint"),
-        scope: "world", config: true, type: Boolean, default: true, requiresReload: true,
+        scope: "world", config: true, type: Boolean, default: true, requiresReload: false,
     });
 
     game.settings.register(MODULE_NAME, SETTING_NAMES.SHOW_TURN_START_MARKER, {

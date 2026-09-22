@@ -746,18 +746,32 @@ function _applyRollModePatch() {
 }
 
 function _applyTokenMovementHistoryPrevention() {
-    if (!_getPreventMovementHistorySetting()) return;
-    if (CONFIG.Token.documentClass?._rollModelPreventsMovementHistory) return;
+    // Core only records movement history when TokenDocument#_shouldRecordMovementHistory
+    // says so (its documented preUpdate extension point), so overriding that is enough.
+    // Wrap it with libWrapper at `setup` rather than swapping CONFIG.Token.documentClass
+    // for a subclass at `init`: by `setup` every system/module `init` hook has installed
+    // its final document class, so the wrapper lands on whatever class actually ended up
+    // in CONFIG and survives any later reassignment; and libWrapper reports another module
+    // touching the same method instead of one of us silently losing the patch. Being a
+    // wrapper it can also be removed again, so the setting toggles live on every client.
+    const TARGET = "CONFIG.Token.documentClass.prototype._shouldRecordMovementHistory";
+    let applied = false;
 
-    class RollModelTokenDocument extends CONFIG.Token.documentClass {
-        static _rollModelPreventsMovementHistory = true;
-
-        _shouldRecordMovementHistory() {
-            return false;
+    const sync = () => {
+        const wanted = _getPreventMovementHistorySetting();
+        if (wanted && !applied) {
+            libWrapper.register(MODULE_NAME, TARGET, function () { return false; }, "OVERRIDE");
+            applied = true;
+        } else if (!wanted && applied) {
+            libWrapper.unregister(MODULE_NAME, TARGET, false);
+            applied = false;
         }
-    }
+    };
 
-    CONFIG.Token.documentClass = RollModelTokenDocument;
+    Hooks.once("setup", sync);
+    Hooks.on("updateSetting", (setting) => {
+        if (setting.key === `${MODULE_NAME}.${SETTING_NAMES.PREVENT_MOVEMENT_HISTORY}`) sync();
+    });
 }
 
 function _applyTurnStartMarker() {

@@ -27,7 +27,7 @@
             "acknowledgedMode.name": "Acknowledged Mode",
             "acknowledgedMode.hint": "Track damage acknowledgment on chat cards from player-owned actors. The GM can manually acknowledge a card; players applying damage also stamp the card with the affected target names. Both show a green badge visible to all.",
             "preventMovementHistory.name": "Prevent Movement History",
-            "preventMovementHistory.hint": "Prevent tokens from recording movement history. Requires a reload.",
+            "preventMovementHistory.hint": "Prevent tokens from recording movement history while in combat. Applies immediately.",
             "showTurnStartMarker.name": "Show Turn-Start Position",
             "showTurnStartMarker.hint": "Highlight the cell a token occupied at the start of their turn with a blue overlay.",
             "showTurnStartMarker.pcs": "Player Characters Only",
