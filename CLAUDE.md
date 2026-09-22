@@ -82,6 +82,14 @@ Auto-archives old chat messages to an external server to keep the local chat log
 - Waits for roll-model's async attack/damage section injection to finish before capturing a message's HTML, so archived cards aren't missing content.
 - GM-only; re-entrancy guarded so overlapping `createChatMessage` events don't trigger concurrent archive runs.
 
+### grid-regions (`submodules/grid-regions/`)
+Makes regions and dnd5e spell templates measure with the scene grid's metric rather than true euclidean geometry, so they follow core's **Grid Diagonals** setting. Entry point: `grid-regions.js` (imported from `roll-model/utils/hooks.js`), gated by `enableGridRegions`.
+
+- Core shapes carry a `gridBased` flag: `false` (the schema default) routes through `gridlessGrid` for euclidean geometry, `true` routes through the scene grid. With Grid Diagonals = Equidistant, `SquareGrid#getCircle` returns four corner points, so a 20 ft burst becomes the 8x8 square block 5e plays on.
+- Two `libWrapper` WRAPPERs on the region layer, registered at `setup`: `placeRegion` (programmatic placement — dnd5e's `TemplatePlacement.fromActivity` reaches it via `placeRegions`, plus any macro) and `_createDragShapeData` (the interactive Regions-layer draw tools). Both run before the original so the *preview* is grid-based too, not just the committed document.
+- `visual-auras` is deliberately untouched — it creates its rings with `createEmbeddedDocuments` and already sets `gridBased` per preset, so it bypasses both wrapped paths.
+- Region *appearance* defaults (Visibility, Highlight Mode) are not handled here; core's own Region Palette stores those per user.
+
 ### effect-autocomplete (`submodules/effect-autocomplete/`)
 Adds an autocomplete/validate dropdown to the Active Effect Config "Changes" key field. Entry point: `effect-autocomplete.js` (imported from `roll-model.js`), gated by `enableEffectAutocomplete`.
 
@@ -96,7 +104,10 @@ Vendored third-party module ("Carousel Combat Tracker" by theripper93) — a car
 Runs macros from active effects on various triggers (onCreate, onDelete, onEnable, etc.).
 
 ### override-settings (`submodules/override-settings/`)
-Reads `submodules/override-settings/settings.json` on load and applies world settings, client settings, and keybindings automatically. Useful for enforcing campaign-wide defaults.
+Reads `submodules/override-settings/settings.json` on load and applies world settings, client settings, and keybindings automatically. Useful for enforcing campaign-wide defaults. Runs on **every** client at `ready`, so client-scoped settings are enforced for players as well as the GM (world-scoped ones are skipped for non-GMs, who cannot write them).
+
+- Object-valued settings are **merged** onto the current value, not replaced, so `settings.json` only needs to name the keys it actually enforces. Scalars and arrays still replace outright.
+- `core.regionPalette` is the per-user preset for newly drawn Regions. `visibility: 2` is `CONST.REGION_VISIBILITY.ALWAYS` (JSON can't reference the constant) and `highlightMode: "coverage"` is "Covered Grid Spaces" — together they make hand-drawn regions visible to players and highlight whole grid squares. dnd5e activity templates set both of these themselves in `TemplatePlacement.fromActivity`, so they are already correct and unaffected by the palette.
 
 ### suppress-warnings (`submodules/suppress-warnings/`)
 Filters specific console warnings/errors by pattern.

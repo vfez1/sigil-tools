@@ -98,10 +98,21 @@ Hooks.once("ready", async () => {
 
                 const current = game.settings.get(namespace, key);
 
-                if (_equals(current, value)) continue;
+                // Object-valued settings (e.g. core.regionPalette) are merged rather than
+                // replaced, so settings.json only has to name the keys it actually enforces.
+                // A bare replace would be cleaned against the setting's full schema and reset
+                // every unlisted key to its initial — and would then differ from `current` on
+                // every load, re-writing the setting forever. Scalars and arrays are untouched
+                // by this branch and still replace outright, as they always did.
+                const isPlainObject = (v) => foundry.utils.getType(v) === "Object";
+                const target = isPlainObject(current) && isPlainObject(value)
+                    ? foundry.utils.mergeObject(current, value, { inplace: false })
+                    : value;
+
+                if (_equals(current, target)) continue;
 
                 try {
-                    await game.settings.set(namespace, key, value);
+                    await game.settings.set(namespace, key, target);
                     log(`Set ${fullKey}`);
                 } catch (err) {
                     warn(`Failed to set ${fullKey}`, err);

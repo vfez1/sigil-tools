@@ -6,7 +6,11 @@
         "lightAnimation": true,
         "showToolclips": false,
         "tokenDragPreview": false,
-        "tokenAutoRotate": false
+        "tokenAutoRotate": false,
+        "regionPalette": {
+            "visibility": 2,
+            "highlightMode": "coverage"
+        }
     },
     "dnd5e": {
         "gridAlignedSquareTemplates": true,

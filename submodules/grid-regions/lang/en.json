@@ -1,0 +1,8 @@
+{
+    "rm": {
+        "settings": {
+            "enableGridRegions.name": "Enable: Grid Regions",
+            "enableGridRegions.hint": "Make regions and spell templates measure with the scene grid's metric instead of true euclidean geometry, so they follow the core Grid Diagonals setting (e.g. Equidistant turns a 20 ft burst into an 8x8 square). Applies to hand-drawn regions and dnd5e activity templates, preview included. Requires a reload."
+        }
+    }
+}

@@ -15,6 +15,7 @@ export const SETTING_NAMES = {
     ENABLE_VISUAL_AURAS: "enableVisualAuras",
     ENABLE_CHAT_ARCHIVE: "enableChatArchive",
     ENABLE_EFFECT_AUTOCOMPLETE: "enableEffectAutocomplete",
+    ENABLE_GRID_REGIONS: "enableGridRegions",
 };
 
 export class SettingsUtility {

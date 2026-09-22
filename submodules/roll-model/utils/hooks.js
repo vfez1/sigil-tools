@@ -9,6 +9,7 @@ import { ChatUtility } from "./chat.js";
 import { AlwaysHPWidget, HPManager, applyHPDismissPatch } from "../../always-hp/always-hp.js";
 import { ROLL_TYPE, RollUtility } from "./roll.js";
 import { registerEffectAutocompleteHooks } from "../../effect-autocomplete/effect-autocomplete.js";
+import { registerGridRegionsHooks } from "../../grid-regions/grid-regions.js";
 import { LogUtility } from "./log.js";
 
 export const HOOKS_CORE = {
@@ -92,6 +93,7 @@ export class HooksUtility {
 
         registerSettingsPanelHooks();
         registerEffectAutocompleteHooks();
+        registerGridRegionsHooks();
 
         Hooks.on(HOOKS_CORE.READY, () => {
             if (!isEnabled(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;
