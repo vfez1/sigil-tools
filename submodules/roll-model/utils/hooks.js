@@ -273,6 +273,10 @@ export class HooksUtility {
                 }
             }
 
+            // Default multi-type parts (e.g. Shillelagh bludgeoning|force) to the type this user last
+            // picked on a card for this item, so the choice is baked into the roll that gets stored.
+            ChatUtility.applyDamageTypePrefs(config.subject?.item, config.rolls);
+
             if (!message.data?.flags || !message.data.flags[MODULE_SHORT]?.quickRoll) {
                 LogUtility.log(`[RM DEBUG] ${HOOKS_DND5E.PRE_ROLL_DAMAGE}: not a quickRoll — skipping fast-forward.`);
                 return true;

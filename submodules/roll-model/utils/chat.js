@@ -211,6 +211,35 @@ export class ChatUtility {
         }
     }
 
+    /**
+     * Flag sub-key for an item's damage-type preferences. UUID dots are replaced so setFlag/getFlag
+     * don't expand the key as a nested path.
+     * @param {Item} item
+     * @returns {string}
+     */
+    static damageTypePrefKey(item) {
+        return item.uuid.replaceAll(".", "_");
+    }
+
+    /**
+     * Apply this user's saved damage-type preferences for an item to a set of damage roll configs
+     * (from dnd5e.preRollDamageV2) before the rolls are built, so the chosen type is what gets
+     * persisted on the message.
+     * @param {Item} item
+     * @param {object[]} rollConfigs config.rolls entries, each with an options.{type,types}
+     */
+    static applyDamageTypePrefs(item, rollConfigs) {
+        if (!item?.uuid || !rollConfigs?.length) return;
+        const prefs = game.user.getFlag(MODULE_NAME, `damageTypePrefs.${ChatUtility.damageTypePrefKey(item)}`);
+        if (!prefs) return;
+        rollConfigs.forEach((rc, i) => {
+            const pref = prefs[i];
+            const types = rc.options?.types;
+            if (!pref || !(types?.length > 1) || !types.includes(pref)) return;
+            rc.options.type = pref;
+        });
+    }
+
     static getMessageType(message) {
         // dnd5e 6.0: the message "kind" moved from flags.dnd5e.messageType + flags.dnd5e.roll.type
         // (which are now largely absent) onto message.type directly (e.g. "attack", "damage",
@@ -449,13 +478,14 @@ function _setupCardListeners(message, html) {
         // The damage tray needs no direct update: the message update above re-renders the card and
         // the 6.0 <damage-application> rebuilds itself from the message's rolls on connect.
 
-        // Save preference to item flag for persistence across rolls
+        // Persist the preference for this user's future rolls of the item. This deliberately lives
+        // on the User document rather than as an item flag: an embedded-item write is a full actor
+        // update (Actor.reset + prepareData + open sheet re-render + canvas refresh — a ~400ms main
+        // thread stall on Chrome, far worse on Firefox), whereas a User flag write touches nothing.
         const item = message.getAssociatedItem?.();
-        if (item?.isOwner) {
-            const prefs = item.getFlag(MODULE_NAME, "damageTypePrefs") ?? {};
-            prefs[partIndex] = newType;
-            await item.setFlag(MODULE_NAME, "damageTypePrefs", prefs);
-            LogUtility.log(`[RM DEBUG] type pill: saved pref ${partIndex}=${newType} on item ${item.name}`);
+        if (item?.uuid) {
+            await game.user.setFlag(MODULE_NAME, `damageTypePrefs.${ChatUtility.damageTypePrefKey(item)}.${partIndex}`, newType);
+            LogUtility.log(`[RM DEBUG] type pill: saved pref ${partIndex}=${newType} for ${item.name} on user ${game.user.name}`);
         }
     });
 
@@ -1319,15 +1349,9 @@ async function _injectDamageRoll(message, html) {
     LogUtility.log(`[RM DEBUG] _injectDamageRoll messageId=${message.id} user=${game.user?.name} damageRolls=${rolls.length} anchorFound=${html?.length ?? 0}`);
     if (!rolls || rolls.length === 0) return;
 
-    // Load saved damage type preferences from the item and apply before rendering
-    const item = message.getAssociatedItem?.();
-    const savedPrefs = item?.getFlag(MODULE_NAME, "damageTypePrefs") ?? {};
-    for (let i = 0; i < rolls.length; i++) {
-        const roll = rolls[i];
-        if (roll.options.types?.length > 1 && savedPrefs[i] && roll.options.types.includes(savedPrefs[i])) {
-            roll.options.type = savedPrefs[i];
-        }
-    }
+    // The saved damage-type preference is applied when the roll is built (see
+    // ChatUtility.applyDamageTypePrefs from dnd5e.preRollDamageV2), so each roll's stored
+    // options.type is authoritative here — old cards keep the type they were rolled with.
 
     // Mirror DamageMessageData#_prepareContext: one compact button showing the summed total,
     // with the per-type parts in the breakdown popover.
