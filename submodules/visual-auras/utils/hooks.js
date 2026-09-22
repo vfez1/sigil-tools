@@ -1,6 +1,7 @@
-import { getPresetsForActor, getPresetsForToken, buildRegionData, buildEffectStateByPreset, findAuraRegionsForToken, refreshTokenAuras } from "./helpers.js";
+import { getPresetsForActor, buildRegionData, buildEffectStateByPreset, findAuraRegionsForToken, refreshTokenAuras, reconcileTokenAuras, vaLog, describeActor } from "./helpers.js";
 
 async function onCreateToken(tokenDoc, options, userId) {
+    vaLog(`createToken: token=${tokenDoc.name}#${tokenDoc.id} scene=${tokenDoc.parent?.name} actor=${describeActor(tokenDoc.actor)} byUser=${userId} isMe=${game.user.id === userId}`);
     if (game.user.id !== userId) return;
     if (!game.user.isGM) return;
     if (!tokenDoc.actor) return;
@@ -40,6 +41,7 @@ async function onCreateToken(tokenDoc, options, userId) {
 }
 
 async function onDeleteToken(tokenDoc, options, userId) {
+    vaLog(`deleteToken: token=${tokenDoc.name}#${tokenDoc.id} scene=${tokenDoc.parent?.name} actor=${describeActor(tokenDoc.actor)} byUser=${userId} isMe=${game.user.id === userId} role=${game.user.role}`);
     if (game.user.id !== userId) return;
     if (!game.user.isGM) return;
     // Full GM's cascade deletes attached regions; AssistantGM's does not, so they handle it here.
@@ -61,12 +63,26 @@ async function onDeleteToken(tokenDoc, options, userId) {
 }
 
 async function onUpdateToken(tokenDoc, changes, options, userId) {
+    const flatChanges = foundry.utils.flattenObject(changes);
+    const changeKeys = Object.keys(flatChanges).filter(k => k !== "_id");
+    // Only trace changes we might care about (aura flags, actor swap from wild shape, size).
+    if (changeKeys.some(k => k.startsWith("flags.sigil-tools") || ["actorId", "width", "height", "name"].includes(k))) {
+        const activeGMs = game.users.filter(u => u.isGM && u.active).sort((a, b) => a.id.localeCompare(b.id));
+        vaLog(`updateToken: token=${tokenDoc.name}#${tokenDoc.id} scene=${tokenDoc.parent?.name} actor=${describeActor(tokenDoc.actor)} changes=${JSON.stringify(flatChanges)} byUser=${userId} primaryGM=${activeGMs[0]?.name} skipRefresh=${!!options["visual-auras.skipRefresh"]}`);
+    }
     if (!game.user.isGM) return;
     const activeGMs = game.users.filter(u => u.isGM && u.active).sort((a, b) => a.id.localeCompare(b.id));
     if (activeGMs[0]?.id !== game.user.id) return;
     if (options["visual-auras.skipRefresh"]) return;
 
-    const flatChanges = foundry.utils.flattenObject(changes);
+    // Wild shape / revert swaps the token's actor (and dnd5e's revert replaces the token's
+    // flags wholesale), so the regions and our flags need a full reconcile, not just a refresh.
+    if ("actorId" in flatChanges) {
+        vaLog(`updateToken: actorId changed on ${tokenDoc.name}#${tokenDoc.id} → reconciling auras`);
+        await reconcileTokenAuras(tokenDoc, "updateToken(actorId)");
+        return;
+    }
+
     if (!("flags.sigil-tools.visualAuras.disabled" in flatChanges)
         && !("flags.sigil-tools.visualAuras.hidden" in flatChanges)) return;
 
@@ -74,72 +90,15 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
 }
 
 async function onCanvasReady(canvas) {
-    if (!game.user.isGM) return;
     const scene = canvas.scene;
+    vaLog(`canvasReady: scene=${scene?.name}#${scene?.id} tokens=${scene?.tokens.size} auraRegions=${scene ? JSON.stringify(scene.regions.filter(r => r.getFlag("sigil-tools", "visualAuras.tokenId")).map(r => `${r.name}→token#${r.getFlag("sigil-tools", "visualAuras.tokenId")}`)) : "-"}`);
+    if (!game.user.isGM) return;
     if (!scene) return;
 
     for (const tokenDoc of scene.tokens) {
-        if (!tokenDoc.actor) continue;
-
-        // Re-derive aura state from live effect states to fix flags that went stale
-        // on scenes that weren't the active canvas when the effect was toggled.
-        const effectStateByPreset = buildEffectStateByPreset(tokenDoc.actor);
-
-        if (effectStateByPreset.size > 0) {
-            const currentDisabled = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];
-            let newDisabled = [...currentDisabled];
-            let flagChanged = false;
-            for (const [presetId, isEnabled] of effectStateByPreset) {
-                if (isEnabled && newDisabled.includes(presetId)) {
-                    newDisabled = newDisabled.filter(id => id !== presetId);
-                    flagChanged = true;
-                } else if (!isEnabled && !newDisabled.includes(presetId)) {
-                    newDisabled.push(presetId);
-                    flagChanged = true;
-                }
-            }
-            if (flagChanged) {
-                await tokenDoc.update(
-                    { "flags.sigil-tools.visualAuras.disabled": newDisabled },
-                    { "visual-auras.skipRefresh": true }
-                );
-            }
-        }
-
-        // Use getPresetsForToken to respect per-token disabled flags
-        const presets = getPresetsForToken(tokenDoc);
-        const assignedIds = new Set(presets.map(p => p.id));
-        const existingRegions = findAuraRegionsForToken(scene, tokenDoc.id);
-
-        // Delete regions whose preset is no longer assigned (or is disabled for this token)
-        const toDelete = existingRegions
-            .filter(r => !assignedIds.has(r.getFlag("sigil-tools", "visualAuras.presetId")))
-            .map(r => r.id);
-
-        if (toDelete.length) {
-            try {
-                await scene.deleteEmbeddedDocuments("Region", toDelete);
-            } catch(e) {
-                console.error("[visual-auras]", "canvasReady | failed to delete stale regions:", e);
-            }
-        }
-
-        const survivingPresetIds = new Set(
-            existingRegions
-                .filter(r => !toDelete.includes(r.id))
-                .map(r => r.getFlag("sigil-tools", "visualAuras.presetId"))
-                .filter(Boolean)
-        );
-
-        const missing = presets.filter(p => !survivingPresetIds.has(p.id));
-        if (!missing.length) continue;
-
-        try {
-            await scene.createEmbeddedDocuments("Region", missing.map(p => buildRegionData(p, tokenDoc)));
-        } catch(e) {
-            console.error("[visual-auras]", "canvasReady | failed to create regions:", e);
-        }
+        await reconcileTokenAuras(tokenDoc, "canvasReady");
     }
+    vaLog(`canvasReady: scene=${scene.name} reconcile DONE — auraRegions now=${JSON.stringify(scene.regions.filter(r => r.getFlag("sigil-tools", "visualAuras.tokenId")).map(r => `${r.name}→token#${r.getFlag("sigil-tools", "visualAuras.tokenId")}`))}`);
 }
 
 async function onRenderTokenConfig(tokenConfig, element, isPlaced) {
@@ -240,8 +199,11 @@ async function syncVisualAuraForEffect(effect, enabled) {
     const scene = game.canvas.scene;
     if (!scene) return;
 
+    const matchingTokens = scene.tokens.filter(t => t.actor?.id === actor.id);
+    vaLog(`syncVisualAuraForEffect: effect="${effect.name}" enabled=${enabled} preset=${presetId} actor=${describeActor(actor)} scene=${scene.name} matchingTokens=${JSON.stringify(matchingTokens.map(t => `${t.name}#${t.id}`))}`);
+
     const pending = [];
-    for (const tokenDoc of scene.tokens.filter(t => t.actor?.id === actor.id)) {
+    for (const tokenDoc of matchingTokens) {
         const currentDisabled = tokenDoc.getFlag("sigil-tools", "visualAuras.disabled") ?? [];
         const isCurrentlyDisabled = currentDisabled.includes(presetId);
 
@@ -255,23 +217,43 @@ async function syncVisualAuraForEffect(effect, enabled) {
         pending.push({ tokenDoc, newDisabled });
     }
 
+    vaLog(`syncVisualAuraForEffect: preset=${presetId} flag updates=${JSON.stringify(pending.map(p => `${p.tokenDoc.name}#${p.tokenDoc.id}→${JSON.stringify(p.newDisabled)}`))}`);
     await Promise.all(pending.map(({ tokenDoc, newDisabled }) =>
         tokenDoc.setFlag("sigil-tools", "visualAuras.disabled", newDisabled)
     ));
 }
 
+// Trace-only: wild shape / revert events, so the log shows when the token's actor swaps
+// relative to canvasReady and the effect hooks.
+function onTransformActor(original, target, data) {
+    vaLog(`dnd5e.transformActorV2: ${describeActor(original)} → ${target?.name}#${target?.id} activeTokens=${JSON.stringify(original.getActiveTokens(true, true).map(t => `${t.name}#${t.id}@${t.parent?.name}`))}`);
+}
+
+function onRevertOriginalForm(actor) {
+    vaLog(`dnd5e.revertOriginalForm: ${describeActor(actor)} activeTokens=${JSON.stringify(actor.getActiveTokens(true, true).map(t => `${t.name}#${t.id}@${t.parent?.name}`))}`);
+}
+
+function traceEffectEvent(kind, effect, userId, extra = "") {
+    if (!effect.flags?.ActiveAuras?.visualAuraPreset) return;
+    const parentActor = effect.parent instanceof Actor ? effect.parent : effect.parent?.parent;
+    vaLog(`${kind}: effect="${effect.name}" preset=${effect.flags.ActiveAuras.visualAuraPreset} disabled=${effect.disabled} on=${describeActor(parentActor)} byUser=${userId} isMe=${game.user.id === userId}${extra}`);
+}
+
 async function onCreateActiveEffect(effect, options, userId) {
+    traceEffectEvent("createActiveEffect", effect, userId);
     if (game.user.id !== userId) return;
     if (effect.disabled) return;
     await syncVisualAuraForEffect(effect, true);
 }
 
 async function onDeleteActiveEffect(effect, options, userId) {
+    traceEffectEvent("deleteActiveEffect", effect, userId);
     if (game.user.id !== userId) return;
     await syncVisualAuraForEffect(effect, false);
 }
 
 async function onUpdateActiveEffect(effect, changes, options, userId) {
+    traceEffectEvent("updateActiveEffect", effect, userId, ` changes=${JSON.stringify(changes)}`);
     if (game.user.id !== userId) return;
     if (!("disabled" in changes)) return;
     await syncVisualAuraForEffect(effect, !changes.disabled);
@@ -287,4 +269,14 @@ export function registerHooks() {
     Hooks.on("createActiveEffect", onCreateActiveEffect);
     Hooks.on("deleteActiveEffect", onDeleteActiveEffect);
     Hooks.on("updateActiveEffect", onUpdateActiveEffect);
+    Hooks.on("dnd5e.transformActorV2", onTransformActor);
+    Hooks.on("dnd5e.revertOriginalForm", onRevertOriginalForm);
+
+    // These hooks are registered on `ready`, but Foundry fires the first canvasReady before
+    // that — so the scene a client loads into would never be reconciled (only later scene
+    // switches would). Catch up on it now.
+    if (game.canvas?.ready) {
+        vaLog(`registerHooks: canvas already ready (scene=${game.canvas.scene?.name}) — running initial reconcile`);
+        onCanvasReady(game.canvas);
+    }
 }
