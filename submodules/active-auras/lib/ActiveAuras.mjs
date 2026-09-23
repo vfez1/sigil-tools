@@ -308,11 +308,8 @@ export class ActiveAuras {
               if (!AAHelpers.DispositionCheck(auraTargets, auraEffect.casterDisposition, canvasToken.document.disposition))
                 continue;
             }
-            // const shape = AATemplates.getTemplateShape(auraEntity);
-            let templateDetails = auraEntity;
-            //templateDetails.shape = shape
             distance = AAMeasure.isTokenInside(
-              templateDetails,
+              auraEntity,
               canvasToken,
               wallsBlock
             );

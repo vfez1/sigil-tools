@@ -903,6 +903,7 @@ export class AAHelpers {
    * @param {number} args.spellLevel - Spell level used for casting.
    * @param {string} args.uuid - Optional origin UUID.
    * @returns {Promise<Object>} The modified args object with `haltEffectsApplication` set to true.
+   * @public Macro API (window.AAHelpers).
    */
   static async applyTemplate(args) {
     let duration;
@@ -962,6 +963,7 @@ export class AAHelpers {
     return arg;
   }
 
+  /** @public Macro API (window.AAHelpers). */
   static async applyDrawing(drawing, effects) {
     const templateEffectData = [];
     for (let effect of effects) {

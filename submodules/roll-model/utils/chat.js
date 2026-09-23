@@ -11,7 +11,7 @@ import { LogUtility } from "./log.js";
  * Enumerable of identifiers for different message types that can be made.
  * @enum {String}
  */
-export const MESSAGE_TYPE = {
+const MESSAGE_TYPE = {
     ROLL: "roll",
     USAGE: "usage",
 };
@@ -104,16 +104,6 @@ export class ChatUtility {
             `[RM DEBUG] processChatMessage: injection done messageId=${message.id} user=${game.user?.name} attackRow=${content.find(".rm-section-attack").length} damageRow=${content.find(".rm-section-damage").length} hidden=${$(html).hasClass("rm-hide")} processed=${message.flags[MODULE_SHORT].processed}`
         );
         content[0]?.dispatchEvent(new CustomEvent("rm-inject-complete", { bubbles: true }));
-
-        // Setup hover buttons when the message is actually hovered(for optimisation).
-        let hoverSetupComplete = false;
-        content.hover(async () => {
-            if (!hoverSetupComplete) {
-                hoverSetupComplete = true;
-                await _injectOverlayButtons(message, content);
-                _onOverlayHover(message, content);
-            }
-        });
 
         if (message.flags[MODULE_SHORT].processed) {
             await $(html).removeClass("rm-hide");
@@ -274,10 +264,6 @@ export class ChatUtility {
         return null;
     }
 
-    static getActivityType(message) {
-        return message.flags.dnd5e?.activity.type;
-    }
-
     static getActorFromMessage(message) {
         let actor = null;
         if (message.speaker.token) {
@@ -290,20 +276,6 @@ export class ChatUtility {
         return actor;
     }
 
-    static isMessageMultiRoll(message) {
-        return (
-            (message.flags[MODULE_SHORT].advantage ||
-                message.flags[MODULE_SHORT].disadvantage ||
-                message.flags[MODULE_SHORT].dual ||
-                (message.rolls[0] instanceof CONFIG.Dice.D20Roll && message.rolls[0].options.advantageMode !== CONFIG.Dice.D20Roll.ADV_MODE.NORMAL)) ??
-            false
-        );
-    }
-
-    static isMessageCritical(message) {
-        return message.flags[MODULE_SHORT].isCritical ?? false;
-    }
-
     static updateAllSaveButtonStates() {
         for (const message of game.messages) {
             if (message.type !== "usage" || !message.system?.outcomes?.size) continue;
@@ -313,118 +285,24 @@ export class ChatUtility {
         }
     }
 
-    static registerSaveSocketListener() {
+    /**
+     * CRIT/MAX on a card the player doesn't own: the player's client sends the modified damage
+     * rolls here and the GM saves them (see _applyDamageRollUpdate).
+     */
+    static registerRetroDamageSocketListener() {
         game.socket.on(`module.${MODULE_NAME}`, async (data) => {
             if (!game.user.isGM) return;
-
-            if (data.type === "retroSave") {
-                const message = game.messages.get(data.messageId);
-                if (!message) return;
-                const upgradedRoll = CONFIG.Dice.D20Roll.fromData(data.rollJSON);
-                const rolls = message.rolls.map(r =>
-                    (r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === data.speaker) ? upgradedRoll : r
-                );
-                await ChatUtility.updateChatMessage(message, { rolls });
-                return;
-            }
-
-            if (data.type === "retroDamage") {
-                const message = game.messages.get(data.messageId);
-                if (!message) return;
-                const updatedRolls = data.rollsJSON.map(r => CONFIG.Dice.DamageRoll.fromData(r));
-                const rolls = message.rolls.map(r =>
-                    r instanceof CONFIG.Dice.DamageRoll ? updatedRolls.shift() ?? r : r
-                );
-                await ChatUtility.updateChatMessage(message, { flags: data.flags, rolls });
-                return;
-            }
-
-            if (data.type !== "embeddedSave") return;
+            if (data.type !== "retroDamage") return;
 
             const message = game.messages.get(data.messageId);
             if (!message) return;
-
-            const d20Roll = CONFIG.Dice.D20Roll.fromData(data.rollJSON);
-            const { speakerName, ability } = data;
-
-            const filteredRolls = message.rolls.filter(r =>
-                !r.options?.embeddedSave || r.options?.embeddedSaveSpeaker !== speakerName
+            const updatedRolls = data.rollsJSON.map(r => CONFIG.Dice.DamageRoll.fromData(r));
+            const rolls = message.rolls.map(r =>
+                r instanceof CONFIG.Dice.DamageRoll ? updatedRolls.shift() ?? r : r
             );
-            filteredRolls.push(d20Roll);
-
-            const existingSaves = message.flags[MODULE_SHORT]?.embeddedSaves ?? {};
-            existingSaves[speakerName] = { ability };
-
-            await ChatUtility.updateChatMessage(message, {
-                rolls: filteredRolls,
-                [`flags.${MODULE_SHORT}.embeddedSaves`]: existingSaves,
-            });
+            await ChatUtility.updateChatMessage(message, { flags: data.flags, rolls });
         });
     }
-
-    static registerSaveListener() {
-        if (ChatUtility._saveListenerRegistered) return;
-        ChatUtility._saveListenerRegistered = true;
-
-        document.addEventListener(
-            "click",
-            async (event) => {
-                const target = event.target instanceof Element ? event.target.closest('[data-action="rollSave"]') : null;
-                if (!target) return;
-
-                const li = target.closest("[data-message-id]");
-                if (!li) return;
-
-                const message = game.messages.get(li.dataset.messageId);
-                if (!message) return;
-
-                event.stopImmediatePropagation();
-                event.preventDefault();
-
-                await _processSaveButtonEvent(message, target, event);
-            },
-            true
-        );
-    }
-
-    static updateAllSaveMultipliers() {
-        for (const message of game.messages) {
-            const embeddedSaves = message.flags?.[MODULE_SHORT]?.embeddedSaves;
-            if (!embeddedSaves) continue;
-            const li = document.querySelector(`[data-message-id="${message.id}"]`);
-            if (!li) continue;
-            _autoSetHalfDamageForFailedSaves(message, li);
-        }
-    }
-
-}
-
-/**
- * Handles hover begin events on the given html/jquery object.
- * @param {ChatMessage} message The chat message to process.
- * @param {JQuery} html The object to handle hover begin events for.
- * @private
- */
-function _onOverlayHover(message, html) {
-    const actor = message.getAssociatedActor?.();
-    const hasPermission = game.user.isGM || message?.isAuthor || actor?.isOwner;
-    const isItem = message.flags.dnd5e?.activity !== undefined;
-
-    // Save-section overlays are handled by per-section hover in _injectOverlayRetroButtons
-    const saveOverlays = html.find("[data-save-speaker] .rm-overlay");
-    html.find(".rm-overlay").not(saveOverlays).show();
-    const saveMultiRollOverlays = html.find("[data-save-speaker] .rm-overlay-multiroll");
-    html.find(".rm-overlay-multiroll").not(saveMultiRollOverlays).toggle(hasPermission && !ChatUtility.isMessageMultiRoll(message));
-    html.find(".rm-overlay-crit").toggle(hasPermission && isItem);
-}
-
-/**
- * Handles hover end events on the given html/jquery object.
- * @param {JQuery} html The object to handle hover end events for.
- * @private
- */
-function _onOverlayHoverEnd(html) {
-    html.find(".rm-overlay").attr("style", "display: none;");
 }
 
 /**
@@ -453,7 +331,6 @@ function _setupCardListeners(message, html) {
         const selector = pill.closest(".rm-type-selector");
         const newType = pill.data("type");
         const partIndex = Number(pill.data("part"));
-        const label = CONFIG[MODULE_SHORT]?.combinedDamageTypes?.[newType] ?? newType;
 
         LogUtility.log(
             `[RM DEBUG] type pill CLICK messageId=${message.id} user=${game.user?.name} newType=${newType} part=${partIndex} readonly=${pill.hasClass("rm-readonly")} isOwner=${message.isOwner} item=${message.getAssociatedItem?.()?.name} itemOwner=${message.getAssociatedItem?.()?.isOwner}`
@@ -487,10 +364,6 @@ function _setupCardListeners(message, html) {
             await game.user.setFlag(MODULE_NAME, `damageTypePrefs.${ChatUtility.damageTypePrefKey(item)}.${partIndex}`, newType);
             LogUtility.log(`[RM DEBUG] type pill: saved pref ${partIndex}=${newType} for ${item.name} on user ${game.user.name}`);
         }
-    });
-
-    html.find(`[data-action='rm-${ROLL_TYPE.CONCENTRATION}']`).click(async (event) => {
-        await _processBreakConcentrationButtonEvent(message, event);
     });
 
     html.find(".rm-gwm-toggle input").change(async (event) => {
@@ -614,7 +487,8 @@ async function _injectContent(message, type, html) {
             // dnd5e 6.0 standalone check/save cards: keep the system's compact roll button as is
             // (vanilla look) and only swap its breakdown popover for the itemised one used on the
             // activity cards' attack row and the save-summary rows — dice line (both d20s for
-            // adv/dis), one line per bonus source, total, plus adv/dis reroll toggles for owners.
+            // adv/dis), one line per bonus source, total — and add adv/dis reroll toggles for
+            // owners beside the roll box.
             _enhanceStandaloneRoll(message, html, roll, type);
 
             // Concentration: dnd5e itself only offers "break concentration" on a failed save (an
@@ -680,16 +554,9 @@ async function _injectContent(message, type, html) {
             // Save row (DC box + roll button) sits above the damage row.
             await _injectSaveRow(message, actions);
 
-            if (message.flags[MODULE_SHORT].manualDamage || message.flags[MODULE_SHORT].renderDamage) {
+            if (message.flags[MODULE_SHORT].renderDamage) {
                 actions.find(`[data-action=rollDamage]`).remove();
                 actions.find(`[data-action=rollHealing]`).remove();
-            }
-
-            if (message.flags[MODULE_SHORT].manualDamage) {
-                await _injectDamageButton(message, actions);
-            }
-
-            if (message.flags[MODULE_SHORT].renderDamage) {
                 await _injectDamageRoll(message, actions);
             }
 
@@ -698,16 +565,8 @@ async function _injectContent(message, type, html) {
                 await _injectFormulaRoll(message, actions);
             }
 
-            // Remove redundant system-generated chat-card shells BEFORE injecting embedded saves,
-            // because the save wrapper also carries .dnd5e2.chat-card and would be removed otherwise.
+            // Remove redundant system-generated chat-card shells.
             html.find(".dnd5e2.chat-card").not(".activation-card").remove();
-
-            {
-                const embeddedSaves = message.flags[MODULE_SHORT].embeddedSaves;
-                if (embeddedSaves && Object.keys(embeddedSaves).length > 0) {
-                    await _injectEmbeddedSave(message, html);
-                }
-            }
 
             _injectDamageTray(message, html);
             _injectSummaryRows(message, html);
@@ -1222,7 +1081,7 @@ function _buildRollActions(message, kind) {
     const flags = message.flags[MODULE_SHORT] ?? {};
 
     if (kind === ROLL_TYPE.ATTACK) {
-        const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll && !r.options?.embeddedSave);
+        const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll);
         group.append(
             btn(`data-state="${ROLL_STATE.DIS}" title="${CoreUtility.localize("rm.chat.buttons.rollDisadvantage")}"`, '<i class="fa-solid fa-chevrons-down" inert></i>', roll?.hasDisadvantage),
             btn(`data-state="${ROLL_STATE.ADV}" title="${CoreUtility.localize("rm.chat.buttons.rollAdvantage")}"`, '<i class="fa-solid fa-chevrons-up" inert></i>', roll?.hasAdvantage),
@@ -1244,7 +1103,7 @@ function _buildRollActions(message, kind) {
 }
 
 async function _injectAttackRoll(message, html) {
-    const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll && !r.options?.embeddedSave);
+    const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll);
 
     LogUtility.log(`[RM DEBUG] _injectAttackRoll messageId=${message.id} user=${game.user?.name} rollFound=${!!roll} anchorFound=${html?.length ?? 0}`);
     if (!roll) return;
@@ -1517,29 +1376,10 @@ async function _injectDamageRoll(message, html) {
     // reads those same roll objects when it connects, so no separate tray sync is needed.
 }
 
-async function _injectDamageButton(message, html) {
-    const button = message.flags[MODULE_SHORT].isHealing
-        ? {
-              title: CoreUtility.localize("DND5E.HEAL.HealingButton"),
-              icon: '<dnd5e-icon src="systems/dnd5e/icons/svg/damage/healing.svg"></dnd5e-icon>',
-          }
-        : {
-              title: CoreUtility.localize("DND5E.Damage"),
-              icon: '<i class="fas fa-burst"></i>',
-          };
-
-    const render = await RenderUtility.render(TEMPLATE.BUTTON, {
-        action: ROLL_TYPE.DAMAGE,
-        ...button,
-    });
-
-    html.prepend($(render));
-}
-
 /**
  * Standalone check/save card (dnd5e 6.0): rebuild the compact roll button's breakdown popover in
  * the roll-model style and badge the discarded d20(s) on the button, exactly like the activity
- * card's attack row. Owners also get adv/dis reroll toggles at the bottom of the popover.
+ * card's attack row. Owners also get adv/dis reroll toggles on the card, right of the roll box.
  * @param {ChatMessage} message
  * @param {JQuery} html     The ".message-content" element.
  * @param {D20Roll} roll    The card's roll.
@@ -1558,27 +1398,21 @@ function _enhanceStandaloneRoll(message, html, roll, type) {
         roll.d20.options.criticalSuccess ??= roll.options.criticalSuccess;
         roll.d20.options.criticalFailure ??= roll.options.criticalFailure;
     }
-    const box = _buildAttackBreakdown(roll);
+    popover[0].replaceChildren(_buildAttackBreakdown(roll)[0]);
 
-    if (message.isOwner) {
-        const btn = (state, icon, title, active) =>
-            $(`<button type="button" class="rm-retro${active ? " active" : ""}" data-state="${state}" aria-pressed="${!!active}" title="${title}"><i class="fa-solid ${icon}" inert></i></button>`);
-        const actions = $('<div class="rm-bd-row rm-bd-actions"></div>')
-            .append($('<span class="rm-bd-label"></span>').text("Reroll"))
-            .append(
-                $('<div class="rm-roll-actions"></div>').append(
-                    btn(ROLL_STATE.DIS, "fa-chevrons-down", CoreUtility.localize("rm.chat.buttons.rollDisadvantage"), roll.hasDisadvantage),
-                    btn(ROLL_STATE.ADV, "fa-chevrons-up", CoreUtility.localize("rm.chat.buttons.rollAdvantage"), roll.hasAdvantage),
-                ),
-            );
+    // Adv/dis toggles on the card itself, right of the roll box (same buttons as the save rows).
+    if (message.isOwner && !button.siblings(".rm-standalone-actions").length) {
+        const actions = $('<div class="rm-roll-actions rm-standalone-actions"></div>').append(
+            _retroSaveButton(ROLL_STATE.DIS, "fa-chevrons-down", "rm.chat.buttons.rollDisadvantage", roll.hasDisadvantage),
+            _retroSaveButton(ROLL_STATE.ADV, "fa-chevrons-up", "rm.chat.buttons.rollAdvantage", roll.hasAdvantage),
+        );
         actions.find("button").on("click", async (event) => {
             event.preventDefault();
             event.stopPropagation();
             await _processRetroStandaloneRollEvent(message, roll, event.currentTarget.dataset.state);
         });
-        box.append(actions);
+        popover.after(actions);
     }
-    popover[0].replaceChildren(box[0]);
 
     // Advantage/disadvantage: dnd5e only badges the kept d20 — add a dimmed badge per discarded die.
     const keptBadge = button.find(".d20die");
@@ -1692,7 +1526,15 @@ async function _processRetroStandaloneRollEvent(message, roll, state) {
             .flatMap((c) => c.combatants.contents)
             .find((c) => (spk.token && c.tokenId === spk.token) || (!spk.token && spk.actor && c.actorId === spk.actor));
         LogUtility.log(`[RM DEBUG] _processRetroStandaloneRollEvent initiative: combatant=${combatant?.name ?? "none"} old=${combatant?.initiative} new=${roll.total}`);
-        if (combatant) await combatant.update({ initiative: roll.total });
+        if (combatant) {
+            // Creatures sharing the roll under "Roll Once per Creature" move with it.
+            const group = [combatant, ...CoreUtility.getInitiativeGroupSiblings(combatant)];
+            LogUtility.log(`[RM DEBUG] _processRetroStandaloneRollEvent initiative group: ${group.map((c) => c.name).join(", ")}`);
+            await combatant.combat.updateEmbeddedDocuments(
+                "Combatant",
+                group.map((c) => ({ _id: c.id, initiative: roll.total }))
+            );
+        }
     }
 
     // A save rolled from a prompt/usage card: refresh that parent so its summary/outcomes follow.
@@ -1738,95 +1580,6 @@ function _restyleBreakConcentrationButton(message, html) {
     const row = native.closest(".icon-row");
     if (row.length) row.replaceWith(section);
     else html.find(".chat-card").first().append(section);
-}
-
-async function _injectBreakConcentrationButton(message, html) {
-    const button = {
-        title: CoreUtility.localize("DND5E.ConcentrationBreak"),
-        icon: '<i class="fas fa-xmark"></i>',
-    };
-
-    const render = await RenderUtility.render(TEMPLATE.BUTTON, {
-        action: ROLL_TYPE.CONCENTRATION,
-        ...button,
-    });
-
-    html.append($(render).addClass("rm-concentration-buttons"));
-}
-
-/**
- * Adds all overlay buttons to a chat card.
- * @param {ChatMessage} message The chat message for which content is being injected.
- * @param {JQuery} html The object to add overlay buttons to.
- * @private
- */
-async function _injectOverlayButtons(message, html) {
-    await _injectOverlayRetroButtons(message, html);
-
-    // Enable Hover Events (to show/hide the elements).
-    _onOverlayHoverEnd(html);
-    html.hover(_onOverlayHover.bind(this, message, html), _onOverlayHoverEnd.bind(this, html));
-}
-
-/**
- * Adds overlay buttons to a chat card for retroactively making a roll into a multi roll or a crit.
- * @param {ChatMessage} message The chat message for which content is being injected.
- * @param {JQuery} html The object to add overlay buttons to.
- * @private
- */
-async function _injectOverlayRetroButtons(message, html) {
-    const overlayMultiRoll = await RenderUtility.render(TEMPLATE.OVERLAY_MULTIROLL, {});
-
-    // Check/save/skill card path only — activity cards use the always-visible ".rm-roll-actions"
-    // button group beside the roll box instead (see _buildRollActions).
-    html.find(".rm-multiroll .dice-total").append($(overlayMultiRoll));
-
-    // Handle clicking the multi-roll overlay buttons
-    html.find(".rm-overlay-multiroll div").click(async (event) => {
-        await _processRetroAdvButtonEvent(message, event);
-    });
-
-    const overlayCrit = await RenderUtility.render(TEMPLATE.OVERLAY_CRIT, {});
-
-    html.find(".rm-damage .dice-total").append($(overlayCrit));
-
-    html.find(".rm-overlay-crit div[data-type='crit']").click(async (event) => {
-        await _processRetroCritButtonEvent(message, event);
-    });
-
-    html.find(".rm-overlay-crit div[data-type='max']").click(async (event) => {
-        await _processRetroMaxButtonEvent(message, event);
-    });
-
-    // Save-section adv/dis overlays: show only when hovering the specific save section.
-    // Permission is per-section: GM always, or the player who owns the saving actor.
-    html.find("[data-save-speaker]").each((_, section) => {
-        const $section = $(section);
-        const speakerName = section.dataset.saveSpeaker;
-        const savingActor = game.actors?.find(a => a.name === speakerName);
-        const canReroll = game.user.isGM || message?.isAuthor || savingActor?.isOwner;
-        $section.hover(
-            () => {
-                if (!canReroll) return;
-                $section.find(".rm-overlay-multiroll").show();
-            },
-            () => {
-                $section.find(".rm-overlay").attr("style", "display: none;");
-            }
-        );
-    });
-}
-
-async function _processBreakConcentrationButtonEvent(message, event) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const actor = ChatUtility.getActorFromMessage(message);
-
-    if (actor) {
-        const ActiveEffect5e = CONFIG.ActiveEffect.documentClass;
-        ActiveEffect5e._manageConcentration(event, actor);
-    }
 }
 
 async function _processGwmToggleEvent(message, event) {
@@ -1937,92 +1690,48 @@ async function _processRetroAdvButtonEvent(message, event) {
     event.stopPropagation();
 
     const button = event.currentTarget;
-    const action = button.dataset.action;
     const state = button.dataset.state;
-    // ".rm-multiroll" on the check/save card path; ".rm-roll-actions" on activity cards.
-    const key = $(button).closest("[data-key]")[0]?.dataset.key ?? ROLL_TYPE.ATTACK;
 
-    if (action === "rm-retro") {
-        const dialogOptions = {
-            width: 100,
-            top: event ? event.clientY - 50 : null,
-            left: window.innerWidth - 510,
-        };
+    // Only the attack row's buttons carry data-action="rm-retro". The adv/dis buttons on save rows
+    // and standalone check cards share the ".rm-roll-actions [data-state]" selector but have their
+    // own handlers.
+    if (button.dataset.action !== "rm-retro") return;
 
-        // Activity cards: the buttons are toggles. Clicking the already-active state reverts to the
-        // original normal roll (snapshotted on first upgrade); clicking the other state switches.
-        const activityRoll = key === ROLL_TYPE.ABILITY_SAVE ? null : message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll && !r.options?.embeddedSave);
-        const currentState = activityRoll?.hasAdvantage ? ROLL_STATE.ADV : activityRoll?.hasDisadvantage ? ROLL_STATE.DIS : null;
-        if (activityRoll && currentState === state) {
-            // Prefer the snapshot of the original roll if it really was a normal roll; otherwise
-            // rebuild a normal roll from the first-rolled die.
-            const baseJSON = message.flags[MODULE_SHORT].baseAttackRollJSON;
-            const snapIsNormal = baseJSON && !(baseJSON.options?.advantageMode);
-            const restored = snapIsNormal
-                ? CONFIG.Dice.D20Roll.fromData(foundry.utils.deepClone(baseJSON))
-                : RollUtility.downgradeRoll(activityRoll);
-            message.rolls[message.rolls.indexOf(activityRoll)] = restored;
-            message.flags[MODULE_SHORT].advantage = false;
-            message.flags[MODULE_SHORT].disadvantage = false;
-            ChatUtility.updateChatMessage(message, { flags: message.flags, rolls: message.rolls });
-            CoreUtility.playRollSound();
-            return;
-        }
-
-        const target = state === ROLL_STATE.ADV ? CoreUtility.localize("DND5E.Advantage") : CoreUtility.localize("DND5E.Disadvantage");
-        const confirmed = await DialogUtility.getConfirmDialog(
-            CoreUtility.localize(`${MODULE_SHORT}.chat.prompts.retroAdv`, {
-                target,
-            }),
-            dialogOptions,
-        );
-
-        if (!confirmed) return;
-
-        if (activityRoll) message.flags[MODULE_SHORT].baseAttackRollJSON ??= foundry.utils.deepClone(activityRoll.toJSON());
-
-        if (key === ROLL_TYPE.ABILITY_SAVE) {
-            // Retroactive adv/dis on an embedded save — find the save roll by speaker name.
-            const speaker = $(button).closest("[data-save-speaker]")[0]?.dataset.saveSpeaker;
-            const saveRoll =
-                message.rolls.find(r => r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === speaker) ??
-                message.rolls.find(r => r instanceof CONFIG.Dice.D20Roll && !r.options?.embeddedSave) ??
-                message.rolls.find(r => r instanceof CONFIG.Dice.D20Roll);
-            if (!saveRoll) return;
-            await RollUtility.upgradeRoll(saveRoll, state);
-            if (message.isOwner) {
-                ChatUtility.updateChatMessage(message, { rolls: message.rolls });
-            } else {
-                // Player owns the saving actor but not the activity message — ask GM to update.
-                game.socket.emit(`module.${MODULE_NAME}`, {
-                    type: "retroSave",
-                    messageId: message.id,
-                    speaker,
-                    rollJSON: saveRoll.toJSON(),
-                });
-            }
-        } else {
-            message.flags[MODULE_SHORT].advantage = state === ROLL_STATE.ADV;
-            message.flags[MODULE_SHORT].disadvantage = state === ROLL_STATE.DIS;
-
-            const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll && !r.options?.embeddedSave);
-            await RollUtility.upgradeRoll(roll, state);
-
-            if (key !== ROLL_TYPE.ATTACK && key !== ROLL_TYPE.TOOL_CHECK) {
-                message.flavor += message.rolls[0].hasAdvantage
-                    ? ` (${CoreUtility.localize("DND5E.Advantage")})`
-                    : ` (${CoreUtility.localize("DND5E.Disadvantage")})`;
-            }
-
-            ChatUtility.updateChatMessage(message, {
-                flags: message.flags,
-                rolls: message.rolls,
-                flavor: message.flavor,
-            });
-        }
-
+    // The buttons are toggles. Clicking the already-active state reverts to the original normal
+    // roll (snapshotted on first upgrade); clicking the other state switches.
+    const attackRoll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll);
+    if (!attackRoll) return;
+    const currentState = attackRoll.hasAdvantage ? ROLL_STATE.ADV : attackRoll.hasDisadvantage ? ROLL_STATE.DIS : null;
+    if (currentState === state) {
+        // Prefer the snapshot of the original roll if it really was a normal roll; otherwise
+        // rebuild a normal roll from the first-rolled die.
+        const baseJSON = message.flags[MODULE_SHORT].baseAttackRollJSON;
+        const snapIsNormal = baseJSON && !(baseJSON.options?.advantageMode);
+        const restored = snapIsNormal
+            ? CONFIG.Dice.D20Roll.fromData(foundry.utils.deepClone(baseJSON))
+            : RollUtility.downgradeRoll(attackRoll);
+        message.rolls[message.rolls.indexOf(attackRoll)] = restored;
+        message.flags[MODULE_SHORT].advantage = false;
+        message.flags[MODULE_SHORT].disadvantage = false;
+        ChatUtility.updateChatMessage(message, { flags: message.flags, rolls: message.rolls });
         CoreUtility.playRollSound();
+        return;
     }
+
+    const target = state === ROLL_STATE.ADV ? CoreUtility.localize("DND5E.Advantage") : CoreUtility.localize("DND5E.Disadvantage");
+    const confirmed = await DialogUtility.getConfirmDialog(
+        CoreUtility.localize(`${MODULE_SHORT}.chat.prompts.retroAdv`, { target }),
+        { width: 100, top: event.clientY - 50, left: window.innerWidth - 510 },
+    );
+    if (!confirmed) return;
+
+    message.flags[MODULE_SHORT].baseAttackRollJSON ??= foundry.utils.deepClone(attackRoll.toJSON());
+    message.flags[MODULE_SHORT].advantage = state === ROLL_STATE.ADV;
+    message.flags[MODULE_SHORT].disadvantage = state === ROLL_STATE.DIS;
+    await RollUtility.upgradeRoll(attackRoll, state);
+
+    ChatUtility.updateChatMessage(message, { flags: message.flags, rolls: message.rolls });
+    CoreUtility.playRollSound();
 }
 
 /**
@@ -2200,187 +1909,3 @@ function _updateSaveButtonState(root, message) {
     saveBtn.classList.add(state);
     LogUtility.log(`[RM DEBUG] _updateSaveButtonState messageId=${message.id} controlled=${controlled.length} state=${state}`);
 }
-
-function _autoSetHalfDamageForFailedSaves(message, html) {
-    const embeddedSaves = message.flags?.[MODULE_SHORT]?.embeddedSaves;
-    if (!embeddedSaves || !Object.keys(embeddedSaves).length) {
-        return;
-    }
-
-    const controlled = canvas.tokens?.controlled ?? [];
-    if (!controlled.length) return;
-
-    const root = html instanceof $ ? html[0] : html;
-    const damageApp = root?.querySelector("damage-application");
-    if (!damageApp) return;
-
-    for (const token of controlled) {
-        if (!embeddedSaves[token.name]) continue;
-
-        const saveRoll = (message.rolls ?? []).find(r =>
-            r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === token.name
-        );
-        if (!saveRoll) continue;
-
-        const dc = saveRoll.options?.target;
-        if (dc === undefined || saveRoll.total < dc) {
-            continue;
-        }
-
-        // Mixin buildTargetsList uses t.actor.uuid (not token document UUID) as the Map key
-        const uuid = token.actor?.uuid;
-        if (!uuid) continue;
-
-        const options = damageApp.getTargetOptions(uuid);
-        options.multiplier = 0.5;
-
-        // Refresh the rendered entry if the tray is already open
-        const entry = damageApp.querySelector(`[data-target-uuid="${uuid}"]`);
-        if (entry) {
-            const actor = fromUuidSync(uuid);
-            if (actor) damageApp.refreshListEntry(actor, entry, options);
-        }
-    }
-}
-
-async function _injectEmbeddedSave(message, html) {
-    // html is .message-content — wrapper is prepended so saves appear above the card and above the ack badge.
-    const embeddedSaves = message.flags[MODULE_SHORT].embeddedSaves;
-
-    if (!embeddedSaves) {
-        return;
-    }
-
-    const entries = Object.entries(embeddedSaves);
-    if (!entries.length) {
-        return;
-    }
-
-    const wrapper = $('<div class="rm-embedded-saves"></div>');
-
-    const headerEl = $(`<div class="rm-saves-header">
-        <i class="fas fa-shield-heart"></i>
-        <span>${CoreUtility.localize("DND5E.SavingThrow")}s</span>
-        <i class="fas fa-chevron-down rm-saves-caret"></i>
-    </div>`);
-    wrapper.append(headerEl);
-
-    // dnd5e2 chat-card context needed for dice roll CSS inside the content.
-    const savesContent = $('<div class="rm-saves-content dnd5e2 chat-card"></div>');
-
-    for (const [speakerName] of entries) {
-        const saveRoll = message.rolls.find(r =>
-            r.options?.embeddedSave && r.options?.embeddedSaveSpeaker === speakerName
-        );
-        if (!saveRoll) {
-            continue;
-        }
-
-        RollUtility.resetRollGetters(saveRoll);
-        saveRoll.options.displayChallenge ??= true;
-
-        const render = await RenderUtility.render(TEMPLATE.MULTIROLL, {
-            roll: saveRoll,
-            key: ROLL_TYPE.ABILITY_SAVE,
-        });
-
-        // Use the same full dice-roll structure as _injectAttackRoll so dnd5e's CSS applies correctly.
-        const ChatMessage5e = CONFIG.ChatMessage.documentClass;
-        const chatData = await saveRoll.toMessage({}, { create: false });
-        const rollHTML = $(await new ChatMessage5e(chatData).renderHTML()).find(".dice-roll");
-        rollHTML.find(".dice-total").replaceWith(render);
-        rollHTML.find(".dice-tooltip").prepend(rollHTML.find(".dice-formula"));
-
-        const labeledFormula = RollUtility.buildLabeledFormula(saveRoll);
-        if (labeledFormula) {
-            rollHTML.find(".dice-formula").text(labeledFormula);
-        }
-
-        const sectionHTML = $(await RenderUtility.render(TEMPLATE.SECTION, {
-            section: `rm-section-${ROLL_TYPE.ABILITY_SAVE}`,
-            title: speakerName,
-            icon: '<i class="fas fa-shield-heart"></i>',
-        }));
-        sectionHTML.attr("data-save-speaker", speakerName);
-
-        sectionHTML.append(rollHTML);
-        savesContent.append(sectionHTML);
-    }
-
-    wrapper.append(savesContent);
-
-    headerEl.on("click", () => wrapper.toggleClass("collapsed"));
-
-    html.prepend(wrapper);
-}
-
-async function _processSaveButtonEvent(message, button, event) {
-    const ability = button.dataset.ability;
-    const token = canvas.tokens.controlled[0];
-    if (!token) {
-        ui.notifications.warn(game.i18n.localize("DND5E.ActionWarningNoToken"));
-        return;
-    }
-
-    const actor = token.actor;
-    const speakerName = token.name;
-
-    const activityObj = message.getAssociatedActivity?.();
-    const dcRaw = activityObj?.save?.dc;
-    const liveDc = typeof dcRaw === "number" ? dcRaw : dcRaw?.value ?? dcRaw?.flat ?? undefined;
-
-    // Some DCs (e.g. Relentless Rage's "10 + uses spent * 5") are formula-driven off a
-    // resource that can change between when this card was posted and when the button is
-    // clicked. Re-deriving the DC live would silently judge the roll against a value that
-    // no longer matches what's printed on the button, so prefer the DC baked into the
-    // button's own label at render time and only fall back to the live value if it can't be read.
-    const printedDc = parseInt(button.textContent?.match(/\d+/)?.[0], 10);
-    const dc = Number.isFinite(printedDc) ? printedDc : liveDc;
-
-    const isAdvantage = CoreUtility.areKeysPressed(event, "skipDialogAdvantage");
-    const isDisadvantage = CoreUtility.areKeysPressed(event, "skipDialogDisadvantage");
-
-    const rollResult = await actor.rollSavingThrow(
-        { ability, advantage: isAdvantage, disadvantage: isDisadvantage },
-        { configure: false },
-        { create: false }
-    );
-
-    const rollArr = CoreUtility.isIterable(rollResult) ? Array.from(rollResult) : (rollResult ? [rollResult] : []);
-    const d20Roll = rollArr.find(r => r instanceof CONFIG.Dice.D20Roll) ?? rollArr[0];
-
-    if (!d20Roll) {
-        return;
-    }
-
-    d20Roll.options.embeddedSave = true;
-    d20Roll.options.embeddedSaveSpeaker = speakerName;
-    d20Roll.options.displayChallenge = true;
-    d20Roll.options.target ??= dc;
-
-    const filteredRolls = message.rolls.filter(r =>
-        !r.options?.embeddedSave || r.options?.embeddedSaveSpeaker !== speakerName
-    );
-    filteredRolls.push(d20Roll);
-
-    const existingSaves = message.flags[MODULE_SHORT]?.embeddedSaves ?? {};
-    existingSaves[speakerName] = { ability };
-
-    if (message.isOwner || game.user.isGM) {
-        await ChatUtility.updateChatMessage(message, {
-            rolls: filteredRolls,
-            [`flags.${MODULE_SHORT}.embeddedSaves`]: existingSaves,
-        });
-    } else {
-        game.socket.emit(`module.${MODULE_NAME}`, {
-            type: "embeddedSave",
-            messageId: message.id,
-            rollJSON: d20Roll.toJSON(),
-            speakerName,
-            ability,
-        });
-    }
-
-    CoreUtility.playRollSound();
-}
-

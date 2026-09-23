@@ -5,14 +5,6 @@ import { MODULE_NAME } from "../../shared/const.js";
  */
 export class CoreUtility {
     /**
-     * Gets the module version for this module.
-     * @returns The module version string.
-     */
-    static getVersion() {
-        return game.modules.get(MODULE_NAME).version;
-    }
-
-    /**
      * Shorthand for both game.i18n.format() and game.i18n.localize() depending on whether data is supplied or not.
      * @param {String} key The key string to localize for.
      * @param {object?} data Optional data that if given will do a i18n.format() instead.
@@ -94,31 +86,6 @@ export class CoreUtility {
     }
 
     /**
-     * Gets data about whispers and roll mode for use in rendering messages.
-     * @param {*} rollMode 
-     * @returns {Object} A data package with the current roll mode.
-     */
-    static getWhisperData(rollMode = null) {
-		let whisper = undefined;
-		let blind = null;
-
-		rollMode = rollMode || game.settings.get("core", "rollMode");
-
-        if (["gmroll", "blindroll"].includes(rollMode)) {
-            whisper = ChatMessage.getWhisperRecipients("GM");
-        }
-
-        if (rollMode === "blindroll") {
-            blind = true;
-        } 
-        else if (rollMode === "selfroll") {
-            whisper = [game.user.id];
-        } 
-
-		return { rollMode, whisper, blind }
-	}
-
-    /**
      * Gets the default configured dice sound from Foundry VTT config.
      * @returns {Object} A data package with the sound data to play when rolling.
      */
@@ -144,31 +111,20 @@ export class CoreUtility {
     }
 
     /**
-     * Asynchronous polling of a specific condition that ends when the condition is met.
-     * @param {Function} condition The condition function to poll.
-     * @returns {Promise} A promise that waits until the condition is met.
+     * The other combatants that share an initiative roll with this one under dnd5e's
+     * "Roll Once per Creature" setting: same Combatant group, or unlinked tokens of the same base
+     * actor, disposition and initiative formula (Combatant5e#getInitiativeGroupingKey). Empty when
+     * the setting is off or the combatant can't be grouped.
+     * @param {Combatant} combatant
+     * @returns {Combatant[]}
      */
-    static async waitUntil(condition) {
-        const poll = resolve => {
-            if (condition()) resolve();
-            else setTimeout(_ => poll(resolve), 10);
-        }
-
-        return new Promise(poll);
-    }
-
-    /**
-     * Asynchronous polling of a specific condition that ends when the condition is no longer met.
-     * @param {Function} condition The condition function to poll.
-     * @returns {Promise} A promise that waits while the condition is met.
-     */
-    static async waitWhile(condition) {
-        const poll = resolve => {
-            if (condition()) setTimeout(_ => poll(resolve), 10);
-            else resolve();
-        }
-
-        return new Promise(poll);
+    static getInitiativeGroupSiblings(combatant) {
+        const keyOf = (c) => {
+            try { return c.getInitiativeGroupingKey?.() ?? null; } catch { return null; }
+        };
+        const key = keyOf(combatant);
+        if (!key || !combatant.combat) return [];
+        return combatant.combat.combatants.filter((c) => c.id !== combatant.id && keyOf(c) === key);
     }
 }
 

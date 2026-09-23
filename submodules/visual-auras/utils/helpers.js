@@ -18,7 +18,7 @@ export function describeActor(actor) {
 }
 
 /** Compact description of a scene's aura regions for a token. */
-export function describeRegions(regions) {
+function describeRegions(regions) {
     return regions.map(r => `${r.id}:${r.getFlag("sigil-tools", "visualAuras.presetId")}`);
 }
 
@@ -53,7 +53,7 @@ export function getPresetsForActor(actor) {
     return found;
 }
 
-export function getPresetsForToken(tokenDoc) {
+function getPresetsForToken(tokenDoc) {
     const actor = tokenDoc.actor;
     if (!actor) return [];
 

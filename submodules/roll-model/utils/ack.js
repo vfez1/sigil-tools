@@ -4,13 +4,10 @@ import { ChatUtility } from "./chat.js";
 import { LogUtility } from "./log.js";
 
 export class AcknowledgedModeUtility {
-    static onNewMessage(_message, _html) {}
-
     static applyAcknowledgedStyle(message, html) {
         if (!SettingsUtility.getSettingValue(SETTING_NAMES.ACK_MODE)) return;
         const appliedTo = message.getFlag(MODULE_NAME, "appliedTo");
-        const acknowledged = message.getFlag(MODULE_NAME, "acknowledged");
-        if (!appliedTo && !acknowledged) return;
+        if (!appliedTo) return;
 
         const $html = $(html);
         $html.addClass("rm-acknowledged");
@@ -19,7 +16,7 @@ export class AcknowledgedModeUtility {
         // with per-target save-summary rows, where the amounts are shown inline on each row instead.
         const hasSummaryRows = $html.find(".card-summary[data-target-uuid]").length > 0;
         const messageContent = $html.find(".message-content").first();
-        if (!hasSummaryRows && appliedTo && messageContent.length && !$html.find(".rm-applied-summary").length) {
+        if (!hasSummaryRows && messageContent.length && !$html.find(".rm-applied-summary").length) {
             // Damage/healing cards: a "Results" block below the roll rows, one row per target in
             // the same style as the save cards' rows (name pill + applied-amount pill).
             const totalDamage = message.rolls
@@ -57,20 +54,13 @@ export class AcknowledgedModeUtility {
             if (tray.length) tray.before(label, ...rows);
             else messageContent.append(label, ...rows);
             LogUtility.log(`[RM DEBUG] applyAcknowledgedStyle: results rows messageId=${message.id} rows=${rows.length} beforeTray=${tray.length > 0}`);
-        } else if (!hasSummaryRows && !appliedTo && acknowledged && !$html.find(".rm-ack-badge").length) {
-            // Manual GM acknowledgement without per-target amounts keeps the simple badge.
-            const badge = $(`<div class="rm-ack-badge"><div class="rm-ack-header"><i class="fas fa-check"></i><span class="rm-ack-prefix">Applied by ${acknowledged}</span></div></div>`);
-            if (messageContent.length) messageContent.prepend(badge);
-            else $html.prepend(badge);
         }
 
         // Defer button marking by one frame to let <damage-application> render its children.
-        if (appliedTo) {
-            const entries = Array.isArray(appliedTo) ? appliedTo : [appliedTo];
-            const appliedNames = new Set(entries.map(e => typeof e === "string" ? e : e.name));
-            const root = html instanceof $ ? html[0] : html;
-            requestAnimationFrame(() => _markApplyButton(root, appliedNames));
-        }
+        const entries = Array.isArray(appliedTo) ? appliedTo : [appliedTo];
+        const appliedNames = new Set(entries.map(e => typeof e === "string" ? e : e.name));
+        const root = html instanceof $ ? html[0] : html;
+        requestAnimationFrame(() => _markApplyButton(root, appliedNames));
     }
 
     static registerApplyListener() {

@@ -85,7 +85,7 @@ export class ActivityUtility {
             _injectRollsToMessage(message, attackRolls, CONFIG.Dice.D20Roll);
             rolledDice ||= _hasDice(attackRolls);
 
-            message.flags[MODULE_SHORT].isCritical = flags.dual ? false : attackRolls[0].isCritical;
+            message.flags[MODULE_SHORT].isCritical = attackRolls[0].isCritical;
         }
 
         if (flags.renderDamage) {

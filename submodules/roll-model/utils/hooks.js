@@ -11,13 +11,14 @@ import { ROLL_TYPE, RollUtility } from "./roll.js";
 import { registerEffectAutocompleteHooks } from "../../effect-autocomplete/effect-autocomplete.js";
 import { registerGridRegionsHooks } from "../../grid-regions/grid-regions.js";
 import { LogUtility } from "./log.js";
+import { CoreUtility } from "./core.js";
 
-export const HOOKS_CORE = {
+const HOOKS_CORE = {
     INIT: "init",
     READY: "ready",
 };
 
-export const HOOKS_DND5E = {
+const HOOKS_DND5E = {
     PRE_ROLL_ABILITY_CHECK: "dnd5e.preRollAbilityCheckV2",
     PRE_ROLL_SAVING_THROW: "dnd5e.preRollSavingThrowV2",
     POST_BUILD_SAVING_THROW_ROLL_CONFIG: "dnd5e.postBuildSavingThrowRollConfig",
@@ -507,7 +508,6 @@ export class HooksUtility {
             if (message?._targetState) message._targetState.mode = "selected";
 
             ChatUtility.processChatMessage(message, html);
-            AcknowledgedModeUtility.onNewMessage(message, html);
             AcknowledgedModeUtility.applyAcknowledgedStyle(message, html);
             _attachPortentClickHandlers(message, html);
 
@@ -584,15 +584,10 @@ export class HooksUtility {
 
         AcknowledgedModeUtility.registerApplyListener();
         AcknowledgedModeUtility.registerSocketListener();
-        // roll-model's own save-button interception (embedded saves) is retired on dnd5e 6.0: the
-        // system now rolls per-target saves itself and lists them as summary rows on the usage card.
-        ChatUtility.registerSaveSocketListener();
+        ChatUtility.registerRetroDamageSocketListener();
 
         Hooks.on("controlToken", () => {
-            requestAnimationFrame(() => {
-                ChatUtility.updateAllSaveButtonStates();
-                ChatUtility.updateAllSaveMultipliers();
-            });
+            requestAnimationFrame(() => ChatUtility.updateAllSaveButtonStates());
         });
     }
 
@@ -838,29 +833,66 @@ function _hasItem(actor, itemName) {
 }
 
 function _applyInitiativeRerollPatch() {
+    // Rolling from the sheet or a chat card goes through Actor#rollInitiative, which skips
+    // combatants that already have an initiative unless told to reroll. Always reroll; the group
+    // handling below then applies.
     libWrapper.register(
         MODULE_NAME,
         "Actor.prototype.rollInitiative",
-        async function (wrapped, options = {}, rollOptions = {}) {
-            if (game.combat) {
-                const combatants = this.isToken
-                    ? this.getActiveTokens(false, true).reduce(
-                          (arr, t) => arr.concat(game.combat.getCombatantsByToken(t.id)),
-                          []
-                      )
-                    : game.combat.getCombatantsByActor(this.id);
-                const toReset = combatants.filter((c) => c.initiative !== null);
-                if (toReset.length) {
-                    await game.combat.updateEmbeddedDocuments(
-                        "Combatant",
-                        toReset.map((c) => ({ _id: c.id, initiative: null }))
-                    );
-                }
-            }
-            return wrapped(options, rollOptions);
+        function (wrapped, options = {}, rollOptions = {}) {
+            return wrapped({ ...options, rerollInitiative: true }, rollOptions);
         },
         "WRAPPER"
     );
+
+    // Every initiative roll ends up here: the sheet (via Actor#rollInitiative), the tracker's and
+    // the carousel's "Re-roll Initiative" menu entries, and the carousel's dice button.
+    // With dnd5e's "Roll Once per Creature", Combat5e#rollInitiative gives a combatant the result of
+    // any group member that already has one — before the combat starts that includes the combatant
+    // itself — so a plain re-roll of an NPC hands the old number straight back. For each combatant
+    // being re-rolled, clear its whole group first, then give the group the fresh result.
+    // Wrapped on the system's class (at setup, once it is in CONFIG): Combat5e overrides this method
+    // and works out the group values *before* calling core's, so a wrapper on core's
+    // Combat.prototype would run too late.
+    Hooks.once("setup", () => libWrapper.register(
+        MODULE_NAME,
+        "CONFIG.Combat.documentClass.prototype.rollInitiative",
+        async function (wrapped, ids, options = {}) {
+            const idList = typeof ids === "string" ? [ids] : Array.from(ids ?? []);
+            const rerolled = idList.map((id) => this.combatants.get(id)).filter((c) => c && c.initiative !== null);
+            LogUtility.log(
+                `[RM DEBUG] Combat#rollInitiative ids=${JSON.stringify(idList)} started=${this.started} groupRoll=${dnd5e?.settings?.initiativeGroupRoll} rerolling=${rerolled.map((c) => `${c.name}(${c.initiative})`).join(", ") || "none"}`
+            );
+            if (!rerolled.length) return wrapped(ids, options);
+
+            const idSet = new Set(idList);
+            const siblings = new Map(); // sibling id → id of the re-rolled combatant it follows
+            for (const c of rerolled) {
+                for (const s of CoreUtility.getInitiativeGroupSiblings(c)) {
+                    if (!idSet.has(s.id) && !siblings.has(s.id)) siblings.set(s.id, c.id);
+                }
+            }
+            const clear = [...rerolled, ...[...siblings.keys()].map((id) => this.combatants.get(id)).filter((s) => s?.initiative !== null)];
+            LogUtility.log(`[RM DEBUG] Combat#rollInitiative clearing=${clear.map((c) => c.name).join(", ")} groupSiblings=${siblings.size}`);
+            await this.updateEmbeddedDocuments(
+                "Combatant",
+                clear.map((c) => ({ _id: c.id, initiative: null })),
+                { turnEvents: false }
+            );
+
+            const result = await wrapped(ids, options);
+
+            const updates = [...siblings.entries()]
+                .map(([id, sourceId]) => ({ _id: id, initiative: this.combatants.get(sourceId)?.initiative ?? null }))
+                .filter((u) => u.initiative !== null);
+            LogUtility.log(
+                `[RM DEBUG] Combat#rollInitiative rolled=${rerolled.map((c) => `${c.name}→${this.combatants.get(c.id)?.initiative}`).join(", ")} syncing=${JSON.stringify(updates)}`
+            );
+            if (updates.length) await this.updateEmbeddedDocuments("Combatant", updates, { turnEvents: false });
+            return result;
+        },
+        "WRAPPER"
+    ));
 }
 
 function _applyRollModePatch() {

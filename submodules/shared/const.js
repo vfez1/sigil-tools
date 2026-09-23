@@ -4,11 +4,6 @@
 export const MODULE_NAME = "sigil-tools";
 
 /**
- * Full title string of the module.
- */
-export const MODULE_TITLE = "Sigil Tools";
-
-/**
  * Shorthand string identifier for the module
  */
 export const MODULE_SHORT = "rm";

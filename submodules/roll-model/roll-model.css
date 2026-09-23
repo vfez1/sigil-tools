@@ -1,97 +1,9 @@
 /* Acknowledged Mode */
 
-.rm-ack-banner {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    padding: 4px 8px;
-    background: var(--color-warm-2, #4a3728);
-    color: var(--color-light-1, #f0e6d3);
-    font-size: var(--font-size-11);
-    font-weight: bold;
-    text-align: center;
-    border-bottom: 1px solid var(--color-border-light-2, #7a5c3c);
-    letter-spacing: 0.04em;
-}
-
-.rm-ack-footer {
-    position: relative;
-    z-index: 10;
-    padding: 6px 6px 4px;
-    pointer-events: auto;
-}
-
-.rm-ack-footer .rm-ack-btn {
-    all: unset;
-    box-sizing: border-box;
-    display: flex;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 7px 0;
-    font-size: 11px;
-    font-weight: bold;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-    color: #c8e6c8;
-    background: linear-gradient(to bottom, #2d5e2d, #1b3b1b);
-    border: 1px solid #3d6b3d;
-    border-radius: 3px;
-    cursor: pointer !important;
-    pointer-events: auto !important;
-}
-
-.rm-ack-footer .rm-ack-btn:hover {
-    background: linear-gradient(to bottom, #3a7a3a, #275227);
-    border-color: #5aaa5a;
-    color: #e8f5e8;
-}
-
 .rm-acknowledged {
     box-shadow: inset 5px 0 0 rgba(80, 170, 80, 0.9);
 }
 
-.rm-ack-badge {
-    margin-bottom: 4px;
-    border: 1px solid var(--color-border-light-tertiary, #c9c7b8);
-    border-radius: 3px;
-    overflow: hidden;
-    text-shadow: none !important;
-    box-shadow: none !important;
-}
-
-.rm-ack-badge .rm-ack-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    background: rgba(60, 110, 220, 0.2);
-    color: var(--color-text-dark-primary, #1a1a1a) !important;
-    font-size: 10px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    border-bottom: 1px solid var(--color-border-light-tertiary, #c9c7b8);
-}
-
-.rm-ack-badge .rm-ack-names {
-    display: grid;
-    grid-template-columns: max-content max-content;
-    align-items: baseline;
-    gap: 2px 8px;
-    padding: 6px 10px;
-    font-size: 12px;
-    background: var(--dnd5e-color-card, #f0ebe0);
-    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.08);
-}
-
-.rm-ack-badge .rm-ack-name {
-    font-weight: bold;
-}
-
-.rm-ack-badge .rm-ack-damage,
 .rm-summary-damage {
     display: inline-block;
     padding: 0 5px;
@@ -201,15 +113,13 @@
     line-height: 1.5;
 }
 
-/* Reroll toggles at the bottom of a save row's breakdown popover. */
-.rm-breakdown .rm-bd-row.rm-bd-actions {
-    margin-block-start: 3px;
-    padding-block-start: 4px;
-    border-block-start: 1px solid var(--dnd5e-color-gold);
-}
-
-.rm-breakdown .rm-bd-actions .rm-roll-actions {
-    margin-inline-start: auto;
+/* Adv/dis toggles on a standalone check/save/initiative card, right of the roll box in dnd5e's
+   icon-row. .rm-roll-actions is otherwise placed in the activity rows' grid, so undo that here. */
+.icon-row > .rm-standalone-actions {
+    grid-column: auto;
+    grid-row: auto;
+    align-self: center;
+    flex: none;
 }
 
 .rm-ack-damage.rm-ack-temp {
@@ -240,21 +150,6 @@
 .rm-ack-damage.rm-ack-vulnerable {
     background: rgba(120, 40, 180, 0.18);
     color: #6a1a9a;
-}
-
-.rm-ack-badge .rm-ack-toggle {
-    margin-left: auto;
-    font-size: 9px;
-    opacity: 0.7;
-    transition: transform 0.15s;
-}
-
-.rm-ack-badge.collapsed .rm-ack-toggle {
-    transform: rotate(-90deg);
-}
-
-.rm-ack-badge.collapsed .rm-ack-names {
-    display: none;
 }
 
 /* Already-applied state on the damage tray Apply button */
@@ -700,151 +595,8 @@ h4.dice-total.ignored > .total {
     border-color: var(--color-text-dark-5, #666);
 }
 
-.rm-multiroll {
-    display: flex;
-    flex: 1;
-    gap: 0.25rem;
-    min-width: 0;
-}
-
-.rm-multiroll > .dice-total {
-    flex: 1;
-}
-
-/* Secondary (kept-lower/discarded) die badge, shown inline next to the primary total. */
-.rm-multiroll .die-icon {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.25rem;
-    padding: 0 0.3rem;
-    white-space: nowrap;
-    border: 1px solid var(--dnd5e-color-gold);
-    border-radius: 3px;
-    background: var(--dnd5e-background-10);
-    color: var(--color-text-secondary);
-    font-family: var(--dnd5e-font-roboto-slab);
-    font-size: var(--font-size-11);
-    font-weight: bold;
-    opacity: 0.75;
-}
-
-.rm-multiroll .success .die-icon,
-.rm-multiroll .critical .die-icon {
-    border-color: var(--color-level-success-border, #1b8f23);
-    color: var(--color-level-success, #26b231);
-    opacity: 1;
-}
-
-.rm-multiroll .failure .die-icon,
-.rm-multiroll .fumble .die-icon {
-    border-color: var(--color-level-error-border, #750003);
-    color: var(--color-level-error, #ce0707);
-    opacity: 1;
-}
-
-.rm-context {
-    font-family: var(--dnd5e-font-roboto);
-    font-size: var(--font-size-11);
-    color: var(--color-text-dark-5);
-    text-align: center;
-    border: 1px solid var(--color-border-light-1);
-    border-radius: 3px;
-    background: var(--dnd5e-background-10);
-    padding: 0.125rem;
-    margin-top: 0.125rem;
-    margin-bottom: 0.125rem;
-}
-
 .rm-damage .dice-tooltip .tooltip-part {
     position: relative;
-}
-
-.rm-concentration-buttons {
-    margin-top: 3px;
-    line-height: 24px;
-}
-
-/* Base hover overlay: absolutely covers the roll box as the hover hit-area, but each variant
-   below docks its visible controls to ONE edge (matching dnd5e's own convention of small
-   corner/edge affordances) rather than the old default of straddling the box left/right —
-   which sat the chevrons directly on top of the total number, doubling up with the secondary
-   die badge and reading as visual noise instead of a clean hover affordance. */
-.rm-overlay {
-    text-align: center !important;
-    flex-grow: 1;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-
-    display: flex;
-    align-items: center;
-    z-index: 1;
-}
-
-.rm-overlay div {
-    width: 20px;
-    height: 20px;
-    font-size: var(--font-size-12);
-    line-height: 22px;
-    padding: 0;
-    color: var(--color-text-dark-5);
-}
-
-.rm-overlay i:hover,
-.rm-overlay span:hover {
-    cursor: pointer;
-    text-shadow: 0 0 10px var(--color-shadow-primary);
-}
-
-.rm-overlay-multiroll {
-    justify-content: flex-end;
-    gap: 2px;
-    padding: 0 4px;
-}
-
-.rm-overlay-crit {
-    justify-content: flex-start;
-    gap: 6px;
-    padding: 0 8px;
-}
-
-.rm-overlay-crit div {
-    width: auto;
-    font-size: var(--font-size-11);
-    font-weight: bold;
-    letter-spacing: 0.03em;
-}
-
-.rm-overlay-header {
-    left: auto;
-    justify-content: right;
-}
-
-.rm-overlay-header button {
-    width: 30px;
-    height: 30px;
-    font-size: 14px;
-}
-
-.dnd5e.item form .rm-item {
-    padding: 8px 8px 0;
-    overflow-y: auto;
-}
-
-.dnd5e.sheet.item .rm-item input[type="text"],
-.dnd5e.sheet.item .rm-item input[type="number"],
-.dnd5e.sheet.item .rm-item select {
-    border: 1px solid #7a7971;
-    background: rgba(0, 0, 0, 0.05);
-}
-
-.dnd5e.sheet.item .rm-item label.checkbox {
-    display: inline-table;
-    padding: 0px 8px;
 }
 
 
@@ -958,49 +710,6 @@ h4.dice-total.ignored > .total {
     border-color: #3f5f8a;
     color: #efe6d8;
 }
-
-/* ===== Embedded Saves Block ===== */
-
-.rm-embedded-saves {
-    margin-bottom: 4px;
-    border: 1px solid var(--color-border-light-tertiary, #c9c7b8);
-    border-radius: 3px;
-    overflow: hidden;
-    text-shadow: none !important;
-    box-shadow: none !important;
-}
-
-.rm-saves-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    background: rgba(60, 110, 220, 0.2);
-    color: var(--color-text-dark-primary, #1a1a1a) !important;
-    font-size: 10px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    border-bottom: 1px solid var(--color-border-light-tertiary, #c9c7b8);
-}
-
-.rm-saves-caret {
-    margin-left: auto;
-    font-size: 9px;
-    opacity: 0.7;
-    transition: transform 0.15s;
-}
-
-.rm-embedded-saves.collapsed .rm-saves-caret {
-    transform: rotate(-90deg);
-}
-
-.rm-embedded-saves.collapsed .rm-saves-content {
-    display: none;
-}
-
-/* ===== end Embedded Saves Block ===== */
 
 /* ===== Item property tags row (collapsible) =====
    dnd5e's "rows.properties" icon-row (fa-tag + ul.pills) is collapsed by default — see

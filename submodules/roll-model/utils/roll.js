@@ -34,16 +34,6 @@ export const ROLL_STATE = {
     SINGLE: "single",
 };
 
-/**
- * Enumerable of identifiers for crit result types.
- * @enum {String}
- */
-export const CRIT_TYPE = {
-    MIXED: "mixed",
-    SUCCESS: "success",
-    FAILURE: "failure",
-};
-
 const FORMULA_LABEL_ALIASES = {
     "Elemental Fury: Potent Spellcasting": "potentSpellcasting",
     "scale.barbarian.rage-damage": "rage",
@@ -494,28 +484,8 @@ export class RollUtility {
     }
 
     /**
-     * Builds an annotated formula string where each @-variable bonus is followed by its name in parentheses.
-     * Falls back to null if no bonus parts are stored on the roll.
-     * @param {Roll} roll The evaluated D20Roll.
-     * @returns {string|null}
-     */
-    static buildLabeledFormula(roll) {
-        const bonuses = RollUtility.buildLabeledBonuses(roll);
-        if (!bonuses) return null;
-
-        const d20Term = roll.terms.find((t) => t.faces === 20);
-        const base = d20Term ? d20Term.expression : "1d20";
-
-        const bonusStr = bonuses
-            .map(({ value, label }) => `${value >= 0 ? "+" : ""}${value}${label ? ` (${label})` : ""}`)
-            .join(" ");
-
-        return bonusStr ? `${base} ${bonusStr}` : null;
-    }
-
-    /**
-     * Structured form of buildLabeledFormula: every non-d20 term of a D20Roll as a signed value with
-     * the display label of the source it came from (null when unknown). Zero-valued terms are skipped.
+     * Every non-d20 term of a D20Roll as a signed value with the display label of the source it
+     * came from (null when unknown). Zero-valued terms are skipped.
      * @param {Roll} roll The evaluated D20Roll.
      * @returns {{value: number, label: string|null}[]|null}
      */
@@ -585,25 +555,7 @@ export class RollUtility {
     }
 
     /**
-     * Builds an annotated damage formula, preserving normal damage dice while labelling damage type
-     * and any captured @-variable bonuses.
-     * @param {Roll} roll The evaluated DamageRoll.
-     * @returns {string|null}
-     */
-    static buildLabeledDamageFormula(roll) {
-        const segments = RollUtility.buildLabeledDamageSegments(roll);
-        if (!segments?.length) return null;
-
-        return segments
-            .map(({ op, expression, label }, i) => {
-                const sign = i === 0 && op === "+" ? "" : `${op} `;
-                return `${sign}${expression}${label ? ` (${label})` : ""}`;
-            })
-            .join(" ");
-    }
-
-    /**
-     * Structured form of buildLabeledDamageFormula: one entry per non-zero term of a DamageRoll.
+     * One entry per non-zero term of a DamageRoll, labelled with the source each bonus came from.
      * @param {Roll} roll The evaluated DamageRoll.
      * @returns {{op: string, expression: string, label: string|null, isDie: boolean, value: number, term: object}[]|null}
      */
@@ -663,21 +615,6 @@ export class RollUtility {
 
         return segments;
     }
-
-    /**
-     * Processes a set of dice results to check what type of critical was rolled (for showing colour in chat card).
-     * @param {Die} die A die term to process into a crit type.
-     * @param {Number} options.critThreshold The threshold above which a result is considered a crit.
-     * @param {Number} options.fumbleThreshold The threshold below which a result is considered a crit.
-     * @returns {CRIT_TYPE} The type of crit for the die term.
-     */
-    static getCritTypeForDie(die, options = {}) {
-        if (!die) return null;
-
-        const { crit, fumble } = _countCritsFumbles(die, options);
-
-        return _getCritResult(crit, fumble);
-    }
 }
 
 function _safeKeys(obj) {
@@ -688,50 +625,6 @@ function _safeKeys(obj) {
     } catch {
         return String(obj);
     }
-}
-
-function _getCritResult(crit, fumble) {
-    if (crit > 0 && fumble > 0) {
-        return CRIT_TYPE.MIXED;
-    }
-
-    if (crit > 0) {
-        return CRIT_TYPE.SUCCESS;
-    }
-
-    if (fumble > 0) {
-        return CRIT_TYPE.FAILURE;
-    }
-}
-
-function _countCritsFumbles(die, options) {
-    let crit = 0;
-    let fumble = 0;
-
-    if (die && die.faces > 1) {
-        let { critThreshold, fumbleThreshold, target, ignoreDiscarded, displayChallenge, forceSuccess } = options;
-
-        if (forceSuccess) {
-            return { crit: 1, fumble: 0 };
-        }
-
-        critThreshold = critThreshold ?? die.options.criticalSuccess ?? die.faces;
-        fumbleThreshold = fumbleThreshold ?? die.options.criticalFailure ?? 1;
-
-        for (const result of die.results) {
-            if (result.rerolled || (result.discarded && ignoreDiscarded)) {
-                continue;
-            }
-
-            if ((displayChallenge && result.result >= target) || result.result >= critThreshold) {
-                crit += 1;
-            } else if ((displayChallenge && result.result < target) || result.result <= fumbleThreshold) {
-                fumble += 1;
-            }
-        }
-    }
-
-    return { crit, fumble };
 }
 
 function _buildFormulaLabelQueue(roll) {

@@ -1,32 +1,4 @@
 export class AATemplates {
-  static getTemplateShape(template) {
-    let d = canvas.dimensions;
-
-    // Extract and prepare data
-    let { direction, distance, angle, width } = template.document;
-    distance *= d.size / d.distance;
-    width *= d.size / d.distance;
-    direction = Math.toRadians(direction);
-    let shape;
-    switch (template.document.t) {
-      case "circle":
-        shape = template._getCircleShape(distance);
-        break;
-      case "cone":
-        shape = template._getConeShape(direction, angle, distance);
-        break;
-      case "rect":
-        shape = template._getRectShape(direction, distance);
-        break;
-      case "ray":
-        shape = template._getRayShape(direction, distance, width);
-        break;
-    }
-    shape.x = template.x;
-    shape.y = template.y;
-    return shape;
-  }
-
   static getAuraShape(source, radius) {
     let shape = "circle";
     if (["dnd5e", "dnd4e","demonlord"].includes(game.system.id)) {

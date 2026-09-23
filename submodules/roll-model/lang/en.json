@@ -4,22 +4,11 @@
             "rollVersatile": {
                 "name": "Roll Versatile Damage",
                 "hint": "Hold this key while clicking an activity to roll versatile damage instead of base damage."
-            },
-            "ackModeToggle": {
-                "name": "Toggle Acknowledged Mode",
-                "hint": "Pause chat auto-scroll and step through new messages one at a time."
-            }
-        },
-        "sceneControls": {
-            "acknowledgedMode": {
-                "title": "Acknowledged Mode"
             }
         },
         "settings": {
             "enableDebugLogs.name": "Debug Logs",
             "enableDebugLogs.hint": "Print Sigil Tools' verbose debug output to this browser's console. Off by default; warnings and errors are always shown.",
-            "enableCombatTrackerDock.name": "Enable: Combat Tracker Dock",
-            "enableCombatTrackerDock.hint": "Enable the Combat Tracker Dock submodule (carousel-style combat tracker overlay). Requires a reload.",
             "enableEffectAutocomplete.name": "Enable: Effect Autocomplete",
             "enableEffectAutocomplete.hint": "Enable attribute key autocomplete on the Active Effect Changes tab. Requires a reload.",
             "enableRollModel.name": "Enable: Roll Model",
@@ -29,33 +18,10 @@
             "preventMovementHistory.name": "Prevent Movement History",
             "preventMovementHistory.hint": "Prevent tokens from recording movement history while in combat. Applies immediately.",
             "showTurnStartMarker.name": "Show Turn-Start Position",
-            "showTurnStartMarker.hint": "Highlight the cell a token occupied at the start of their turn with a blue overlay.",
+            "showTurnStartMarker.hint": "Highlight the cell a token occupied at the start of their turn with purple corner brackets marked with an S.",
             "showTurnStartMarker.pcs": "Player Characters Only",
             "showTurnStartMarker.all": "All Tokens",
             "showTurnStartMarker.disabled": "Disabled"
-        },
-        "choices": {
-            "rollModifierMode": {
-                "shiftAdv": "Shift ➔ Advantage, Ctrl/Cmd ➔ Disadvantage",
-                "ctrlAdv": "Ctrl/Cmd ➔ Advantage, Shift ➔ Disadvantage"
-            }
-        },
-        "sheet": {
-            "tab": {
-                "title": "Quick Roll",
-                "section": {
-                    "defaultRoll": "Default Roll Options",
-                    "alternateRoll": "Alternate Roll Options"
-                },
-                "subsection": {
-                    "main": "Main Content",
-                    "damage": "Damage Rolls"
-                }
-            },
-            "placeholder": {
-                "context": "Context",
-                "label": "Label"
-            }
         },
         "chat": {
             "expandTags": "expand tags",
@@ -64,8 +30,7 @@
                 "rollCrit": "Click to roll critical damage.",
                 "rollMax": "Click to maximize damage.",
                 "rollAdvantage": "Click to roll with advantage.",
-                "rollDisadvantage": "Click to roll with disadvantage.",
-                "repeat": "Click to repeat the quick roll."
+                "rollDisadvantage": "Click to roll with disadvantage."
             },
             "prompts": {
                 "retroCrit": "Upgrade to Crit?",
@@ -77,13 +42,7 @@
         "messages": {
             "error": {
                 "incorrectTargetState": "Cannot ugprade a roll to target state '{state}' because it is not a valid state (advantage or disadvantage).",
-                "rollIsNullOrUndefined": "The given roll is null or undefined.",
-                "termIsNullOrUndefined": "The given term is null or undefined.",
-                "applyDamageNoPermission": "You do not have permission to apply damage from this message.",
-                "applyDamageNoTokens": "You have no tokens selected or targeted to apply damage to."
-            },
-            "warning": {
-                "emptyDamageField": "One or more damage fields on this item are empty! To roll damage, ensure all damage fields are filled."
+                "rollIsNullOrUndefined": "The given roll is null or undefined."
             }
         }
     }

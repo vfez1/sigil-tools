@@ -21,6 +21,7 @@ export class AAMeasure {
    * @param {TokenDocument} sourceToken   The source token from which to measure
    * @param {number} radius               The radius of the grid-based circle to estimate
    * @returns {Set<Token>}                A set of Tokens which might be within range
+   * @public Macro API (window.AAMeasure).
     */
   static getInRangeTokens(sourceToken, radius) {
     const adjustedRadius = sourceToken.parent.grid.size * ((radius / sourceToken.parent.grid.distance) + sourceToken.width / 2);

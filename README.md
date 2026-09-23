@@ -6,6 +6,7 @@ Internal Foundry VTT module for the Sigil campaign. Requires the **dnd5e** syste
 
 ### Roll Model
 Overhauls D&D 5e rolls with quality-of-life improvements: quick rolls, multi-roll display, damage buttons, GWM/Celestial Revelation support, an always-visible HP widget, and wildshape effect automation.
+Full documentation: [submodules/roll-model/README.md](submodules/roll-model/README.md).
 
 ### Active Auras
 Automatically applies active effects to tokens within a defined aura radius. Integrates with the Roll Model item sheet to configure aura flags per active effect.

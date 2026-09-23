@@ -18,9 +18,9 @@ A custom all-in-one FoundryVTT module for a private D&D 5e campaign. It is **not
 The core submodule. Entry point: `roll-model.js` → `HooksUtility.registerModuleHooks()`.
 
 **Roll fast-forward & multi-roll display**
-- Keybindings: Shift = advantage, Ctrl/Cmd = disadvantage, Ctrl+Alt = normal (skip dialog)
+- Keybindings: Shift = advantage, Ctrl/Cmd = disadvantage, Ctrl+Alt = open the dnd5e roll dialog instead of quick-rolling
 - Rolls with adv/dis show both dice side-by-side in chat (multi-roll)
-- Retroactive upgrade buttons on cards: hover to reroll as adv/dis or upgrade to crit
+- Retroactive buttons beside each roll: adv/dis on attack rows, save rows and check cards; CRIT/MAX on damage rows
 
 **Chat card enhancements**
 - Attack and damage sections injected into the activity card (consolidates into one card)
@@ -40,7 +40,7 @@ The core submodule. Entry point: `roll-model.js` → `HooksUtility.registerModul
 - **Raven Queen Inspiration**: restores inspiration on long rest
 
 **Acknowledged Mode**
-- Tracks damage acknowledgment on chat cards. When a player applies damage, the affected token names are stamped as a green badge visible to all. GM can manually acknowledge. Communicated via socket.
+- Tracks damage acknowledgment on chat cards. When a player applies damage, each target and the damage it actually took are recorded on the card (players relay through the GM via socket). Shown in the save Results rows, or a Results block on other damage cards; the Apply button greys out once every selected token has taken the damage.
 
 **Always-HP widget** (`submodules/always-hp/`)
 - Persistent draggable HP bar for the selected token
@@ -49,7 +49,7 @@ The core submodule. Entry point: `roll-model.js` → `HooksUtility.registerModul
 
 **Misc**
 - Prevent token movement history (v14 override via `libWrapper`)
-- Turn-start position marker: blue overlay on the cell a token occupied at turn start
+- Turn-start position marker: purple corner brackets marked "S" on the cell a token occupied at turn start
 
 ---
 
@@ -116,7 +116,7 @@ Filters specific console warnings/errors by pattern.
 Dev utility for auto-loading a specific scene.
 
 ### shared (`submodules/shared/`)
-- `const.js` — `MODULE_NAME`, `MODULE_SHORT`, `MODULE_TITLE`, `MODULE_DEBUG_TAG`
+- `const.js` — `MODULE_NAME`, `MODULE_SHORT`, `MODULE_DEBUG_TAG`
 - `enable.js` — `isEnabled(settingKey)` safe helper (falls back to `true` if setting not yet registered)
 
 ---
@@ -136,7 +136,7 @@ Dev utility for auto-loading a specific scene.
 ## PC characters (campaign-specific)
 
 - **Wabu** — Moon Druid. Has Wild Shape with Improved Circle Forms and Lunar Transformation (Cloak of the Lunar Guardian, needs attunement). The character-features wildshape toggle was originally written for this character.
-- **Sheyla** (Iliad) — Barbarian. Has Relentless Rage, whose save DC is formula-driven (`10 + uses.spent * 5`, resets to 10 on rest) rather than flat — relevant if working on `roll-model`'s embedded-save flow (`chat.js` `_processSaveButtonEvent`).
+- **Sheyla** (Iliad) — Barbarian. Has Relentless Rage, whose save DC is formula-driven (`10 + uses.spent * 5`, resets to 10 on rest) rather than flat — worth testing whenever the save flow changes.
 - Other players use features like Portent, GWM, Potent Spellcasting, Celestial Revelation, Raven Queen Inspiration.
 
 ---
@@ -152,6 +152,7 @@ Dev utility for auto-loading a specific scene.
 | Task | How |
 |---|---|
 | Deploy changes | `/deploy` |
+| Lint / find dead code | `npm run check` (ESLint, then knip; `npm run lint` / `npm run knip` individually) |
 | Add a new submodule enable toggle | Add to `SETTING_NAMES` + `registerSettings()` in `shared/settings.js`, add lang strings, add to `toggleKeys` in `shared/settings-panel.js` |
 | Add a settings section header | Edit the `renderSettingsConfig` hook in `shared/settings-panel.js` |
 | Add a new character-features hook | Add to `registerHooks()` in `character-features/utils/hooks.js` |
