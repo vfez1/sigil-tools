@@ -1129,3 +1129,29 @@ recorded-targets button.target-source-toggle {
 }
 
 /* ===== end Damage tray: target source ===== */
+
+/* ── Combat carousel: keep clear of the sidebar ────────────────────────────────────────────────
+   combat-tracker-dock sets "width: auto !important" on both #combat-dock and .combat-dock, so the
+   strip sizes itself to its combatants. Past a certain count it escapes #ui-middle — which core
+   lays out as the centred 60% of #interface — and runs underneath #ui-right, i.e. the chat panel
+   and its tab strip. Overflow style stays on "scroll" on purpose: the goal is not to shrink the
+   portraits to fit, it's for the strip to stop at the sidebar and scroll past that.
+
+   The dock centres itself in #ui-top, so capping its width pulls both edges in equally: for a
+   right edge at the sidebar, the cap is 100vw - 2 * (sidebar + gap). #ui-top being the centre 60%
+   is what makes that work out — measured against a live 1500px window it puts the strip at
+   348..1152 with the sidebar starting at exactly 1152. min(100%, …) keeps the cap inert on wide
+   windows, where the strip never reaches the sidebar in the first place (past ~1740px here).
+
+   #sidebar is wider than --sidebar-width: that variable covers the panel only, not the vertical
+   tab strip beside it or the 16px #ui-right gap, which measured 48px together. The remaining 24px
+   is clearance, so the dock's own Next Turn / End Combat buttons don't sit flush against the
+   sidebar tabs. #combatants is already overflow-x:scroll, so anything past the cap scrolls
+   instead of colliding. */
+:root {
+    --rm-carousel-sidebar-extra: 72px;
+}
+
+#combat-dock {
+    max-width: min(100%, calc(100vw - 2 * (var(--sidebar-width, 300px) + var(--rm-carousel-sidebar-extra)))) !important;
+}
