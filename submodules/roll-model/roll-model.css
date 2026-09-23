@@ -1125,3 +1125,13 @@ h4.dice-total.ignored > .total {
     -ms-user-select: none;
     user-select: none;
 }
+
+/* ===== Damage tray: target source =====
+   dnd5e's <recorded-targets> can apply to the roll's recorded targets ("targeted") or to the
+   currently selected tokens ("selected"), switched with this button. The mode is pinned to
+   "selected" in hooks.js registerChatHooks, so the toggle has nothing left to switch. */
+recorded-targets button.target-source-toggle {
+    display: none;
+}
+
+/* ===== end Damage tray: target source ===== */

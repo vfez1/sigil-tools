@@ -507,30 +507,56 @@ function _setupCardListeners(message, html) {
     }
 }
 
+/**
+ * Replace dnd5e's own roll row on a standalone damage/healing card (an enricher such as
+ * "[[/damage 2d6]]" or "[[/healing 30 type=temphp]]" in an item description, with no activity
+ * behind it) with roll-model's section, and relabel the damage tray's button to match.
+ * @param {ChatMessage} message   The damage/healing message.
+ * @param {JQuery} html           The ".message-content" element.
+ * @param {boolean} isHealing     Whether the card is healing rather than damage.
+ */
+async function _injectStandaloneRoll(message, html, isHealing) {
+    // dnd5e 6.0 renders the roll as "section.icon-row > button.dice-roll + .roll-breakdown";
+    // older versions as a bare "div.dice-roll". Take the whole row so nothing is orphaned.
+    const nativeRow = html.find(".icon-row").has(".dice-roll").first();
+    const enricher = nativeRow.length ? nativeRow : html.find(".dice-roll").first();
+
+    // Drops dnd5e's flavor line — the injected section carries its own "Damage"/"Healing" title.
+    // (It also hides an upstream bug: the enricher builds its flavor as `DND5E.${type}Roll`, but
+    // there is no DND5E.HealingRoll key any more — it moved to DND5E.HEAL.HealingRoll — so healing
+    // cards show the raw key. Still the case in dnd5e 6.0.3.)
+    html.parent().find(".flavor-text").text("");
+
+    message.flags[MODULE_SHORT].isHealing = isHealing;
+    message.flags[MODULE_SHORT].renderDamage = true;
+    message.flags[MODULE_SHORT].isCritical = message.rolls[0]?.isCritical;
+
+    await _injectDamageRoll(message, enricher);
+    enricher.remove();
+    _wireRollPopovers(html);
+    _relabelTrayButtons(message, html);
+}
+
 async function _injectContent(message, type, html) {
     const parent = message.getOriginatingMessage();
     message.flags[MODULE_SHORT].displayChallenge = parent?.shouldDisplayChallenge ?? message.shouldDisplayChallenge;
     message.flags[MODULE_SHORT].displayAttackResult = game.user.isGM || game.settings.get("dnd5e", "attackRollVisibility") !== "none";
 
+    const isStandalone = !(message.system?.item?.uuid ?? message.flags.dnd5e?.item?.id);
+
     switch (type) {
+        case ROLL_TYPE.HEALING:
+            // Standalone healing enricher ("[[/healing 30 type=temphp]]" in an item description):
+            // same treatment as the standalone damage enricher below. Healing rolls that do belong
+            // to an item/activity keep dnd5e's own card.
+            if (isStandalone) await _injectStandaloneRoll(message, html, true);
+            break;
         case ROLL_TYPE.DAMAGE:
             // Standalone damage (enrichers such as a weapon mastery's "[[/damage]]" link): no item
             // behind it, so there's no activity card to merge into — replace dnd5e's own roll row
             // with roll-model's damage row in place.
-            if (!(message.system?.item?.uuid ?? message.flags.dnd5e?.item?.id)) {
-                // dnd5e 6.0 renders the roll as "section.icon-row > button.dice-roll + .roll-breakdown";
-                // older versions as a bare "div.dice-roll". Take the whole row so nothing is orphaned.
-                const nativeRow = html.find(".icon-row").has(".dice-roll").first();
-                const enricher = nativeRow.length ? nativeRow : html.find(".dice-roll").first();
-
-                html.parent().find(".flavor-text").text("");
-
-                message.flags[MODULE_SHORT].renderDamage = true;
-                message.flags[MODULE_SHORT].isCritical = message.rolls[0]?.isCritical;
-
-                await _injectDamageRoll(message, enricher);
-                enricher.remove();
-                _wireRollPopovers(html);
+            if (isStandalone) {
+                await _injectStandaloneRoll(message, html, false);
                 break;
             }
         case ROLL_TYPE.ATTACK:
@@ -1078,19 +1104,23 @@ function _injectSummaryLabel(message, html) {
 }
 
 /**
- * "Apply" → "Apply Effect" / "Apply Damage" on the trays' buttons. Both trays are custom elements
- * that build their contents in connectedCallback, i.e. only once the message is in the chat log —
- * so relabel a frame later (same timing as ack.js _markApplyButton), with one retry.
+ * "Apply" → "Apply Effect" / "Apply Damage" (or "Apply Healing" on a heal activity's card) on the
+ * trays' buttons. Both trays are custom elements that build their contents in connectedCallback,
+ * i.e. only once the message is in the chat log — so relabel a frame later (same timing as ack.js
+ * _markApplyButton), with one retry.
  * @param {ChatMessage} message  The usage message.
  * @param {JQuery} html          The ".message-content" element.
  */
 function _relabelTrayButtons(message, html) {
     const root = html[0] ?? html;
+    // Same flag the damage section's own header and button use (see _injectDamageRoll /
+    // _injectDamageButton), set from the activity type in ActivityUtility.setRenderFlags.
+    const isHealing = !!message.flags?.[MODULE_SHORT]?.isHealing;
     const relabel = (attempt) => {
         const effectSpan = root.querySelector("effect-application .apply-button > span");
         const damageSpan = root.querySelector("damage-application .apply-button > span");
         if (effectSpan) effectSpan.textContent = "Apply Effect";
-        if (damageSpan) damageSpan.textContent = "Apply Damage";
+        if (damageSpan) damageSpan.textContent = isHealing ? "Apply Healing" : "Apply Damage";
         const hasEffectTray = !!root.querySelector("effect-application");
         const hasDamageTray = !!root.querySelector("damage-application");
         const pending = (hasEffectTray && !effectSpan) || (hasDamageTray && !damageSpan);

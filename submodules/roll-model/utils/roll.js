@@ -63,19 +63,17 @@ export class RollUtility {
                 `alreadyProcessed=${message?.data?.flags?.[MODULE_SHORT]?.processed}`
         );
 
-        if (message.data.flags?.[MODULE_SHORT]?.processed) {
-            LogUtility.log(`[RM DEBUG] processRoll EXIT (already processed)`);
-            return;
-        }
-
-        // dnd5e 6.0: message.data is no longer guaranteed to carry a `flags` object at this
-        // point in the pipeline (it used to). Without this guard, `message.data.flags[MODULE_SHORT] = ...`
-        // below throws "Cannot set properties of undefined", which Hooks.call swallows into a
-        // console error and silently kills roll-model's entire interception chain.
+        // dnd5e 6.0: neither `message.data` nor its `flags` is guaranteed to exist at this point in
+        // the pipeline (it used to). Actor5e#rollInitiativeDialog, for one, builds the roll with no
+        // message data at all. Without these guards the reads and writes below throw, Hooks.call
+        // swallows it into a console error, and roll-model's entire interception chain dies
+        // silently — leaving the vanilla roll dialog to appear.
         message.data ??= {};
         message.data.flags ??= {};
-        if (!message.data.flags) {
-            LogUtility.logWarning(`[RM DEBUG] processRoll: message.data.flags was missing, had to create it. This is the dnd5e 6.0 breakage.`, { ui: false });
+
+        if (message.data.flags[MODULE_SHORT]?.processed) {
+            LogUtility.log(`[RM DEBUG] processRoll EXIT (already processed)`);
+            return;
         }
 
         const keys = {

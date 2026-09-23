@@ -374,6 +374,14 @@ export class HooksUtility {
             LogUtility.log(
                 `[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.RENDER_CHAT_MESSAGE} messageId=${message?.id} flags[rm]=${JSON.stringify(message?.flags?.[MODULE_SHORT])}`
             );
+            // Damage tray target source. dnd5e's <recorded-targets> offers two modes: "targeted"
+            // (the targets recorded on the roll) and "selected" (whatever tokens you have selected),
+            // switched with a small button at the left of the targets row, and it starts in
+            // "targeted". This campaign only ever applies to the selection, so pin the mode here —
+            // the component reads message._targetState.mode in its connectedCallback, which runs
+            // after this hook — and hide the toggle in CSS.
+            if (message?._targetState) message._targetState.mode = "selected";
+
             ChatUtility.processChatMessage(message, html);
             AcknowledgedModeUtility.onNewMessage(message, html);
             AcknowledgedModeUtility.applyAcknowledgedStyle(message, html);
