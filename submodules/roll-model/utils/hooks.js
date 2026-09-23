@@ -105,7 +105,126 @@ export class HooksUtility {
             );
 
             HooksUtility.registerHPHooks();
+            HooksUtility.registerDuplicateSaveNotice();
         });
+    }
+
+    /**
+     * Confirmation on a card's Save button when part of the selection has already rolled: one
+     * dialog naming who is skipped and who is left, answered yes/no. The enforcement itself lives
+     * in the PRE_ROLL_SAVING_THROW hook below, but dnd5e's SaveActivity#rollSave loops the
+     * selection and awaits each roll in turn, so asking from there would mean one prompt per
+     * duplicate token. Here the whole selection is still known.
+     */
+    static registerDuplicateSaveNotice() {
+        if (HooksUtility._duplicateSaveNoticeRegistered) return;
+        HooksUtility._duplicateSaveNoticeRegistered = true;
+
+        document.addEventListener(
+            "click",
+            (event) => {
+                const button = event.target instanceof Element ? event.target.closest('[data-action="rollSave"]') : null;
+                if (!button) return;
+
+                // The re-dispatched click after a "Yes" — let it through to dnd5e untouched.
+                if (HooksUtility._bypassSaveConfirm) return;
+
+                const li = button.closest("[data-message-id]");
+                const message = li ? game.messages.get(li.dataset.messageId) : null;
+                if (!message) return;
+
+                // Mark the press so the per-roll guard stays quiet — this dialog speaks for it.
+                HooksUtility._lastSaveButtonPress = Date.now();
+
+                let already = [];
+                let rolling = [];
+                try {
+                    // Same selection dnd5e's own handler will use (SaveActivity#rollSave →
+                    // getSceneTargets): controlled tokens, else the user's own character.
+                    let targets = message.system?.evaluatedTargets ?? canvas.tokens?.controlled.filter((t) => t.actor) ?? [];
+                    if (!targets.length && game.user.character) targets = game.user.character.getActiveTokens();
+
+                    const rolled = new Set(
+                        (message.getAssociatedRolls?.("save") ?? [])
+                            .map((m) => m.getAssociatedToken?.()?.uuid)
+                            .filter(Boolean),
+                    );
+
+                    for (const t of targets) {
+                        const doc = t instanceof Actor ? null : t.document;
+                        const name = doc?.name ?? t.name ?? "Unknown";
+                        (doc && rolled.has(doc.uuid) ? already : rolling).push(name);
+                    }
+                } catch (e) {
+                    LogUtility.logError(`[RM DEBUG] duplicate-save check failed: ${e?.message}`, { ui: false });
+                    console.error(e);
+                    return;
+                }
+
+                LogUtility.log(
+                    `[RM DEBUG] rollSave press on ${message.id}: already=[${already.join(",")}] rolling=[${rolling.join(",")}]`,
+                );
+                if (!already.length) return;
+
+                // Hold the press while we ask. dnd5e's own delegated handler is on the application
+                // element, so a capture-phase stop here keeps it from running.
+                event.stopImmediatePropagation();
+                event.preventDefault();
+
+                const list = (names) =>
+                    new Intl.ListFormat(game.i18n?.lang ?? "en", { style: "long", type: "conjunction" }).format(names);
+                const skipped = `<p><strong>${list(already)}</strong> ${already.length === 1 ? "has" : "have"} already rolled this save.</p>`;
+                const hint = `<p class="hint">To reroll one of those, use the advantage/disadvantage buttons on that token's row.</p>`;
+
+                (async () => {
+                    const DialogV2 = foundry.applications.api.DialogV2;
+                    const window = { title: "Saving Throw", icon: "fa-solid fa-shield-heart" };
+
+                    if (!rolling.length) {
+                        await DialogV2.prompt({
+                            window,
+                            content: `${skipped}<p>Nobody in the selection still needs to roll.</p>${hint}`,
+                            ok: { label: "OK", icon: "fa-solid fa-check" },
+                            rejectClose: false,
+                        });
+                        return;
+                    }
+
+                    const confirmed = await DialogV2.confirm({
+                        window,
+                        content: `${skipped}<p>Roll for <strong>${list(rolling)}</strong> only?</p>${hint}`,
+                        rejectClose: false,
+                        modal: true,
+                    });
+                    LogUtility.log(`[RM DEBUG] duplicate-save confirm on ${message.id}: ${confirmed ? "yes" : "no"}`);
+                    if (!confirmed) return;
+
+                    // Replay the press for dnd5e, carrying the modifier keys so a shift/ctrl-click
+                    // still rolls with advantage/disadvantage.
+                    HooksUtility._bypassSaveConfirm = true;
+                    HooksUtility._lastSaveButtonPress = Date.now();
+                    try {
+                        button.dispatchEvent(
+                            new PointerEvent("click", {
+                                bubbles: true,
+                                cancelable: true,
+                                composed: true,
+                                shiftKey: event.shiftKey,
+                                ctrlKey: event.ctrlKey,
+                                altKey: event.altKey,
+                                metaKey: event.metaKey,
+                            }),
+                        );
+                    } finally {
+                        HooksUtility._bypassSaveConfirm = false;
+                    }
+                })().catch((e) => {
+                    LogUtility.logError(`[RM DEBUG] duplicate-save dialog failed: ${e?.message}`, { ui: false });
+                    console.error(e);
+                });
+            },
+            true,
+        );
     }
 
     /**
@@ -139,7 +258,12 @@ export class HooksUtility {
                     const existing = origin.getAssociatedRolls?.("save")?.find((m) => m.getAssociatedToken?.()?.uuid === tokenUuid);
                     if (existing) {
                         const name = fromUuidSync(tokenUuid)?.name ?? "This token";
-                        ui.notifications.warn(`${name} has already rolled this save. Use the row's advantage/disadvantage buttons to reroll.`);
+                        // Normally registerDuplicateSaveNotice has just shown one dialog covering
+                        // the whole selection; only fall back to a toast if this save came from
+                        // somewhere else, or that handler failed before marking the press.
+                        if (Date.now() - (HooksUtility._lastSaveButtonPress ?? 0) > 2000) {
+                            ui.notifications.warn(`${name} has already rolled this save. Use the row's advantage/disadvantage buttons to reroll.`);
+                        }
                         LogUtility.log(`[RM DEBUG] ${HOOKS_DND5E.PRE_ROLL_SAVING_THROW}: blocked duplicate save for ${tokenUuid} on ${origin.id} (existing ${existing.id})`);
                         return false;
                     }

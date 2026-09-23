@@ -991,6 +991,20 @@ function _applySaveMultipliers(tray, message) {
  * @param {ChatMessage} message  The usage (origin) message.
  * @param {JQuery} html          The ".message-content" element.
  */
+/**
+ * One adv/dis toggle for a save-summary row.
+ * @param {string} state   ROLL_STATE.ADV / ROLL_STATE.DIS.
+ * @param {string} icon    Font Awesome class.
+ * @param {string} title   Lang key for the tooltip.
+ * @param {boolean} active Whether the roll is already in that state.
+ * @returns {JQuery}
+ */
+function _retroSaveButton(state, icon, title, active) {
+    return $(
+        `<button type="button" class="rm-retro${active ? " active" : ""}" data-state="${state}" aria-pressed="${!!active}" title="${CoreUtility.localize(title)}"><i class="fa-solid ${icon}" inert></i></button>`,
+    );
+}
+
 function _injectSummaryRows(message, html) {
     const applied = message.getFlag(MODULE_NAME, "appliedTo");
     const entries = (applied ? (Array.isArray(applied) ? applied : [applied]) : []).map((e) =>
@@ -998,12 +1012,22 @@ function _injectSummaryRows(message, html) {
     );
     const totalDamage = message.rolls.filter((r) => r instanceof CONFIG.Dice.DamageRoll).reduce((sum, r) => sum + (r.total ?? 0), 0);
 
+    // dnd5e appends a Legendary Resistance button to rows where the save failed and the target has
+    // uses left (save-summary.hbs, buttonGroups.resist). Since the name pill is the flexible column,
+    // a row carrying that button pushes every column left of it out of line with the rows that
+    // don't. If any row on this card has one, give every row a fixed-width trailing slot for it.
+    const hasResistButtons = html.find(".card-summary[data-message-id] .save-summary > button.icon").length > 0;
+
     html.find(".card-summary[data-message-id]").each((_, el) => {
         const saveMsg = game.messages.get(el.dataset.messageId);
         const roll = saveMsg?.rolls?.find((r) => r instanceof CONFIG.Dice.D20Roll);
         const row = el.querySelector(".save-summary");
         if (!saveMsg || !roll || !row) return;
         el.classList.add("rm-summary");
+
+        // The name pill is truncated to one line in CSS, so keep the full name reachable.
+        const pill = row.querySelector(":scope > ul > li.pill");
+        if (pill && !pill.title) pill.title = pill.textContent.trim();
 
         // Applied damage column (always present so rows stay aligned; empty when nothing applied yet).
         const uuid = el.dataset.targetUuid;
@@ -1022,54 +1046,54 @@ function _injectSummaryRows(message, html) {
             dmg.classList.add("rm-ack-damage", cat);
             dmg.textContent = entry.damage > 0 ? `+${entry.damage}` : String(entry.damage);
         }
-        row.append(dmg);
+        // Right after the roll (button + its popover), i.e. ahead of any resist button, not at the
+        // very end of the row.
+        const afterRoll = row.querySelector(":scope > .roll-breakdown") ?? row.querySelector(":scope > button.dice-roll");
+        if (afterRoll) afterRoll.after(dmg);
+        else row.append(dmg);
 
-        // Base d20(s) column, before the result: one chip normally, both dice for adv/dis with the
-        // discarded one dimmed (dnd5e hides its own .d20die badge on summary rows).
-        row.querySelector('.rm-summary-dice')?.remove();
-        const diceEl = document.createElement('span');
-        diceEl.className = 'rm-summary-dice';
-        for (const r of roll.d20?.results ?? []) {
-            const chip = document.createElement('span');
-            chip.className = 'rm-bd-die';
-            if (r.discarded || r.active === false) chip.classList.add('discarded');
-            else if (roll.d20.options.criticalSuccess != null && r.result >= roll.d20.options.criticalSuccess) chip.classList.add('crit');
-            else if (roll.d20.options.criticalFailure != null && r.result <= roll.d20.options.criticalFailure) chip.classList.add('fumble');
-            chip.textContent = r.result;
-            diceEl.append(chip);
+        if (hasResistButtons) {
+            let tail = row.querySelector(":scope > .rm-summary-tail");
+            if (!tail) {
+                tail = document.createElement("span");
+                tail.className = "rm-summary-tail";
+                row.append(tail);
+            }
+            tail.append(...row.querySelectorAll(":scope > button.icon"));
         }
-        const resultBtn = row.querySelector('button.dice-roll');
-        if (resultBtn) resultBtn.before(diceEl);
 
-        // Popover: attack-style breakdown + adv/dis toggles.
+        // No base-d20 column here: the row is narrow, and both dice are already listed in the
+        // breakdown popover the row opens.
+
+        // Adv/dis toggles on the row itself, between the name and the numbers, rather than tucked
+        // inside the breakdown popover. The column is emitted even without ownership (empty) so the
+        // result/damage columns stay aligned down the whole card.
+        row.querySelector(".rm-summary-actions")?.remove();
+        const rowActions = $('<div class="rm-roll-actions rm-summary-actions"></div>');
+        if (saveMsg.isOwner) {
+            rowActions.append(
+                _retroSaveButton(ROLL_STATE.DIS, "fa-chevrons-down", "rm.chat.buttons.rollDisadvantage", roll.hasDisadvantage),
+                _retroSaveButton(ROLL_STATE.ADV, "fa-chevrons-up", "rm.chat.buttons.rollAdvantage", roll.hasAdvantage),
+            );
+            rowActions.find("button").on("click", async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                await _processRetroSaveSummaryEvent(message, saveMsg, event.currentTarget.dataset.state);
+            });
+        }
+        const namePill = row.querySelector(":scope > ul");
+        if (namePill) namePill.after(rowActions[0]);
+        else row.querySelector(":scope > button.dice-roll")?.before(rowActions[0]);
+
+        // Popover: attack-style breakdown. The adv/dis toggles used to live at the bottom of this
+        // box; they sit on the row itself now (above).
         const popover = el.querySelector(".roll-breakdown[popover]");
         if (popover) {
             if (roll.d20) {
                 roll.d20.options.criticalSuccess ??= roll.options.criticalSuccess;
                 roll.d20.options.criticalFailure ??= roll.options.criticalFailure;
             }
-            const box = _buildAttackBreakdown(roll);
-
-            if (saveMsg.isOwner) {
-                const btn = (state, icon, title, active) =>
-                    $(`<button type="button" class="rm-retro${active ? " active" : ""}" data-state="${state}" aria-pressed="${!!active}" title="${title}"><i class="fa-solid ${icon}" inert></i></button>`);
-                const actions = $('<div class="rm-bd-row rm-bd-actions"></div>')
-                    .append($('<span class="rm-bd-label"></span>').text("Reroll"))
-                    .append(
-                        $('<div class="rm-roll-actions"></div>').append(
-                            btn(ROLL_STATE.DIS, "fa-chevrons-down", CoreUtility.localize("rm.chat.buttons.rollDisadvantage"), roll.hasDisadvantage),
-                            btn(ROLL_STATE.ADV, "fa-chevrons-up", CoreUtility.localize("rm.chat.buttons.rollAdvantage"), roll.hasAdvantage),
-                        ),
-                    );
-                actions.find("button").on("click", async (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    await _processRetroSaveSummaryEvent(message, saveMsg, event.currentTarget.dataset.state);
-                });
-                box.append(actions);
-            }
-
-            popover.replaceChildren(box[0]);
+            popover.replaceChildren(_buildAttackBreakdown(roll)[0]);
         }
 
         // Whole-row click opens the popover (buttons/links keep their own behaviour).

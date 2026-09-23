@@ -115,9 +115,41 @@
     justify-content: start;
 }
 
-.card-summary.rm-summary .save-summary button.dice-roll {
-    flex: 0 0 64px;
+/* A long token name would otherwise wrap to three or four lines and blow the row's height out —
+   truncate it instead and keep the full name in the tooltip. */
+.card-summary.rm-summary .save-summary > ul > li.pill {
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Fixed slot for dnd5e's Legendary Resistance button, added only when some row on the card has one
+   (see chat.js _injectSummaryRows) so the numeric columns line up across rows either way. */
+.card-summary.rm-summary .save-summary > .rm-summary-tail {
+    display: flex;
     justify-content: end;
+    flex: 0 0 20px;
+}
+
+.card-summary.rm-summary .save-summary button.dice-roll {
+    flex: 0 0 56px;
+    justify-content: end;
+}
+
+/* Adv/dis toggles, sitting on the row right after the token name. .rm-roll-actions is otherwise
+   placed into the breakdown popover's grid, so undo that here; the column keeps its width when
+   empty (non-owned rows) so the numbers stay aligned. */
+.card-summary.rm-summary .save-summary .rm-summary-actions {
+    grid-column: auto;
+    grid-row: auto;
+    flex: 0 0 42px;
+    justify-content: end;
+}
+
+.card-summary.rm-summary .save-summary .rm-summary-actions button.rm-retro {
+    inline-size: 20px;
 }
 
 /* Titled separator above the save rows — dnd5e's tray-label look (dashed rule either side of an
@@ -158,44 +190,6 @@
     border-block-start: none;
     margin-block-start: 0;
     padding-block-start: 2px;
-}
-
-/* Base d20 chips column (both dice for adv/dis, discarded one dimmed). The .rm-bd-die chip
-   styles are scoped to .rm-breakdown, so restate them here. */
-.card-summary.rm-summary .save-summary .rm-summary-dice {
-    display: flex;
-    justify-content: end;
-    gap: 3px;
-    flex: 0 0 44px;
-}
-
-.card-summary.rm-summary .save-summary .rm-summary-dice .rm-bd-die {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-inline-size: 18px;
-    block-size: 18px;
-    padding: 0 3px;
-    border: 1px solid var(--dnd5e-color-gold);
-    border-radius: 3px;
-    font-family: var(--dnd5e-font-roboto-slab);
-    font-size: var(--font-size-11);
-    font-weight: bold;
-}
-
-.card-summary.rm-summary .save-summary .rm-summary-dice .rm-bd-die.discarded {
-    opacity: 0.4;
-    text-decoration: line-through;
-}
-
-.card-summary.rm-summary .save-summary .rm-summary-dice .rm-bd-die.crit {
-    border-color: var(--color-level-success-border, #1b8f23);
-    color: var(--color-level-success, #26b231);
-}
-
-.card-summary.rm-summary .save-summary .rm-summary-dice .rm-bd-die.fumble {
-    border-color: var(--color-level-error-border, #750003);
-    color: var(--color-level-error, #ce0707);
 }
 
 /* Applied-damage column ("−7", "+5", empty until damage is applied to that target). */
