@@ -1,0 +1,28 @@
+{
+    "$schema": "https://unpkg.com/knip@5/schema.json",
+    "entry": [
+        "submodules/roll-model/roll-model.js",
+        "submodules/roll-model/config/config.js",
+        "submodules/suppress-warnings/suppress-warnings.js",
+        "submodules/override-settings/override.js",
+        "submodules/dev-scene-loader/dev-scene-loader.js"
+    ],
+    "project": ["submodules/**/*.{js,mjs}"],
+    "ignore": [
+        "submodules/combat-tracker-dock/**",
+        "submodules/effectmacro/**"
+    ],
+    "include": ["files", "exports", "types", "classMembers", "dependencies", "devDependencies", "unlisted", "unresolved"],
+    "ignoreMembers": [
+        "DEFAULT_OPTIONS",
+        "PARTS",
+        "_initializeApplicationOptions",
+        "_renderFrame",
+        "_prepareContext",
+        "_onRender",
+        "setPosition",
+        "close",
+        "getData",
+        "nonDismissible"
+    ]
+}

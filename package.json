@@ -2,8 +2,14 @@
     "name": "sigil-tools",
     "private": true,
     "type": "module",
+    "scripts": {
+        "lint": "eslint .",
+        "knip": "knip",
+        "check": "npm run lint && npm run knip"
+    },
     "devDependencies": {
         "eslint": "^9.0.0",
-        "globals": "^15.0.0"
+        "globals": "^15.0.0",
+        "knip": "^5.88.1"
     }
 }
