@@ -3,7 +3,7 @@ import { AddEvent } from "./AddEvent.js";
 import { HandlebarsApplication, mergeClone, mergeObject } from "../lib/utils.js";
 
 // Multiplier on the mouse wheel distance when scrolling the carousel sideways.
-const WHEEL_SCROLL_SPEED = 3;
+const WHEEL_SCROLL_SPEED = 2;
 
 export class CombatDock extends HandlebarsApplication {
     constructor(combat) {
