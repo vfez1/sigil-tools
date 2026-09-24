@@ -81,6 +81,10 @@
                     "autofit": "Shrink Portraits"
                 }
             },
+            "reverseWheelScroll": {
+                "name": "Reverse Wheel Scroll",
+                "hint": "With the Scroll overflow style, the mouse wheel scrolls the carousel sideways: by default wheel up moves right and wheel down moves left. Enable to swap them."
+            },
             "portraitAspect": {
                 "name": "Portrait Aspect Ratio",
                 "hint": "The aspect ratio of the portrait. The image will be cropped if it doesn't match the aspect ratio of the portrait.",

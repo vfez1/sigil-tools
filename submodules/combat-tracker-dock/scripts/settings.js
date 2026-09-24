@@ -84,6 +84,15 @@ export function registerSettings() {
         },
     });
 
+    game.settings.register(MODULE_ID, "reverseWheelScroll", {
+        name: "combat-tracker-dock.settings.reverseWheelScroll.name",
+        hint: "combat-tracker-dock.settings.reverseWheelScroll.hint",
+        scope: "client",
+        config: true,
+        type: Boolean,
+        default: false,
+    });
+
     game.settings.register(MODULE_ID, "carouselStyle", {
         name: "combat-tracker-dock.settings.carouselStyle.name",
         hint: "combat-tracker-dock.settings.carouselStyle.hint",

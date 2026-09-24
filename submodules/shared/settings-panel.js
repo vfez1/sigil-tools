@@ -67,7 +67,7 @@ export function registerSettingsPanelHooks() {
         // Move combat-tracker-dock settings before the submodule toggles.
         const submodulesAnchor = group("enableActiveAuras");
         if (submodulesAnchor) {
-            for (const key of ["direction", "portraitSize", "lessButtons", "overflowStyle", "carouselStyle", "alignment", "hideDefeated", "showDispositionColor", "showInitiativeOnPortrait", "hideFirstRound", "hideEnemyInitiative"]) {
+            for (const key of ["direction", "portraitSize", "lessButtons", "overflowStyle", "reverseWheelScroll", "carouselStyle", "alignment", "hideDefeated", "showDispositionColor", "showInitiativeOnPortrait", "hideFirstRound", "hideEnemyInitiative"]) {
                 const g = group(key);
                 if (g) submodulesAnchor.before(g);
             }
