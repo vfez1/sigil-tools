@@ -71,7 +71,7 @@ export function registerSettings() {
         config: true,
         type: String,
         choices: {
-            autofit: "combat-tracker-dock.settings.overflowStyle.choices.autofit",
+            // "Shrink Portraits" (autofit) is hidden from the menu; its code path is kept.
             hidden: "combat-tracker-dock.settings.overflowStyle.choices.hidden",
             scroll: "combat-tracker-dock.settings.overflowStyle.choices.scroll",
         },
