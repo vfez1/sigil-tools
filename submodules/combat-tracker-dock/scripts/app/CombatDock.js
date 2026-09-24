@@ -376,6 +376,7 @@ export class CombatDock extends HandlebarsApplication {
         });
         this.autosize();
         this.setControlsOrder();
+        this.activateWheelScroll();
         new foundry.applications.ux.ContextMenu(
             this.element.querySelector("#combatants"),
             ".combatant-portrait",
@@ -391,6 +392,29 @@ export class CombatDock extends HandlebarsApplication {
                 ...game.combats.directory._getEntryContextOptions(),
             ],
             { jQuery: false, fixed: true }
+        );
+    }
+
+    /**
+     * Mouse wheel over the portraits scrolls a horizontal carousel sideways: wheel up moves
+     * right, wheel down moves left. Only with the "Scroll" overflow style; vertical carousels
+     * already scroll with the wheel natively.
+     */
+    activateWheelScroll() {
+        const combatantsEl = this.element.querySelector("#combatants");
+        if (!combatantsEl || combatantsEl._ctdWheelScroll) return;
+        combatantsEl._ctdWheelScroll = true;
+        combatantsEl.addEventListener(
+            "wheel",
+            (e) => {
+                if (this.isVertical || game.settings.get(MODULE_ID, "overflowStyle") !== "scroll") return;
+                if (combatantsEl.scrollWidth <= combatantsEl.clientWidth) return;
+                // Sideways trackpad swipes already scroll the right way natively.
+                if (!e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+                e.preventDefault();
+                combatantsEl.scrollBy({ left: -e.deltaY, behavior: "smooth" });
+            },
+            { passive: false },
         );
     }
 
