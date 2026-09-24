@@ -2,6 +2,9 @@ import { MODULE_ID } from "../main.js";
 import { AddEvent } from "./AddEvent.js";
 import { HandlebarsApplication, mergeClone, mergeObject } from "../lib/utils.js";
 
+// Multiplier on the mouse wheel distance when scrolling the carousel sideways.
+const WHEEL_SCROLL_SPEED = 3;
+
 export class CombatDock extends HandlebarsApplication {
     constructor(combat) {
         super();
@@ -412,7 +415,17 @@ export class CombatDock extends HandlebarsApplication {
                 // Sideways trackpad swipes already scroll the right way natively.
                 if (!e.deltaY || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
                 e.preventDefault();
-                combatantsEl.scrollBy({ left: -e.deltaY, behavior: "smooth" });
+                // deltaMode 1 = lines, 2 = pages; normalise to pixels, then speed it up.
+                const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? combatantsEl.clientWidth : 1;
+                const step = -e.deltaY * unit * WHEEL_SCROLL_SPEED;
+                // Chain from where the previous smooth scroll is heading, not where it currently is,
+                // so fast wheel spins add up instead of each notch restarting from mid-animation.
+                const max = combatantsEl.scrollWidth - combatantsEl.clientWidth;
+                const inFlight = Date.now() - (combatantsEl._ctdWheelTime ?? 0) < 300;
+                const from = inFlight ? combatantsEl._ctdWheelTarget : combatantsEl.scrollLeft;
+                combatantsEl._ctdWheelTarget = Math.max(0, Math.min(max, from + step));
+                combatantsEl._ctdWheelTime = Date.now();
+                combatantsEl.scrollTo({ left: combatantsEl._ctdWheelTarget, behavior: "smooth" });
             },
             { passive: false },
         );
