@@ -399,8 +399,8 @@ export class CombatDock extends HandlebarsApplication {
     }
 
     /**
-     * Mouse wheel over the portraits scrolls a horizontal carousel sideways: wheel up moves
-     * right, wheel down moves left (swapped by "Reverse Wheel Scroll"). Only with the "Scroll"
+     * Mouse wheel over the portraits scrolls a horizontal carousel sideways: wheel down moves
+     * right, wheel up moves left (swapped by "Reverse Wheel Scroll"). Only with the "Scroll"
      * overflow style; vertical carousels already scroll with the wheel natively.
      */
     activateWheelScroll() {
@@ -417,7 +417,7 @@ export class CombatDock extends HandlebarsApplication {
                 e.preventDefault();
                 // deltaMode 1 = lines, 2 = pages; normalise to pixels, then speed it up.
                 const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? combatantsEl.clientWidth : 1;
-                const direction = game.settings.get(MODULE_ID, "reverseWheelScroll") ? 1 : -1;
+                const direction = game.settings.get(MODULE_ID, "reverseWheelScroll") ? -1 : 1;
                 const step = direction * e.deltaY * unit * WHEEL_SCROLL_SPEED;
                 // Chain from where the previous smooth scroll is heading, not where it currently is,
                 // so fast wheel spins add up instead of each notch restarting from mid-animation.
