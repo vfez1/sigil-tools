@@ -229,6 +229,7 @@ class AttributeDropdown {
             const item = document.createElement("div");
             item.className = "eac-option" + (i === 0 ? " selected" : "");
             item.textContent = path;
+            item.title = path;
             item.dataset.index = i;
             Object.assign(item.style, {
                 padding: "4px 8px",
@@ -284,10 +285,17 @@ class AttributeDropdown {
         if (!this.currentInput || !this.el) return;
         const rect = this.currentInput.getBoundingClientRect();
         const maxH = Math.min(300, window.innerHeight - rect.bottom - 8);
-        this.el.style.left = rect.left + "px";
         this.el.style.top = rect.bottom + "px";
-        this.el.style.width = Math.max(rect.width, 280) + "px";
         this.el.style.maxHeight = maxH + "px";
+        // Size to the longest key so paths aren't clipped, never narrower than the input, and
+        // shift left when that would run off the right edge of the window.
+        const margin = 8;
+        this.el.style.width = "max-content";
+        this.el.style.minWidth = Math.max(rect.width, 500) + "px";
+        this.el.style.maxWidth = (window.innerWidth - 2 * margin) + "px";
+        const width = this.el.getBoundingClientRect().width;
+        const left = Math.min(rect.left, window.innerWidth - margin - width);
+        this.el.style.left = Math.max(margin, left) + "px";
     }
 
     _select(index) {
@@ -394,6 +402,7 @@ function injectChangesStyle() {
 // dnd5e 6.0's sheet has no inline inputs, so this is a no-op there and leaves its layout alone.
 function onRenderActiveEffectConfig(app, html) {
     const el = html instanceof jQuery ? html[0] : html;
+    addChangeListTooltips(el);
     const inputs = findInlineKeyInputs(el);
     if (!inputs.length) return;
 
@@ -403,6 +412,15 @@ function onRenderActiveEffectConfig(app, html) {
     }
     const dropdown = getDropdown(app);
     inputs.forEach(input => dropdown.attach(input));
+}
+
+// dnd5e 6.0's read-only Changes list ellipsizes long keys and values with no way to see the
+// rest, so give each one a tooltip with its full text.
+function addChangeListTooltips(el) {
+    for (const span of el.querySelectorAll('li.change .item-name .title, li.change .effect-value .condensed')) {
+        const text = span.textContent.trim();
+        if (text && !span.dataset.tooltip) span.dataset.tooltip = text;
+    }
 }
 
 function onRenderEffectChangeConfig(app, html) {
