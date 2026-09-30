@@ -69,6 +69,12 @@ function _applyMoveBetweenSheets() {
  */
 async function _moveOnce(wrapped, event, items, behavior) {
     behavior ??= event?._behavior;
+    if ((behavior === "copy") && _meantAsMove(event, items, this.inventorySource)) {
+        console.warn(`${MODULE_NAME} | item-drag-move: dropping ${items.map(i => i.name).join(", ")} from `
+            + `${items[0].parent?.name} arrived as a copy (drop effect "${event.dataTransfer?.dropEffect}"), `
+            + "though no copy key was held; moving it instead.");
+        behavior = "move";
+    }
     if (behavior !== "move") return wrapped(event, items, behavior);
 
     const stale = items.filter(i => moving.has(i.uuid) || (i.parent && !i.parent.items.has(i.id)));
@@ -86,6 +92,24 @@ async function _moveOnce(wrapped, event, items, behavior) {
     } finally {
         items.forEach(i => moving.delete(i.uuid));
     }
+}
+
+/**
+ * Whether a drop that arrived as a copy was meant as a move. dnd5e decides copy or move while
+ * the item hovers over a sheet, remembers it, and only reads that memory at the drop; when the
+ * memory is lost or stale by then, the drop falls back to a copy, which left roughly one in
+ * five plain drags between sheets on both of them. So the decision is made again here, from
+ * the drop itself: a real drop, no Drag Copy key (Ctrl/Alt) held, and every item from another
+ * actor this user owns means a move, exactly as _defaultDropBehavior would have decided.
+ * @param {DragEvent} event
+ * @param {Item[]} items
+ * @param {Actor} target
+ * @returns {boolean}
+ */
+function _meantAsMove(event, items, target) {
+    if ((event?.type !== "drop") || !items.length) return false;
+    if (dnd5e.utils.areKeysPressed(event, "dragCopy")) return false;
+    return items.every(i => _isOwnedItemOnAnotherActor(i.uuid, target));
 }
 
 /**
