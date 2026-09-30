@@ -96,7 +96,8 @@ Adds an autocomplete/validate dropdown to the Active Effect Config "Changes" key
 
 - Builds a flat list of valid effect-change key paths once on `ready` by walking the Actor (character) and Item data model schemas (prefixed `system.`), the `TokenDocument` schema (prefixed `token.`), and DND5E activity schemas (bracket-notation, for enchantment effects) — plus a hardcoded list of virtual paths (`DND5E_VIRTUAL`, e.g. `system.save.dc`) and known `flags.dnd5e.*` toggles (`DND5E_FLAGS`) that don't appear in any schema.
 - `walkFields` recurses `SchemaField`s and `EmbeddedDataField`s; `MappingField`/`DocumentCollection` fields (e.g. `system.abilities`, `system.skills`) are expanded via a hardcoded key list in `getMappingKeys` since the valid keys aren't derivable from the schema alone. Cycle-safe via a shared `visited` set.
-- Hooks `renderActiveEffectConfig`: attaches a filtered dropdown + red-outline invalid-key styling to each key input in the Changes tab.
+- dnd5e 6.0 lists changes read-only on the effect sheet and edits each one in an `EffectChangeConfig` dialog, so the main hook is `renderEffectChangeConfig` (attaches to `input[name="key"]`). `renderActiveEffectConfig` is kept for core/pre-6.0 inline key inputs and no-ops on the 6.0 sheet.
+- Pre-6.0 keys that dnd5e still redirects (`ActiveEffect5e.SHIM_FIELDS`, plus `abilities/skills/tools.*.bonuses.*`) pass validation but aren't suggested, so new changes use the 6.0 paths (`system.rolls.*`, `movement.speeds.*`, `senses.ranges.*`).
 
 ### combat-tracker-dock (`submodules/combat-tracker-dock/`)
 Vendored third-party module ("Carousel Combat Tracker" by theripper93) — a carousel-style combat tracker UI, spiritual successor to Combat Carousel. Loaded unconditionally as its own top-level esmodule in `module.json` (not gated by a sigil-tools enable toggle like the other submodules). Has its own `renderSettingsConfig` hook (`scripts/config.js`) for its settings.

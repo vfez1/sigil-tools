@@ -6,11 +6,15 @@ export function registerEffectAutocompleteHooks() {
     if (!isEnabled(SETTING_KEY)) return;
     Hooks.once("ready", initFields);
     Hooks.on("renderActiveEffectConfig", onRenderActiveEffectConfig);
+    // dnd5e 6.0+ lists changes read-only on the effect sheet and edits each one in its own
+    // EffectChangeConfig dialog, where the key is a single `input[name="key"]`.
+    Hooks.on("renderEffectChangeConfig", onRenderEffectChangeConfig);
 }
 
 // ── Field list ────────────────────────────────────────────────────────────────
 
 let _fields = null;
+let _legacyFields = null;
 
 function initFields() {
     if (_fields) return;
@@ -51,17 +55,48 @@ function initFields() {
     for (const key of DND5E_FLAGS) paths.push(key);
 
     _fields = [...new Set(paths)].filter(p => !p.includes("<key>")).sort();
+    _legacyFields = buildLegacyFields();
+}
+
+// Pre-6.0 keys that dnd5e still redirects to their new location when an effect applies
+// (ActiveEffect5e#_applyChangeShim). Accepted by validation so existing effects don't show
+// as invalid, but left out of the suggestions so new changes use the current paths.
+function buildLegacyFields() {
+    const legacy = new Set(Object.keys(CONFIG.ActiveEffect.documentClass?.SHIM_FIELDS ?? {}));
+    // BONUS_SHIM_REGEX: system.(abilities|skills|tools).<key>.bonuses.(check|save)
+    for (const k of Object.keys(CONFIG.DND5E.abilities)) {
+        legacy.add(`system.abilities.${k}.bonuses.check`);
+        legacy.add(`system.abilities.${k}.bonuses.save`);
+    }
+    for (const k of Object.keys(CONFIG.DND5E.skills)) legacy.add(`system.skills.${k}.bonuses.check`);
+    for (const k of Object.keys(CONFIG.DND5E.toolIds ?? CONFIG.DND5E.tools ?? {})) legacy.add(`system.tools.${k}.bonuses.check`);
+    return legacy;
+}
+
+function isValidKey(key) {
+    return getFields().includes(key) || !!_legacyFields?.has(key);
 }
 
 function walkFields(fields, prefix, paths, visited = new Set()) {
+    // `visited` holds only the current ancestor chain: a MappingField walks the SAME element
+    // schema once per known key (abilities.str, abilities.dex, ...), so a set of everything
+    // ever walked would stop after the first key.
     if (visited.has(fields)) return;
     visited.add(fields);
+    try {
+        walkFieldEntries(fields, prefix, paths, visited);
+    } finally {
+        visited.delete(fields);
+    }
+}
+
+function walkFieldEntries(fields, prefix, paths, visited) {
     for (const [key, field] of Object.entries(fields)) {
         const path = prefix ? `${prefix}.${key}` : key;
         const typeName = field.constructor?.name ?? "";
         if (field.fields) {
             walkFields(field.fields, path, paths, visited);
-        } else if (typeName === "MappingField" || typeName === "DocumentCollection") {
+        } else if (typeName === "MappingField" || typeName === "TypedObjectField" || typeName === "DocumentCollection") {
             const elementFields = field.model?.schema?.fields ?? field.element?.fields;
             const knownKeys = getMappingKeys(path);
             if (elementFields && knownKeys) {
@@ -94,7 +129,9 @@ function getMappingKeys(path) {
     if (path === "system.spells")                   return ["spell1","spell2","spell3","spell4","spell5","spell6","spell7","spell8","spell9","pact"];
     if (path === "system.currency")                 return Object.keys(CONFIG.DND5E.currencies);
     if (path === "system.attributes.senses.ranges") return Object.keys(CONFIG.DND5E.senses);
+    if (path === "system.attributes.movement.speeds") return Object.keys(CONFIG.DND5E.movementTypes);
     if (path === "system.traits.dm.amount")         return Object.keys(CONFIG.DND5E.damageTypes);
+    if (path === "token.detectionModes")            return Object.keys(CONFIG.Canvas.detectionModes);
     if (path === "system.traits.languages.communication") return null;
     return null;
 }
@@ -163,7 +200,7 @@ class AttributeDropdown {
 
     _validate(input) {
         const val = input.value.trim();
-        if (val && !getFields().includes(val)) {
+        if (val && !isValidKey(val)) {
             input.style.outline = "1px solid #c0392b";
         } else {
             input.style.outline = "";
@@ -319,14 +356,23 @@ class AttributeDropdown {
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
-function attachKeyInputs(el, dropdown) {
-    const inputs = el.querySelectorAll('.tab[data-tab="changes"] input[type="text"]');
-    inputs.forEach(input => {
+function findInlineKeyInputs(el) {
+    return [...el.querySelectorAll('.tab[data-tab="changes"] input[type="text"]')].filter(input => {
         const row = input.closest("li, tr, .effect-change");
-        if (!row) return;
-        if (input !== row.querySelector('input[type="text"]')) return;
-        dropdown.attach(input);
+        return row && input === row.querySelector('input[type="text"]');
     });
+}
+
+function getDropdown(app) {
+    if (!app._eacDropdown) {
+        app._eacDropdown = new AttributeDropdown();
+        // ApplicationV2 emits "close" on the app itself, not on its element.
+        app.addEventListener?.("close", () => {
+            app._eacDropdown?.destroy();
+            delete app._eacDropdown;
+        }, { once: true });
+    }
+    return app._eacDropdown;
 }
 
 const EAC_STYLE_ID = "eac-changes-style";
@@ -344,18 +390,23 @@ function injectChangesStyle() {
     document.head.appendChild(style);
 }
 
+// Core's ActiveEffectConfig (and dnd5e before 6.0) edits keys inline in the Changes tab.
+// dnd5e 6.0's sheet has no inline inputs, so this is a no-op there and leaves its layout alone.
 function onRenderActiveEffectConfig(app, html) {
     const el = html instanceof jQuery ? html[0] : html;
+    const inputs = findInlineKeyInputs(el);
+    if (!inputs.length) return;
 
     if (!app._eacDropdown) {
-        app._eacDropdown = new AttributeDropdown();
         app.setPosition({ width: 680 });
         injectChangesStyle();
-        app.element?.addEventListener("close", () => {
-            app._eacDropdown?.destroy();
-            delete app._eacDropdown;
-        }, { once: true });
     }
+    const dropdown = getDropdown(app);
+    inputs.forEach(input => dropdown.attach(input));
+}
 
-    attachKeyInputs(el, app._eacDropdown);
+function onRenderEffectChangeConfig(app, html) {
+    const el = html instanceof jQuery ? html[0] : html;
+    const input = el.querySelector('input[name="key"]');
+    if (input) getDropdown(app).attach(input);
 }
