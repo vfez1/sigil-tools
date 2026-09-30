@@ -20,6 +20,9 @@ Adds an "Auras" tab to token config sheets for defining visual aura rings drawn 
 ### Grid Regions
 Forces Foundry's Region shapes — both from dnd5e template placement (e.g. an activity's area of effect) and the manual region-drawing tools — to measure using the scene's own grid metric instead of true euclidean geometry, so a burst radius matches the grid squares the table actually plays on.
 
+### Item Drag Move
+Dragging an item from one actor's sheet onto another's moves it instead of copying it. Dragging from a compendium or the Items sidebar still copies, holding Ctrl or Alt while dragging still copies, and dragging from a sheet you don't own still copies (a move would need to delete the original there). Always on; there's no setting for it.
+
 ### Effect Macro
 Adds macro triggers to active effects and related dnd5e workflows.
 

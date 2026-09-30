@@ -10,6 +10,7 @@ import { AlwaysHPWidget, HPManager, applyHPDismissPatch } from "../../always-hp/
 import { ROLL_TYPE, RollUtility } from "./roll.js";
 import { registerEffectAutocompleteHooks } from "../../effect-autocomplete/effect-autocomplete.js";
 import { registerGridRegionsHooks } from "../../grid-regions/grid-regions.js";
+import { registerItemDragMoveHooks } from "../../item-drag-move/item-drag-move.js";
 import { LogUtility } from "./log.js";
 import { CoreUtility } from "./core.js";
 
@@ -95,6 +96,7 @@ export class HooksUtility {
         registerSettingsPanelHooks();
         registerEffectAutocompleteHooks();
         registerGridRegionsHooks();
+        registerItemDragMoveHooks();
 
         Hooks.on(HOOKS_CORE.READY, () => {
             if (!isEnabled(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;

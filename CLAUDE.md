@@ -91,6 +91,13 @@ Makes regions and dnd5e spell templates measure with the scene grid's metric rat
 - `visual-auras` is deliberately untouched — it creates its rings with `createEmbeddedDocuments` and already sets `gridBased` per preset, so it bypasses both wrapped paths.
 - Region *appearance* defaults (Visibility, Highlight Mode) are not handled here; core's own Region Palette stores those per user.
 
+### item-drag-move (`submodules/item-drag-move/`)
+Makes dragging an item from one actor's sheet onto another's a move rather than a copy. Entry point: `item-drag-move.js` (imported from `roll-model/utils/hooks.js`). Always on: no enable toggle, no settings.
+
+- One libWrapper WRAPPER at `setup` on `dnd5e.applications.actor.BaseActorSheet.prototype._defaultDropBehavior`, the default dnd5e falls back to when neither its Drag Move key (Shift) nor its Drag Copy key (Ctrl/Alt) is held. The character, NPC and group sheets all extend `BaseActorSheet`.
+- Returns `"move"` only when dnd5e's default is `"copy"` and the dragged Item is embedded in a different actor the user owns. Compendium entries (`fromUuidSync` gives an index entry, not an Item) and sidebar items (no parent actor) keep copying, and a non-owned source keeps copying because dnd5e's move deletes the original from the dropping user's client.
+- The move itself is dnd5e's own code (`_onDropCreateItems` / `_onDropItemContainer` delete the source with `deleteContents: true`), so containers carry their contents.
+
 ### effect-autocomplete (`submodules/effect-autocomplete/`)
 Adds an autocomplete/validate dropdown to the Active Effect Config "Changes" key field. Entry point: `effect-autocomplete.js` (imported from `roll-model.js`), gated by `enableEffectAutocomplete`.
 
