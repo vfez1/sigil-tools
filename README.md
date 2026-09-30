@@ -21,7 +21,7 @@ Adds an "Auras" tab to token config sheets for defining visual aura rings drawn 
 Forces Foundry's Region shapes — both from dnd5e template placement (e.g. an activity's area of effect) and the manual region-drawing tools — to measure using the scene's own grid metric instead of true euclidean geometry, so a burst radius matches the grid squares the table actually plays on.
 
 ### Item Drag Move
-Makes dragging an item from one actor's sheet onto another's move it instead of copying it. Dragging from a compendium or the Items sidebar still copies, holding Ctrl or Alt while dragging still copies, and dragging from a sheet you don't own still copies (a move would need to delete the original there). There's no setting for it; `ENABLED` in `item-drag-move.js` switches it (off leaves dnd5e's own behavior: copy between sheets, Shift to move).
+Makes dragging an item from one actor's sheet onto another's move it instead of copying it, and makes every move (Shift-drags included) happen exactly once: dnd5e deletes the original without waiting, so moving the same item again quickly used to leave a copy behind; now the original is gone before the drop finishes, and a drag of an item that's still being moved is refused with a notice. Dragging from a compendium or the Items sidebar still copies, holding Ctrl or Alt while dragging still copies, and dragging from a sheet you don't own still copies (a move would need to delete the original there). There's no setting for it; `ENABLED` in `item-drag-move.js` switches it (off leaves dnd5e's own behavior: copy between sheets, Shift to move).
 
 ### Effect Macro
 Adds macro triggers to active effects and related dnd5e workflows.
