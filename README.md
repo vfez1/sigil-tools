@@ -30,7 +30,7 @@ Adds an attribute-path autocomplete dropdown to the Active Effect Changes tab, b
 Per-character automation config, keyed by actor name: toggles specific active effects on/off automatically when a character wild-shapes/reverts, or when a tracked item's attunement changes.
 
 ### Chat Archive
-Once the chat log passes a configured message count, automatically POSTs the oldest messages to an external archive server and deletes them from the live log, keeping the in-game chat log short.
+Once the chat log passes a configured message count, automatically POSTs the oldest messages to an external archive server and deletes them from the live log, keeping the in-game chat log short. The GM also gets an archive button (box icon, next to Clear Chat) that sends every message currently in chat to the archive after a confirmation; messages are only removed once the server confirms it stored them.
 
 ### Override Settings
 Applies a fixed set of world/client settings and keybindings on load, driven by `submodules/override-settings/settings.json`.

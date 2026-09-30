@@ -81,6 +81,7 @@ Auto-archives old chat messages to an external server to keep the local chat log
 - On every `createChatMessage` (and once at `ready`), trims `game.messages` down to `chatArchiveKeepCount` by POSTing the oldest messages' rendered HTML to `chatArchiveUrl`, then deletes them locally once the server confirms.
 - Waits for roll-model's async attack/damage section injection to finish before capturing a message's HTML, so archived cards aren't missing content.
 - GM-only; re-entrancy guarded so overlapping `createChatMessage` events don't trigger concurrent archive runs.
+- GM **archive-all button** (`fa-box-archive`, injected left of core's Clear Chat in `#chat-controls .control-buttons` via `renderChatInput` plus once at `ready`): after a `DialogV2.confirm`, archives every message regardless of `chatArchiveKeepCount`. Shares the auto-archive's POST-then-delete path and re-entrancy flag, so nothing is deleted unless the server confirms.
 
 ### grid-regions (`submodules/grid-regions/`)
 Makes regions and dnd5e spell templates measure with the scene grid's metric rather than true euclidean geometry, so they follow core's **Grid Diagonals** setting. Entry point: `grid-regions.js` (imported from `roll-model/utils/hooks.js`), gated by `enableGridRegions`.

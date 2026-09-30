@@ -2,7 +2,7 @@
     "rm": {
         "settings": {
             "enableChatArchive.name": "Enable: Chat Archive",
-            "enableChatArchive.hint": "Enable the Chat Archive submodule (injects an archive button into the chat log to POST old messages to the archive server). Requires a reload."
+            "enableChatArchive.hint": "Enable the Chat Archive submodule (automatically POSTs old messages to the archive server, and gives the GM a chat button that archives every message). Requires a reload."
         }
     }
 }
