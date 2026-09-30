@@ -72,7 +72,7 @@ another for the damage. Roll Model **folds all of that into the item's own card*
 | **Damage / Healing** | The total, with *"Critical Hit!"* when it is one. Adds a *"(Versatile)"* suffix when rolled versatile. |
 | **Damage-type pills** | Only when a damage part could be more than one type (e.g. *Shillelagh*: bludgeoning or force). Click to choose. Roll Model **remembers your choice for that item** and uses it for your future rolls of that item. |
 | **GWM / CR checkboxes** | Great Weapon Master and Celestial Revelation toggles, when they apply (see [automation](#9-character-and-feat-automation)). |
-| **Formula** | The item's "other formula" roll, if it has one. |
+| **Formula** | The item's "other formula" roll, if it has one. Labelled with the roll's name, or **Check** (a d20 roll) / **Roll** when it has none. |
 | **Results** | One row per target that rolled the save (see [Saving throws](#5-saving-throws)). |
 | **Apply Effect / Apply Damage trays** | dnd5e's trays. The damage tray is added here even though dnd5e 6.0 normally only puts it on its own separate damage card. The buttons are relabelled *"Apply Effect"*, *"Apply Damage"* or *"Apply Healing"*. |
 
@@ -116,14 +116,15 @@ the wrong way round. When it can't match a bonus at all, it labels it just *"Bon
 
 ## 4. Changing a roll afterwards
 
-For when someone forgot advantage, or the DM rules it was a crit after all. The buttons sit to the
-right of the roll box.
+For when someone forgot advantage, or the DM rules it was a crit after all. The buttons sit left of
+the roll box (under the row label on attack and damage rows), except on save result rows, where
+they end the row.
 
 | Where | Buttons | What they do |
 |---|---|---|
 | Attack row | **⌄⌄** disadvantage, **⌃⌃** advantage | Rolls the extra d20 and re-evaluates. Clicking the lit button again returns to the original single roll. Switching directly between advantage and disadvantage works too. |
 | Damage row | **CRIT**, **MAX** | CRIT turns the damage into critical damage. **The dice you already rolled are kept** and only the extra crit dice are new. MAX sets every damage die to its maximum. The two can be combined. Turning one off restores the original roll, and turning CRIT on again re-uses the same crit dice rather than rolling new ones. |
-| Save result rows, check/save/initiative cards | **⌄⌄**, **⌃⌃** | Same as the attack row. |
+| Save result rows, check/save/initiative cards, d20 formula rows (e.g. an item's "1d20 + 9" skill check) | **⌄⌄**, **⌃⌃** | Same as the attack row. |
 
 Switching a button **on** asks for confirmation first. Switching it **off** doesn't.
 
@@ -176,7 +177,7 @@ normal compact card**. Roll Model adds to it:
 
 - a dimmed badge for the discarded d20 when rolled with advantage or disadvantage;
 - the itemised **breakdown** when you click the roll;
-- for owners, **⌄⌄ / ⌃⌃** buttons on the card, right of the roll box. The card's
+- for owners, **⌄⌄ / ⌃⌃** buttons on the card, left of the roll box. The card's
   *"(Advantage)"* text updates to match. On an initiative card, the tracker moves too, along with
   the rest of the creature's group. If the save came from an item's Save button, that item card's
   Results row updates too.

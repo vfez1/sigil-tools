@@ -1063,11 +1063,10 @@ function _wireRollPopovers(root) {
 }
 
 /**
- * Build the always-visible retro-action button group that sits to the right of a roll row's box:
- * adv/dis rerolls for the attack row, CRIT/MAX for the damage row. Replaces the old hover overlay
- * that was layered on top of the roll box itself.
+ * Build the always-visible retro-action button group that sits under a roll row's label: adv/dis
+ * rerolls for the attack row and d20 formula rows, CRIT/MAX for the damage row.
  * @param {ChatMessage} message
- * @param {"attack"|"damage"} kind
+ * @param {"attack"|"damage"|"formula"} kind
  * @returns {JQuery|null}  Null when the current user may not modify this message's rolls.
  */
 function _buildRollActions(message, kind) {
@@ -1080,7 +1079,14 @@ function _buildRollActions(message, kind) {
         $(`<button type="button" class="rm-retro${active ? " active" : ""}" data-action="rm-retro" aria-pressed="${!!active}" ${attrs}>${inner}</button>`);
     const flags = message.flags[MODULE_SHORT] ?? {};
 
-    if (kind === ROLL_TYPE.ATTACK) {
+    if (kind === ROLL_TYPE.FORMULA) {
+        // A formula roll is a plain BasicRoll with no advantage getters, so its state is a flag.
+        const state = flags.formulaRollState;
+        group.append(
+            btn(`data-roll="${ROLL_TYPE.FORMULA}" data-state="${ROLL_STATE.DIS}" title="${CoreUtility.localize("rm.chat.buttons.rollDisadvantage")}"`, '<i class="fa-solid fa-chevrons-down" inert></i>', state === ROLL_STATE.DIS),
+            btn(`data-roll="${ROLL_TYPE.FORMULA}" data-state="${ROLL_STATE.ADV}" title="${CoreUtility.localize("rm.chat.buttons.rollAdvantage")}"`, '<i class="fa-solid fa-chevrons-up" inert></i>', state === ROLL_STATE.ADV),
+        );
+    } else if (kind === ROLL_TYPE.ATTACK) {
         const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.D20Roll);
         group.append(
             btn(`data-state="${ROLL_STATE.DIS}" title="${CoreUtility.localize("rm.chat.buttons.rollDisadvantage")}"`, '<i class="fa-solid fa-chevrons-down" inert></i>', roll?.hasDisadvantage),
@@ -1229,8 +1235,21 @@ async function _injectSaveRow(message, html) {
     }
 }
 
+/**
+ * The activity's "other formula" roll: the plain BasicRoll, not the attack (D20Roll) or damage
+ * (DamageRoll) rolls, which are BasicRoll subclasses sharing the same message.
+ * @param {ChatMessage} message
+ * @returns {Roll|undefined}
+ */
+function _getFormulaRoll(message) {
+    return (
+        message.rolls.find((r) => r instanceof CONFIG.Dice.BasicRoll && !(r instanceof CONFIG.Dice.D20Roll) && !(r instanceof CONFIG.Dice.DamageRoll)) ??
+        message.rolls.find((r) => r instanceof CONFIG.Dice.BasicRoll)
+    );
+}
+
 async function _injectFormulaRoll(message, html) {
-    const roll = message.rolls.find((r) => r instanceof CONFIG.Dice.BasicRoll);
+    const roll = _getFormulaRoll(message);
 
     if (!roll) return;
 
@@ -1244,15 +1263,21 @@ async function _injectFormulaRoll(message, html) {
 
     _prependBreakdownFormula(rollHTML, roll.formula);
 
+    // An unnamed roll gets a label short enough for the 50px label column (dnd5e's own fallback,
+    // "Other Formula", is cut to "OTHER F…"): "Check" when it rolls a d20, as an item's "1d20 + 9"
+    // skill check does, otherwise "Roll".
+    const isD20 = roll.dice.some((d) => d.faces === 20);
     const sectionHTML = $(
         await RenderUtility.render(TEMPLATE.SECTION, {
             section: `rm-section-${ROLL_TYPE.FORMULA}`,
-            title: message.flags[MODULE_SHORT].formulaName ?? CoreUtility.localize("DND5E.OtherFormula"),
+            title: message.flags[MODULE_SHORT].formulaName || (isD20 ? "Check" : "Roll"),
             icon: '<i class="fa-fw fa-solid fa-dice" aria-label="Formula"></i>',
         }),
     );
 
     sectionHTML.append(rollHTML);
+    // A d20 formula (e.g. an item's skill check) gets the attack row's adv/dis rerolls.
+    if (isD20) sectionHTML.append(_buildRollActions(message, ROLL_TYPE.FORMULA));
     sectionHTML.insertBefore(html);
 }
 
@@ -1379,7 +1404,7 @@ async function _injectDamageRoll(message, html) {
 /**
  * Standalone check/save card (dnd5e 6.0): rebuild the compact roll button's breakdown popover in
  * the roll-model style and badge the discarded d20(s) on the button, exactly like the activity
- * card's attack row. Owners also get adv/dis reroll toggles on the card, right of the roll box.
+ * card's attack row. Owners also get adv/dis reroll toggles on the card, left of the roll box.
  * @param {ChatMessage} message
  * @param {JQuery} html     The ".message-content" element.
  * @param {D20Roll} roll    The card's roll.
@@ -1400,7 +1425,7 @@ function _enhanceStandaloneRoll(message, html, roll, type) {
     }
     popover[0].replaceChildren(_buildAttackBreakdown(roll)[0]);
 
-    // Adv/dis toggles on the card itself, right of the roll box (same buttons as the save rows).
+    // Adv/dis toggles on the card itself, left of the roll box like the attack row's (same buttons as the save rows).
     if (message.isOwner && !button.siblings(".rm-standalone-actions").length) {
         const actions = $('<div class="rm-roll-actions rm-standalone-actions"></div>').append(
             _retroSaveButton(ROLL_STATE.DIS, "fa-chevrons-down", "rm.chat.buttons.rollDisadvantage", roll.hasDisadvantage),
@@ -1411,7 +1436,7 @@ function _enhanceStandaloneRoll(message, html, roll, type) {
             event.stopPropagation();
             await _processRetroStandaloneRollEvent(message, roll, event.currentTarget.dataset.state);
         });
-        popover.after(actions);
+        button.before(actions);
     }
 
     // Advantage/disadvantage: dnd5e only badges the kept d20 — add a dimmed badge per discarded die.
@@ -1696,6 +1721,10 @@ async function _processRetroAdvButtonEvent(message, event) {
     // and standalone check cards share the ".rm-roll-actions [data-state]" selector but have their
     // own handlers.
     if (button.dataset.action !== "rm-retro") return;
+    if (button.dataset.roll === ROLL_TYPE.FORMULA) {
+        await _processRetroFormulaAdvEvent(message, event, state);
+        return;
+    }
 
     // The buttons are toggles. Clicking the already-active state reverts to the original normal
     // roll (snapshotted on first upgrade); clicking the other state switches.
@@ -1729,6 +1758,45 @@ async function _processRetroAdvButtonEvent(message, event) {
     message.flags[MODULE_SHORT].advantage = state === ROLL_STATE.ADV;
     message.flags[MODULE_SHORT].disadvantage = state === ROLL_STATE.DIS;
     await RollUtility.upgradeRoll(attackRoll, state);
+
+    ChatUtility.updateChatMessage(message, { flags: message.flags, rolls: message.rolls });
+    CoreUtility.playRollSound();
+}
+
+/**
+ * Adv/dis toggle on a d20 formula row. Same toggle behaviour as the attack row: clicking the lit
+ * state restores the original single roll (snapshotted on first upgrade), the other state switches.
+ * @param {ChatMessage} message
+ * @param {Event} event
+ * @param {string} state  ROLL_STATE.ADV or ROLL_STATE.DIS.
+ * @private
+ */
+async function _processRetroFormulaAdvEvent(message, event, state) {
+    const flags = message.flags[MODULE_SHORT];
+    const roll = _getFormulaRoll(message);
+    if (!roll) return;
+    const index = message.rolls.indexOf(roll);
+
+    if (flags.formulaRollState === state) {
+        if (flags.baseFormulaRollJSON) message.rolls[index] = Roll.fromData(foundry.utils.deepClone(flags.baseFormulaRollJSON));
+        else RollUtility.downgradeRoll(roll);
+        flags.formulaRollState = null;
+        ChatUtility.updateChatMessage(message, { flags: message.flags, rolls: message.rolls });
+        CoreUtility.playRollSound();
+        return;
+    }
+
+    const target = state === ROLL_STATE.ADV ? CoreUtility.localize("DND5E.Advantage") : CoreUtility.localize("DND5E.Disadvantage");
+    const confirmed = await DialogUtility.getConfirmDialog(
+        CoreUtility.localize(`${MODULE_SHORT}.chat.prompts.retroAdv`, { target }),
+        { width: 100, top: event.clientY - 50, left: window.innerWidth - 510 },
+    );
+    if (!confirmed) return;
+
+    flags.baseFormulaRollJSON ??= foundry.utils.deepClone(roll.toJSON());
+    flags.formulaRollState = state;
+    await RollUtility.upgradeRoll(roll, state);
+    LogUtility.log(`[RM DEBUG] _processRetroFormulaAdvEvent messageId=${message.id} state=${state} formula=${roll.formula} total=${roll.total}`);
 
     ChatUtility.updateChatMessage(message, { flags: message.flags, rolls: message.rolls });
     CoreUtility.playRollSound();

@@ -113,8 +113,9 @@
     line-height: 1.5;
 }
 
-/* Adv/dis toggles on a standalone check/save/initiative card, right of the roll box in dnd5e's
-   icon-row. .rm-roll-actions is otherwise placed in the activity rows' grid, so undo that here. */
+/* Adv/dis toggles on a standalone check/save/initiative card, left of the roll box in dnd5e's
+   icon-row, matching the attack row's. .rm-roll-actions is otherwise placed in the activity rows'
+   grid, so undo that here. */
 .icon-row > .rm-standalone-actions {
     grid-column: auto;
     grid-row: auto;
