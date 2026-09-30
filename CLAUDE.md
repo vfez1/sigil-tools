@@ -92,7 +92,7 @@ Makes regions and dnd5e spell templates measure with the scene grid's metric rat
 - Region *appearance* defaults (Visibility, Highlight Mode) are not handled here; core's own Region Palette stores those per user.
 
 ### item-drag-move (`submodules/item-drag-move/`)
-Makes dragging an item from one actor's sheet onto another's a move rather than a copy. Entry point: `item-drag-move.js` (imported from `roll-model/utils/hooks.js`). Always on: no enable toggle, no settings.
+Makes dragging an item from one actor's sheet onto another's a move rather than a copy. Entry point: `item-drag-move.js` (imported from `roll-model/utils/hooks.js`). No enable toggle or settings; the `ENABLED` constant at the top of the file switches it, and it is currently `false` (off).
 
 - One libWrapper WRAPPER at `setup` on `dnd5e.applications.actor.BaseActorSheet.prototype._defaultDropBehavior`, the default dnd5e falls back to when neither its Drag Move key (Shift) nor its Drag Copy key (Ctrl/Alt) is held. The character, NPC and group sheets all extend `BaseActorSheet`.
 - Returns `"move"` only when dnd5e's default is `"copy"` and the dragged Item is embedded in a different actor the user owns. Compendium entries (`fromUuidSync` gives an index entry, not an Item) and sidebar items (no parent actor) keep copying, and a non-owned source keeps copying because dnd5e's move deletes the original from the dropping user's client.
