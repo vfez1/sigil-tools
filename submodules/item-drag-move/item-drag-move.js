@@ -2,9 +2,9 @@ import { MODULE_NAME } from "../shared/const.js";
 
 const TARGET_DEFAULT_DROP = "dnd5e.applications.actor.BaseActorSheet.prototype._defaultDropBehavior";
 
-// Switched off for now: dnd5e's own drag behavior applies (copy between sheets unless Shift is
-// held). There's no setting for it; set this to true to switch it back on.
-const ENABLED = false;
+// On. There's no setting for it; set this to false to switch it off, which leaves dnd5e's own
+// drag behavior (copy between sheets unless Shift is held).
+const ENABLED = true;
 
 // Wrapped at `setup`, like grid-regions, so any module that replaces dnd5e's sheet classes
 // during `init` has already done so.
