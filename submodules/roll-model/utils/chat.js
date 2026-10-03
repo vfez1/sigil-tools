@@ -374,6 +374,10 @@ function _setupCardListeners(message, html) {
         await _processCelestialToggleEvent(message, event);
     });
 
+    html.find(".rm-hand-of-harm input").change(async (event) => {
+        await _processHandOfHarmToggleEvent(message, event);
+    });
+
     // Mark the save button passed/failed/already-rolled for the controlled token(s).
     if (message.type === "usage" && message.system?.outcomes?.size) {
         _updateSaveButtonState(html[0] ?? html, message);
@@ -1371,8 +1375,9 @@ async function _injectDamageRoll(message, html) {
 
     const flags = (message.flags ?? message.data?.flags)?.[MODULE_SHORT] ?? {};
     const showCelestialRevelation = flags.celestialRevelationEligible && flags.renderAttack;
+    const showHandOfHarm = flags.handOfHarmEligible && flags.renderAttack;
 
-    if (flags.gwmEligible || showCelestialRevelation) {
+    if (flags.gwmEligible || showCelestialRevelation || showHandOfHarm) {
         const row = $('<div class="rm-gwm-row"></div>');
         const disabled = canModify ? "" : " disabled";
 
@@ -1384,6 +1389,13 @@ async function _injectDamageRoll(message, html) {
         if (showCelestialRevelation) {
             const active = flags.celestialRevelationActive;
             row.append($(`<label class="rm-celestial-revelation${readonlyClass}"><input type="checkbox" ${active ? "checked" : ""}${disabled}>CR</label>`));
+        }
+
+        if (showHandOfHarm) {
+            const active = flags.handOfHarmActive;
+            row.append(
+                $(`<label class="rm-hand-of-harm${readonlyClass}" title="Hand of Harm"><input type="checkbox" ${active ? "checked" : ""}${disabled}>HoH</label>`),
+            );
         }
 
         extraRows.push(row);
@@ -1705,6 +1717,118 @@ async function _processCelestialToggleEvent(message, event) {
 }
 
 /**
+ * HoH toggle (Hand of Harm on an Unarmed Strike). Ticking it asks what pays for it — a Flurry of
+ * Healing and Harm use or a Focus Point — spends that use and adds the feat's necrotic damage to
+ * the card. Unticking removes the damage and gives the use back.
+ * @param {ChatMessage} message
+ * @param {Event} event
+ * @private
+ */
+async function _processHandOfHarmToggleEvent(message, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const input = event.currentTarget;
+    const flags = message.flags[MODULE_SHORT];
+    const actor = ChatUtility.getActorFromMessage(message);
+    if (!actor) {
+        input.checked = !input.checked;
+        return;
+    }
+
+    if (input.checked) {
+        const damage = RollUtility.getHandOfHarmDamage(actor);
+        const resources = RollUtility.getHandOfHarmResources(actor).filter((r) => r.value > 0);
+        if (!damage || !resources.length) {
+            if (damage) ui.notifications.warn(`${actor.name} has no Focus Points or Flurry of Healing and Harm uses left.`);
+            input.checked = false;
+            return;
+        }
+
+        const choice = await DialogUtility.getChoiceDialog(
+            "Hand of Harm",
+            `<p>Add ${damage.formula} ${damage.type} damage. What does it use?</p>`,
+            resources.map((r) => ({ action: r.item.id, label: `${r.name} (${r.value}/${r.max} left)` })),
+        );
+        const resource = resources.find((r) => r.item.id === choice);
+        if (!resource) {
+            input.checked = false;
+            return;
+        }
+        await resource.item.update({ "system.uses.spent": (resource.item.system.uses.spent ?? 0) + 1 });
+
+        // Roll the normal and the critical damage once, with the crit keeping the normal roll's
+        // dice, so toggling CRIT afterwards swaps between them without re-rolling (a crit doubles
+        // Hand of Harm's die, as it comes with the strike).
+        const options = { type: damage.type, handOfHarm: true };
+        const base = new CONFIG.Dice.DamageRoll(damage.formula, {}, options);
+        const crit = new CONFIG.Dice.DamageRoll(damage.formula, {}, { ...options, isCritical: true });
+        await base.evaluate();
+        await crit.evaluate();
+        for (const [j, term] of base.terms.entries()) {
+            if (!(term instanceof foundry.dice.terms.Die) || !(crit.terms[j] instanceof foundry.dice.terms.Die)) continue;
+            crit.terms[j].results.splice(0, term.results.length, ...term.results);
+        }
+        RollUtility.resetRollGetters(crit);
+        const parts = damage.formula.split(/\s*\+\s*/);
+        for (const roll of [base, crit]) {
+            roll.options.bonusParts = parts;
+            roll.options.bonusResolved = parts.map((p) => (Number.isNaN(Number(p)) ? null : Number(p)));
+            roll.options.bonusLabels = parts.map(() => "Hand of Harm");
+            roll.options.bonusSourceLabels = parts.map(() => "Hand of Harm");
+        }
+
+        flags.handOfHarm = {
+            itemId: resource.item.id,
+            baseJSON: foundry.utils.deepClone(base.toJSON()),
+            critJSON: foundry.utils.deepClone(crit.toJSON()),
+        };
+        message.rolls.push(_handOfHarmRoll(flags));
+        LogUtility.log(`[RM DEBUG] Hand of Harm: ${actor.name} spent ${resource.name}, ${damage.formula} ${damage.type} = ${base.total} (crit ${crit.total})`);
+    } else {
+        const paid = actor.items.get(flags.handOfHarm?.itemId);
+        if (paid) await paid.update({ "system.uses.spent": Math.max(0, (paid.system.uses.spent ?? 0) - 1) });
+        message.rolls = message.rolls.filter((r) => !r.options?.handOfHarm);
+        flags.handOfHarm = null;
+        LogUtility.log(`[RM DEBUG] Hand of Harm removed: ${actor.name} got back a use of ${paid?.name}`);
+    }
+
+    flags.handOfHarmActive = input.checked;
+    ChatUtility.updateChatMessage(message, { flags: message.flags, rolls: message.rolls });
+}
+
+/**
+ * The card's Hand of Harm damage for the current CRIT / MAX state.
+ * @param {object} flags The message's roll-model flags.
+ * @returns {DamageRoll}
+ * @private
+ */
+function _handOfHarmRoll(flags) {
+    const json = flags.isCritical ? flags.handOfHarm.critJSON : flags.handOfHarm.baseJSON;
+    const roll = CONFIG.Dice.DamageRoll.fromData(foundry.utils.deepClone(json));
+    if (flags.isMaximized) {
+        for (const term of roll.terms) {
+            if (!(term instanceof foundry.dice.terms.Die)) continue;
+            for (const result of term.results) result.result = term.faces;
+        }
+        RollUtility.resetRollGetters(roll);
+    }
+    return roll;
+}
+
+/**
+ * Damage rolls added to the card by a toggle (CR, HoH) rather than rolled by the activity. They
+ * stay out of the base-roll snapshot and the activity's crit rolls, which only know the activity's
+ * own damage parts.
+ * @param {Roll|object} roll A roll or its JSON.
+ * @returns {boolean}
+ * @private
+ */
+function _isToggleRoll(roll) {
+    return !!(roll?.options?.celestialRevelation || roll?.options?.handOfHarm);
+}
+
+/**
  * Processes and handles a retroactive advantage/disadvantage button click event.
  * @param {ChatMessage} message The chat message for which an event is being processed.
  * @param {Event} event The originating event of the button click.
@@ -1838,14 +1962,19 @@ async function _applyDamageModifiers(message) {
             flags.critRollsJSON = crits.map((r) => foundry.utils.deepClone(r.toJSON()));
         }
 
-        // Extra flat rolls appended by roll-model (e.g. Celestial Revelation) have no crit
-        // counterpart and are left as they are.
+        // Rolls added by a toggle have no counterpart in the activity's crit rolls: Celestial
+        // Revelation is flat and stays as it is, Hand of Harm is swapped below.
         let idx = 0;
         for (let i = 0; i < message.rolls.length; i++) {
-            if (!(message.rolls[i] instanceof CONFIG.Dice.DamageRoll)) continue;
+            if (!(message.rolls[i] instanceof CONFIG.Dice.DamageRoll) || _isToggleRoll(message.rolls[i])) continue;
             if (crits[idx]) message.rolls[i] = crits[idx];
             idx++;
         }
+    }
+
+    if (flags.handOfHarm) {
+        const i = message.rolls.findIndex((r) => r.options?.handOfHarm);
+        if (i !== -1) message.rolls[i] = _handOfHarmRoll(flags);
     }
 
     if (flags.isMaximized) {
@@ -1915,17 +2044,17 @@ async function _processRetroMaxButtonEvent(message, event) {
 
 function _snapshotBaseRolls(message) {
     if (message.flags[MODULE_SHORT].baseRollsJSON) return;
-    const damageRolls = message.rolls.filter(r => r instanceof CONFIG.Dice.DamageRoll);
+    const damageRolls = message.rolls.filter(r => r instanceof CONFIG.Dice.DamageRoll && !_isToggleRoll(r));
     message.flags[MODULE_SHORT].baseRollsJSON = damageRolls.map(r => foundry.utils.deepClone(r.toJSON()));
 }
 
 function _restoreBaseRolls(message) {
-    const snapshots = message.flags[MODULE_SHORT].baseRollsJSON;
+    const snapshots = message.flags[MODULE_SHORT].baseRollsJSON?.filter(j => !_isToggleRoll(j));
     if (!snapshots) return;
     const restored = snapshots.map(j => CONFIG.Dice.DamageRoll.fromData(foundry.utils.deepClone(j)));
     let idx = 0;
     for (let i = 0; i < message.rolls.length; i++) {
-        if (message.rolls[i] instanceof CONFIG.Dice.DamageRoll) {
+        if (message.rolls[i] instanceof CONFIG.Dice.DamageRoll && !_isToggleRoll(message.rolls[i])) {
             message.rolls[i] = restored[idx++];
         }
     }

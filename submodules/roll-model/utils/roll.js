@@ -2,6 +2,14 @@ import { MODULE_SHORT } from "../../shared/const.js";
 import { CoreUtility } from "./core.js";
 import { LogUtility } from "./log.js";
 
+/** Hand of Harm: the feat it looks for, what can pay for it, and its damage if the feat has none. */
+const HAND_OF_HARM = {
+    feat: "Hand of Harm",
+    resources: ["Flurry of Healing and Harm", "Monk's Focus"],
+    formula: "@scale.monk.die + @abilities.wis.mod",
+    type: "necrotic",
+};
+
 /**
  * Enumerable of identifiers for different roll types that can be made.
  * @enum {String}
@@ -354,6 +362,49 @@ export class RollUtility {
         }
 
         return null;
+    }
+
+    /**
+     * Hand of Harm (Warrior of Mercy monk): an Unarmed Strike by an actor with the feat can add the
+     * feat's necrotic damage, paid with a Focus Point or (Flurry of Healing and Harm) a free use.
+     * @param {Activity} activity The attack activity being used.
+     * @returns {boolean}
+     */
+    static isHandOfHarmEligible(activity) {
+        if (activity?.attack?.type?.classification !== "unarmed") return false;
+        return !!RollUtility.getHandOfHarmFeat(activity.actor);
+    }
+
+    static getHandOfHarmFeat(actor) {
+        return actor?.items?.find((i) => i.type === "feat" && i.name === HAND_OF_HARM.feat) ?? null;
+    }
+
+    /**
+     * The items Hand of Harm can be paid with, each with its uses left.
+     * @param {Actor5e} actor
+     * @returns {{item: Item5e, name: string, value: number, max: number}[]}
+     */
+    static getHandOfHarmResources(actor) {
+        return HAND_OF_HARM.resources
+            .map((name) => actor?.items?.find((i) => i.name === name))
+            .filter((item) => item?.system?.uses?.max)
+            .map((item) => ({ item, name: item.name, value: item.system.uses.value ?? 0, max: item.system.uses.max }));
+    }
+
+    /**
+     * The damage formula and type of the Hand of Harm feat's damage activity (on the sheet:
+     * "@scale.monk.die + @abilities.wis.mod" necrotic), resolved against the feat's roll data.
+     * @param {Actor5e} actor
+     * @returns {{formula: string, type: string}|null}
+     */
+    static getHandOfHarmDamage(actor) {
+        const feat = RollUtility.getHandOfHarmFeat(actor);
+        if (!feat) return null;
+        const activity = feat.system.activities?.find((a) => a.type === "damage");
+        const part = activity?.damage?.parts?.[0];
+        const formula = part?.formula || HAND_OF_HARM.formula;
+        const type = part?.types?.first?.() ?? HAND_OF_HARM.type;
+        return { formula: Roll.replaceFormulaData(formula, feat.getRollData()), type };
     }
 
     static applyGWMDamageBonus(outerConfig, rollConfig, index) {

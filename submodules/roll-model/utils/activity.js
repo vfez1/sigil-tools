@@ -53,6 +53,9 @@ export class ActivityUtility {
                 rmFlags.celestialRevelationEligible = false;
                 rmFlags.celestialRevelationActive = false;
             }
+
+            rmFlags.handOfHarmEligible = RollUtility.isHandOfHarmEligible(activity);
+            rmFlags.handOfHarmActive = false;
         }
 
         if (hasDamage && activity[ROLL_TYPE.DAMAGE]?.parts?.length > 0) {

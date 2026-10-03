@@ -5,7 +5,7 @@ Internal Foundry VTT module for the Sigil campaign. Requires the **dnd5e** syste
 ## Submodules
 
 ### Roll Model
-Overhauls D&D 5e rolls with quality-of-life improvements: quick rolls, multi-roll display, damage buttons, GWM/Celestial Revelation support, an always-visible HP widget, and wildshape effect automation.
+Overhauls D&D 5e rolls with quality-of-life improvements: quick rolls, multi-roll display, damage buttons, GWM/Celestial Revelation/Hand of Harm support, an always-visible HP widget, and wildshape effect automation.
 Full documentation: [submodules/roll-model/README.md](submodules/roll-model/README.md).
 
 ### Always HP

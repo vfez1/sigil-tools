@@ -601,7 +601,7 @@ h4.dice-total.ignored > .total {
 }
 
 
-/* Pill family (damage-type selector, GWM/Celestial Revelation toggles) restyled to match
+/* Pill family (damage-type selector, GWM/Celestial Revelation/Hand of Harm toggles) restyled to match
    dnd5e 6.0's native ".pill" (chat.less/elements.less): dotted border, square-ish 3px radius,
    transparent background, Roboto Condensed — rather than roll-model's old fully-rounded
    solid-border/filled-background pill, which no longer matched the pills sitting right above
@@ -618,7 +618,8 @@ h4.dice-total.ignored > .total {
 
 .rm-type-pill,
 .rm-gwm-toggle,
-.rm-celestial-revelation {
+.rm-celestial-revelation,
+.rm-hand-of-harm {
     display: inline-flex;
     align-items: center;
     font-family: var(--dnd5e-font-roboto-condensed);
@@ -639,7 +640,8 @@ h4.dice-total.ignored > .total {
 
 .rm-type-pill:hover,
 .rm-gwm-toggle:hover,
-.rm-celestial-revelation:hover {
+.rm-celestial-revelation:hover,
+.rm-hand-of-harm:hover {
     border-style: solid;
     border-color: var(--dnd5e-color-gold);
     color: var(--color-text-primary);
@@ -671,7 +673,8 @@ h4.dice-total.ignored > .total {
 
 /* Checked state: same treatment for both — dark fill (the card's text colour), light text. */
 .rm-gwm-toggle:has(input:checked),
-.rm-celestial-revelation:has(input:checked) {
+.rm-celestial-revelation:has(input:checked),
+.rm-hand-of-harm:has(input:checked) {
     border-style: solid;
     border-color: #3f5f8a;
     background: #3f5f8a;
@@ -679,14 +682,16 @@ h4.dice-total.ignored > .total {
 }
 
 .rm-gwm-toggle input,
-.rm-celestial-revelation input {
+.rm-celestial-revelation input,
+.rm-hand-of-harm input {
     display: none;
 }
 
 /* Read-only variant for users without permission to modify the message: visible, not clickable. */
 .rm-type-pill.rm-readonly,
 .rm-gwm-toggle.rm-readonly,
-.rm-celestial-revelation.rm-readonly {
+.rm-celestial-revelation.rm-readonly,
+.rm-hand-of-harm.rm-readonly {
     cursor: default;
     opacity: 0.7;
 }
@@ -694,15 +699,31 @@ h4.dice-total.ignored > .total {
 /* No hover feedback when read-only: unchecked stays dotted/muted, checked/active keeps its look. */
 .rm-type-pill.rm-readonly:not(.active):hover,
 .rm-gwm-toggle.rm-readonly:not(:has(input:checked)):hover,
-.rm-celestial-revelation.rm-readonly:not(:has(input:checked)):hover {
+.rm-celestial-revelation.rm-readonly:not(:has(input:checked)):hover,
+.rm-hand-of-harm.rm-readonly:not(:has(input:checked)):hover {
     border-style: dotted;
     border-color: var(--color-text-secondary);
     color: var(--color-text-secondary);
 }
 
 .rm-gwm-toggle.rm-readonly:has(input:checked):hover,
-.rm-celestial-revelation.rm-readonly:has(input:checked):hover {
+.rm-celestial-revelation.rm-readonly:has(input:checked):hover,
+.rm-hand-of-harm.rm-readonly:has(input:checked):hover {
     border-color: #3f5f8a;
+    color: #efe6d8;
+}
+
+/* HoH is purple, the colour of the Hand of Harm feature's icon, rather than the blue of GWM/CR. */
+.rm-hand-of-harm,
+.rm-hand-of-harm:hover {
+    border-color: #7a4bb0;
+    color: #7a4bb0;
+}
+
+.rm-hand-of-harm:has(input:checked),
+.rm-hand-of-harm.rm-readonly:has(input:checked):hover {
+    border-color: #6a3d9a;
+    background: #6a3d9a;
     color: #efe6d8;
 }
 

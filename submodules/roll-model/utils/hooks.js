@@ -330,6 +330,11 @@ export class HooksUtility {
                     messageConfig.data.flags[MODULE_SHORT].celestialRevelationActive = false;
                 }
 
+                if (hasAttackActivity && RollUtility.isHandOfHarmEligible(activity)) {
+                    messageConfig.data.flags[MODULE_SHORT].handOfHarmEligible = true;
+                    messageConfig.data.flags[MODULE_SHORT].handOfHarmActive = false;
+                }
+
                 LogUtility.log(`[RM DEBUG] ${HOOKS_DND5E.PRE_USE_ACTIVITY} handler DONE. flags=${JSON.stringify(messageConfig.data.flags[MODULE_SHORT])}`);
             } catch (e) {
                 LogUtility.logError(`[RM DEBUG] EXCEPTION in ${HOOKS_DND5E.PRE_USE_ACTIVITY} handler: ${e?.message}`, { ui: false });
