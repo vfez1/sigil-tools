@@ -619,7 +619,8 @@ h4.dice-total.ignored > .total {
 .rm-type-pill,
 .rm-gwm-toggle,
 .rm-celestial-revelation,
-.rm-hand-of-harm {
+.rm-hand-of-harm,
+.rm-blood-fury {
     display: inline-flex;
     align-items: center;
     font-family: var(--dnd5e-font-roboto-condensed);
@@ -641,7 +642,8 @@ h4.dice-total.ignored > .total {
 .rm-type-pill:hover,
 .rm-gwm-toggle:hover,
 .rm-celestial-revelation:hover,
-.rm-hand-of-harm:hover {
+.rm-hand-of-harm:hover,
+.rm-blood-fury:hover {
     border-style: solid;
     border-color: var(--dnd5e-color-gold);
     color: var(--color-text-primary);
@@ -674,7 +676,8 @@ h4.dice-total.ignored > .total {
 /* Checked state: same treatment for both — dark fill (the card's text colour), light text. */
 .rm-gwm-toggle:has(input:checked),
 .rm-celestial-revelation:has(input:checked),
-.rm-hand-of-harm:has(input:checked) {
+.rm-hand-of-harm:has(input:checked),
+.rm-blood-fury:has(input:checked) {
     border-style: solid;
     border-color: #3f5f8a;
     background: #3f5f8a;
@@ -683,7 +686,8 @@ h4.dice-total.ignored > .total {
 
 .rm-gwm-toggle input,
 .rm-celestial-revelation input,
-.rm-hand-of-harm input {
+.rm-hand-of-harm input,
+.rm-blood-fury input {
     display: none;
 }
 
@@ -691,7 +695,8 @@ h4.dice-total.ignored > .total {
 .rm-type-pill.rm-readonly,
 .rm-gwm-toggle.rm-readonly,
 .rm-celestial-revelation.rm-readonly,
-.rm-hand-of-harm.rm-readonly {
+.rm-hand-of-harm.rm-readonly,
+.rm-blood-fury.rm-readonly {
     cursor: default;
     opacity: 0.7;
 }
@@ -700,7 +705,8 @@ h4.dice-total.ignored > .total {
 .rm-type-pill.rm-readonly:not(.active):hover,
 .rm-gwm-toggle.rm-readonly:not(:has(input:checked)):hover,
 .rm-celestial-revelation.rm-readonly:not(:has(input:checked)):hover,
-.rm-hand-of-harm.rm-readonly:not(:has(input:checked)):hover {
+.rm-hand-of-harm.rm-readonly:not(:has(input:checked)):hover,
+.rm-blood-fury.rm-readonly:not(:has(input:checked)):hover {
     border-style: dotted;
     border-color: var(--color-text-secondary);
     color: var(--color-text-secondary);
@@ -708,17 +714,19 @@ h4.dice-total.ignored > .total {
 
 .rm-gwm-toggle.rm-readonly:has(input:checked):hover,
 .rm-celestial-revelation.rm-readonly:has(input:checked):hover,
-.rm-hand-of-harm.rm-readonly:has(input:checked):hover {
+.rm-hand-of-harm.rm-readonly:has(input:checked):hover,
+.rm-blood-fury.rm-readonly:has(input:checked):hover {
     border-color: #3f5f8a;
     color: #efe6d8;
 }
 
 /* The feature toggles are bold and carry their colour even unticked: GWM and CR in the blue
    they fill with when ticked, Hand of Harm in the violet of its feature's icon
-   (injury-hand-blood-red). */
+   (injury-hand-blood-red), Blood Fury in blood red. */
 .rm-gwm-toggle,
 .rm-celestial-revelation,
-.rm-hand-of-harm {
+.rm-hand-of-harm,
+.rm-blood-fury {
     font-weight: bold;
 }
 
@@ -740,6 +748,19 @@ h4.dice-total.ignored > .total {
 .rm-hand-of-harm.rm-readonly:has(input:checked):hover {
     border-color: #5a2a86;
     background: #5a2a86;
+    color: #efe6d8;
+}
+
+.rm-blood-fury,
+.rm-blood-fury:hover {
+    border-color: #b02a2a;
+    color: #b02a2a;
+}
+
+.rm-blood-fury:has(input:checked),
+.rm-blood-fury.rm-readonly:has(input:checked):hover {
+    border-color: #8a1c1c;
+    background: #8a1c1c;
     color: #efe6d8;
 }
 

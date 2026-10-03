@@ -378,6 +378,10 @@ function _setupCardListeners(message, html) {
         await _processHandOfHarmToggleEvent(message, event);
     });
 
+    html.find(".rm-blood-fury input").change(async (event) => {
+        await _processBloodFuryToggleEvent(message, event);
+    });
+
     // Mark the save button passed/failed/already-rolled for the controlled token(s).
     if (message.type === "usage" && message.system?.outcomes?.size) {
         _updateSaveButtonState(html[0] ?? html, message);
@@ -1376,8 +1380,9 @@ async function _injectDamageRoll(message, html) {
     const flags = (message.flags ?? message.data?.flags)?.[MODULE_SHORT] ?? {};
     const showCelestialRevelation = flags.celestialRevelationEligible && flags.renderAttack;
     const showHandOfHarm = flags.handOfHarmEligible && flags.renderAttack;
+    const showBloodFury = flags.bloodFuryEligible && flags.renderAttack;
 
-    if (flags.gwmEligible || showCelestialRevelation || showHandOfHarm) {
+    if (flags.gwmEligible || showCelestialRevelation || showHandOfHarm || showBloodFury) {
         const row = $('<div class="rm-gwm-row"></div>');
         const disabled = canModify ? "" : " disabled";
 
@@ -1396,6 +1401,11 @@ async function _injectDamageRoll(message, html) {
             row.append(
                 $(`<label class="rm-hand-of-harm${readonlyClass}"><input type="checkbox" ${active ? "checked" : ""}${disabled}>Hand of Harm</label>`),
             );
+        }
+
+        if (showBloodFury) {
+            const active = flags.bloodFuryActive;
+            row.append($(`<label class="rm-blood-fury${readonlyClass}"><input type="checkbox" ${active ? "checked" : ""}${disabled}>Blood Fury</label>`));
         }
 
         extraRows.push(row);
@@ -1761,34 +1771,9 @@ async function _processHandOfHarmToggleEvent(message, event) {
         }
         await resource.item.update({ "system.uses.spent": (resource.item.system.uses.spent ?? 0) + 1 });
 
-        // Roll the normal and the critical damage once, with the crit keeping the normal roll's
-        // dice, so toggling CRIT afterwards swaps between them without re-rolling (a crit doubles
-        // Hand of Harm's die, as it comes with the strike).
-        const options = { type: damage.type, handOfHarm: true };
-        const base = new CONFIG.Dice.DamageRoll(damage.formula, {}, options);
-        const crit = new CONFIG.Dice.DamageRoll(damage.formula, {}, { ...options, isCritical: true });
-        await base.evaluate();
-        await crit.evaluate();
-        for (const [j, term] of base.terms.entries()) {
-            if (!(term instanceof foundry.dice.terms.Die) || !(crit.terms[j] instanceof foundry.dice.terms.Die)) continue;
-            crit.terms[j].results.splice(0, term.results.length, ...term.results);
-        }
-        RollUtility.resetRollGetters(crit);
-        const parts = damage.formula.split(/\s*\+\s*/);
-        for (const roll of [base, crit]) {
-            roll.options.bonusParts = parts;
-            roll.options.bonusResolved = parts.map((p) => (Number.isNaN(Number(p)) ? null : Number(p)));
-            roll.options.bonusLabels = parts.map(() => "Hand of Harm");
-            roll.options.bonusSourceLabels = parts.map(() => "Hand of Harm");
-        }
-
-        flags.handOfHarm = {
-            itemId: resource.item.id,
-            baseJSON: foundry.utils.deepClone(base.toJSON()),
-            critJSON: foundry.utils.deepClone(crit.toJSON()),
-        };
-        message.rolls.push(_handOfHarmRoll(flags));
-        LogUtility.log(`[RM DEBUG] Hand of Harm: ${actor.name} spent ${resource.name}, ${damage.formula} ${damage.type} = ${base.total} (crit ${crit.total})`);
+        flags.handOfHarm = { itemId: resource.item.id, ...(await _rollToggleDamage(damage, "handOfHarm", "Hand of Harm")) };
+        message.rolls.push(_toggleDamageRoll(flags, "handOfHarm"));
+        LogUtility.log(`[RM DEBUG] Hand of Harm: ${actor.name} spent ${resource.name}, ${damage.formula} ${damage.type}`);
     } else {
         const paid = actor.items.get(flags.handOfHarm?.itemId);
         if (paid) await paid.update({ "system.uses.spent": Math.max(0, (paid.system.uses.spent ?? 0) - 1) });
@@ -1802,13 +1787,108 @@ async function _processHandOfHarmToggleEvent(message, event) {
 }
 
 /**
- * The card's Hand of Harm damage for the current CRIT / MAX state.
+ * Blood Fury toggle (Bloodthirsty Strikes on a melee weapon or Unarmed Strike hit). Ticking it
+ * shows the damage and the tattoo's charges left, and on confirmation spends a charge and adds the
+ * tattoo's necrotic damage to the card. Unticking removes the damage and gives the charge back.
+ * @param {ChatMessage} message
+ * @param {Event} event
+ * @private
+ */
+async function _processBloodFuryToggleEvent(message, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const input = event.currentTarget;
+    const flags = message.flags[MODULE_SHORT];
+    const actor = ChatUtility.getActorFromMessage(message);
+    if (!actor) {
+        input.checked = !input.checked;
+        return;
+    }
+
+    if (input.checked) {
+        const tattoo = RollUtility.getBloodFuryTattoo(actor);
+        if (!tattoo) {
+            input.checked = false;
+            return;
+        }
+        const left = tattoo.system.uses.value ?? 0;
+        if (left <= 0) {
+            ui.notifications.warn(`${actor.name}'s ${tattoo.name} has no charges left.`);
+            input.checked = false;
+            return;
+        }
+
+        const damage = RollUtility.getBloodFuryDamage(tattoo);
+        const choice = await DialogUtility.getChoiceDialog(
+            "Blood Fury",
+            `<p>Add ${damage.formula} ${damage.type} damage and regain Hit Points equal to the ${damage.type} damage dealt?</p>` +
+                "<ul>" +
+                "<li>Bloodthirsty Strikes is once per turn.</li>" +
+                "</ul>",
+            [{ action: "use", label: `Use a charge (${left}/${tattoo.system.uses.max} left)` }],
+        );
+        if (choice !== "use") {
+            input.checked = false;
+            return;
+        }
+        await tattoo.update({ "system.uses.spent": (tattoo.system.uses.spent ?? 0) + 1 });
+
+        flags.bloodFury = { itemId: tattoo.id, ...(await _rollToggleDamage(damage, "bloodFury", "Blood Fury")) };
+        message.rolls.push(_toggleDamageRoll(flags, "bloodFury"));
+        LogUtility.log(`[RM DEBUG] Blood Fury: ${actor.name} spent a charge of ${tattoo.name}, ${damage.formula} ${damage.type}`);
+    } else {
+        const paid = actor.items.get(flags.bloodFury?.itemId);
+        if (paid) await paid.update({ "system.uses.spent": Math.max(0, (paid.system.uses.spent ?? 0) - 1) });
+        message.rolls = message.rolls.filter((r) => !r.options?.bloodFury);
+        flags.bloodFury = null;
+        LogUtility.log(`[RM DEBUG] Blood Fury removed: ${actor.name} got back a charge of ${paid?.name}`);
+    }
+
+    flags.bloodFuryActive = input.checked;
+    ChatUtility.updateChatMessage(message, { flags: message.flags, rolls: message.rolls });
+}
+
+/**
+ * Rolls a toggle's extra damage (Hand of Harm, Blood Fury) as a normal and a critical roll, once,
+ * with the crit keeping the normal roll's dice, so toggling CRIT afterwards swaps between them
+ * without re-rolling (a crit doubles the extra dice, as they come with the strike).
+ * @param {{formula: string, type: string}} damage
+ * @param {string} key The roll option marking the toggle's roll, and the flag storing it.
+ * @param {string} label The label on its formula terms.
+ * @returns {Promise<{baseJSON: object, critJSON: object}>}
+ * @private
+ */
+async function _rollToggleDamage(damage, key, label) {
+    const options = { type: damage.type, [key]: true };
+    const base = new CONFIG.Dice.DamageRoll(damage.formula, {}, options);
+    const crit = new CONFIG.Dice.DamageRoll(damage.formula, {}, { ...options, isCritical: true });
+    await base.evaluate();
+    await crit.evaluate();
+    for (const [j, term] of base.terms.entries()) {
+        if (!(term instanceof foundry.dice.terms.Die) || !(crit.terms[j] instanceof foundry.dice.terms.Die)) continue;
+        crit.terms[j].results.splice(0, term.results.length, ...term.results);
+    }
+    RollUtility.resetRollGetters(crit);
+    const parts = damage.formula.split(/\s*\+\s*/);
+    for (const roll of [base, crit]) {
+        roll.options.bonusParts = parts;
+        roll.options.bonusResolved = parts.map((p) => (Number.isNaN(Number(p)) ? null : Number(p)));
+        roll.options.bonusLabels = parts.map(() => label);
+        roll.options.bonusSourceLabels = parts.map(() => label);
+    }
+    return { baseJSON: foundry.utils.deepClone(base.toJSON()), critJSON: foundry.utils.deepClone(crit.toJSON()) };
+}
+
+/**
+ * The card's damage from a toggle (Hand of Harm, Blood Fury) for the current CRIT / MAX state.
  * @param {object} flags The message's roll-model flags.
+ * @param {string} key The toggle's flag ("handOfHarm" or "bloodFury").
  * @returns {DamageRoll}
  * @private
  */
-function _handOfHarmRoll(flags) {
-    const json = flags.isCritical ? flags.handOfHarm.critJSON : flags.handOfHarm.baseJSON;
+function _toggleDamageRoll(flags, key) {
+    const json = flags.isCritical ? flags[key].critJSON : flags[key].baseJSON;
     const roll = CONFIG.Dice.DamageRoll.fromData(foundry.utils.deepClone(json));
     if (flags.isMaximized) {
         for (const term of roll.terms) {
@@ -1821,7 +1901,7 @@ function _handOfHarmRoll(flags) {
 }
 
 /**
- * Damage rolls added to the card by a toggle (CR, HoH) rather than rolled by the activity. They
+ * Damage rolls added to the card by a toggle (CR, HoH, Blood Fury) rather than rolled by the activity. They
  * stay out of the base-roll snapshot and the activity's crit rolls, which only know the activity's
  * own damage parts.
  * @param {Roll|object} roll A roll or its JSON.
@@ -1829,7 +1909,7 @@ function _handOfHarmRoll(flags) {
  * @private
  */
 function _isToggleRoll(roll) {
-    return !!(roll?.options?.celestialRevelation || roll?.options?.handOfHarm);
+    return !!(roll?.options?.celestialRevelation || roll?.options?.handOfHarm || roll?.options?.bloodFury);
 }
 
 /**
@@ -1967,7 +2047,7 @@ async function _applyDamageModifiers(message) {
         }
 
         // Rolls added by a toggle have no counterpart in the activity's crit rolls: Celestial
-        // Revelation is flat and stays as it is, Hand of Harm is swapped below.
+        // Revelation is flat and stays as it is, Hand of Harm and Blood Fury are swapped below.
         let idx = 0;
         for (let i = 0; i < message.rolls.length; i++) {
             if (!(message.rolls[i] instanceof CONFIG.Dice.DamageRoll) || _isToggleRoll(message.rolls[i])) continue;
@@ -1976,9 +2056,10 @@ async function _applyDamageModifiers(message) {
         }
     }
 
-    if (flags.handOfHarm) {
-        const i = message.rolls.findIndex((r) => r.options?.handOfHarm);
-        if (i !== -1) message.rolls[i] = _handOfHarmRoll(flags);
+    for (const key of ["handOfHarm", "bloodFury"]) {
+        if (!flags[key]) continue;
+        const i = message.rolls.findIndex((r) => r.options?.[key]);
+        if (i !== -1) message.rolls[i] = _toggleDamageRoll(flags, key);
     }
 
     if (flags.isMaximized) {

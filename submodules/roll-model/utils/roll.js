@@ -10,6 +10,13 @@ const HAND_OF_HARM = {
     type: "necrotic",
 };
 
+/** Blood Fury Tattoo's Bloodthirsty Strikes: the item it looks for and its damage if the item has none. */
+const BLOOD_FURY = {
+    item: "Blood Fury Tattoo",
+    formula: "4d6",
+    type: "necrotic",
+};
+
 /**
  * Enumerable of identifiers for different roll types that can be made.
  * @enum {String}
@@ -405,6 +412,36 @@ export class RollUtility {
         const formula = part?.formula || HAND_OF_HARM.formula;
         const type = part?.types?.first?.() ?? HAND_OF_HARM.type;
         return { formula: Roll.replaceFormulaData(formula, feat.getRollData()), type };
+    }
+
+    /**
+     * Blood Fury Tattoo (Bloodthirsty Strikes): a hit with a melee weapon or an Unarmed Strike, by an
+     * actor with the tattoo equipped and attuned, can spend one of its charges for extra necrotic damage.
+     * @param {Activity} activity The attack activity being used.
+     * @returns {boolean}
+     */
+    static isBloodFuryEligible(activity) {
+        const attack = activity?.attack?.type;
+        if (attack?.value !== "melee" || !["weapon", "unarmed"].includes(attack?.classification)) return false;
+        return !!RollUtility.getBloodFuryTattoo(activity.actor);
+    }
+
+    /** The actor's Blood Fury Tattoo, only while it's both equipped and attuned. */
+    static getBloodFuryTattoo(actor) {
+        return actor?.items?.find((i) => i.name === BLOOD_FURY.item && i.system.equipped && i.system.attuned) ?? null;
+    }
+
+    /**
+     * The damage formula and type of the tattoo's damage activity (4d6 necrotic).
+     * @param {Item5e} item The tattoo.
+     * @returns {{formula: string, type: string}}
+     */
+    static getBloodFuryDamage(item) {
+        const activity = item.system.activities?.find((a) => a.type === "damage");
+        const part = activity?.damage?.parts?.[0];
+        const formula = part?.formula || (part?.number && part?.denomination ? `${part.number}d${part.denomination}` : BLOOD_FURY.formula);
+        const type = part?.types?.first?.() ?? BLOOD_FURY.type;
+        return { formula: Roll.replaceFormulaData(formula, item.getRollData()), type };
     }
 
     static applyGWMDamageBonus(outerConfig, rollConfig, index) {

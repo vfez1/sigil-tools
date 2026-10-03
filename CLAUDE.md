@@ -31,6 +31,7 @@ The core submodule. Entry point: `roll-model.js` → `HooksUtility.registerModul
 - GWM toggle: adds proficiency bonus to damage, with checkbox to enable/disable post-roll
 - Celestial Revelation toggle for Aasimar characters (adds radiant damage = prof bonus)
 - Hand of Harm toggle on monk unarmed strikes: pays with a Flurry of Healing and Harm use or a Focus Point, adds the feat's necrotic damage, refunds on untick
+- Blood Fury toggle (red) on melee weapon / unarmed attacks while the Blood Fury Tattoo is equipped and attuned: confirms in a popup, spends a tattoo charge, adds its 4d6 necrotic, refunds on untick
 
 **Class/feat automation**
 - **Portent** (Divination Wizard): rolls 2–3 d20s on long rest, displays on sheet next to the feat, click to post to chat as a standalone card

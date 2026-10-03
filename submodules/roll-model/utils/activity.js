@@ -56,6 +56,8 @@ export class ActivityUtility {
 
             rmFlags.handOfHarmEligible = RollUtility.isHandOfHarmEligible(activity);
             rmFlags.handOfHarmActive = false;
+            rmFlags.bloodFuryEligible = RollUtility.isBloodFuryEligible(activity);
+            rmFlags.bloodFuryActive = false;
         }
 
         if (hasDamage && activity[ROLL_TYPE.DAMAGE]?.parts?.length > 0) {
