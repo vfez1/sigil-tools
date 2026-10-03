@@ -713,16 +713,27 @@ h4.dice-total.ignored > .total {
     color: #efe6d8;
 }
 
-/* Hand of Harm is the violet of the Hand of Harm feature's icon (injury-hand-blood-red), not the blue of GWM/CR. */
+/* The feature toggles are bold and carry their colour even unticked: GWM and CR in the blue
+   they fill with when ticked, Hand of Harm in the violet of its feature's icon
+   (injury-hand-blood-red). */
+.rm-gwm-toggle,
+.rm-celestial-revelation,
+.rm-hand-of-harm {
+    font-weight: bold;
+}
+
+.rm-gwm-toggle,
+.rm-gwm-toggle:hover,
+.rm-celestial-revelation,
+.rm-celestial-revelation:hover {
+    border-color: #3f5f8a;
+    color: #3f5f8a;
+}
+
 .rm-hand-of-harm,
 .rm-hand-of-harm:hover {
     border-color: #7048a8;
     color: #7048a8;
-}
-
-/* Spelled out in full, so bold to sit as heavily as the all-caps GWM and CR. */
-.rm-hand-of-harm {
-    font-weight: bold;
 }
 
 .rm-hand-of-harm:has(input:checked),
