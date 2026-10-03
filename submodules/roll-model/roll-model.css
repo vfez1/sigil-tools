@@ -713,17 +713,17 @@ h4.dice-total.ignored > .total {
     color: #efe6d8;
 }
 
-/* HoH is purple, the colour of the Hand of Harm feature's icon, rather than the blue of GWM/CR. */
+/* HoH is the violet of the Hand of Harm feature's icon (injury-hand-blood-red), not the blue of GWM/CR. */
 .rm-hand-of-harm,
 .rm-hand-of-harm:hover {
-    border-color: #7a4bb0;
-    color: #7a4bb0;
+    border-color: #7048a8;
+    color: #7048a8;
 }
 
 .rm-hand-of-harm:has(input:checked),
 .rm-hand-of-harm.rm-readonly:has(input:checked):hover {
-    border-color: #6a3d9a;
-    background: #6a3d9a;
+    border-color: #5a2a86;
+    background: #5a2a86;
     color: #efe6d8;
 }
 
