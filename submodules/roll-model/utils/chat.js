@@ -1748,7 +1748,10 @@ async function _processHandOfHarmToggleEvent(message, event) {
         const choice = await DialogUtility.getChoiceDialog(
             "Hand of Harm",
             `<p>Add ${damage.formula} ${damage.type} damage. What does it use?</p>` +
-                `<p><em>Flurry of Healing and Harm only pays for it when this Unarmed Strike is part of Flurry of Blows; otherwise it costs a Focus Point. Hand of Harm is once per turn either way.</em></p>`,
+                "<ul>" +
+                "<li>Flurry of Healing and Harm only when this Unarmed Strike is part of Flurry of Blows.</li>" +
+                "<li>Hand of Harm is once per turn.</li>" +
+                "</ul>",
             resources.map((r) => ({ action: r.item.id, label: `${r.name} (${r.value}/${r.max} left)` })),
         );
         const resource = resources.find((r) => r.item.id === choice);

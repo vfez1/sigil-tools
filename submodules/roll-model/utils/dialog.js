@@ -13,7 +13,7 @@ export class DialogUtility {
     }
 
     /**
-     * Ask the user to pick one of several buttons.
+     * Ask the user to pick one of several buttons, stacked one per line in a narrow window.
      * @param {string} title
      * @param {string} content HTML shown above the buttons.
      * @param {{action: string, label: string}[]} choices
@@ -24,6 +24,8 @@ export class DialogUtility {
             window: { title },
             content,
             buttons: [...choices, { action: "cancel", label: "Cancel" }],
+            classes: ["rm-choice-dialog"],
+            position: { width: 320 },
             rejectClose: false,
         });
         return choice && choice !== "cancel" ? choice : null;

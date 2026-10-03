@@ -902,3 +902,13 @@ recorded-targets button.target-source-toggle {
 #combat-dock {
     max-width: min(100%, calc(100vw - 2 * (var(--sidebar-width, 300px) + var(--rm-carousel-sidebar-extra)))) !important;
 }
+
+/* DialogUtility.getChoiceDialog: one button per line, so long labels don't widen the window. */
+.rm-choice-dialog .form-footer {
+    flex-direction: column;
+}
+
+.rm-choice-dialog ul {
+    margin: 0 0 4px;
+    padding-left: 18px;
+}
