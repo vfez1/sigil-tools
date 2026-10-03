@@ -2,7 +2,7 @@
     "id": "sigil-tools",
     "title": "Sigil Tools",
     "description": "Internal tooling module. Contains submodules for roll-model, always-hp, active-auras, visual-auras, grid-regions, item-drag-move, effectmacro, effect-autocomplete, character-features, chat-archive, override-settings, suppress-warnings, dev-scene-loader, combat-tracker-dock, and shared internal utilities.",
-    "version": "1.1.12",
+    "version": "1.1.13",
     "socket": true,
     "compatibility": {
         "minimum": "13",

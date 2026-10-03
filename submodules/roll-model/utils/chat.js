@@ -1788,8 +1788,8 @@ async function _processHandOfHarmToggleEvent(message, event) {
 
 /**
  * Blood Fury toggle (Bloodthirsty Strikes on a melee weapon or Unarmed Strike hit). Ticking it
- * shows the damage and the tattoo's charges left, and on confirmation spends a charge and adds the
- * tattoo's necrotic damage to the card. Unticking removes the damage and gives the charge back.
+ * spends one of the tattoo's charges and adds its necrotic damage to the card, no confirmation
+ * needed since unticking removes the damage and gives the charge back.
  * @param {ChatMessage} message
  * @param {Event} event
  * @private
@@ -1812,26 +1812,13 @@ async function _processBloodFuryToggleEvent(message, event) {
             input.checked = false;
             return;
         }
-        const left = tattoo.system.uses.value ?? 0;
-        if (left <= 0) {
+        if ((tattoo.system.uses.value ?? 0) <= 0) {
             ui.notifications.warn(`${actor.name}'s ${tattoo.name} has no charges left.`);
             input.checked = false;
             return;
         }
 
         const damage = RollUtility.getBloodFuryDamage(tattoo);
-        const choice = await DialogUtility.getChoiceDialog(
-            "Blood Fury",
-            `<p>Add ${damage.formula} ${damage.type} damage and regain Hit Points equal to the ${damage.type} damage dealt?</p>` +
-                "<ul>" +
-                "<li>Bloodthirsty Strikes is once per turn.</li>" +
-                "</ul>",
-            [{ action: "use", label: `Use a charge (${left}/${tattoo.system.uses.max} left)` }],
-        );
-        if (choice !== "use") {
-            input.checked = false;
-            return;
-        }
         await tattoo.update({ "system.uses.spent": (tattoo.system.uses.spent ?? 0) + 1 });
 
         flags.bloodFury = { itemId: tattoo.id, ...(await _rollToggleDamage(damage, "bloodFury", "Blood Fury")) };
