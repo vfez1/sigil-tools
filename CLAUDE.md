@@ -30,7 +30,7 @@ The core submodule. Entry point: `roll-model.js` → `HooksUtility.registerModul
 - dnd5e's damage-application tray appended to the combined card (6.0 only renders it on its own damage-type cards); GM always, players per dnd5e's "Allow Player Damage Application"
 - GWM toggle: adds proficiency bonus to damage, with checkbox to enable/disable post-roll
 - Celestial Revelation toggle for Aasimar characters (adds radiant damage = prof bonus)
-- Hand of Harm toggle (HoH) on monk unarmed strikes: pays with a Flurry of Healing and Harm use or a Focus Point, adds the feat's necrotic damage, refunds on untick
+- Hand of Harm toggle on monk unarmed strikes: pays with a Flurry of Healing and Harm use or a Focus Point, adds the feat's necrotic damage, refunds on untick
 
 **Class/feat automation**
 - **Portent** (Divination Wizard): rolls 2–3 d20s on long rest, displays on sheet next to the feat, click to post to chat as a standalone card
@@ -149,7 +149,7 @@ Dev utility for auto-loading a specific scene.
 
 - **Wabu** — Moon Druid. Has Wild Shape with Improved Circle Forms and Lunar Transformation (Cloak of the Lunar Guardian, needs attunement). The character-features wildshape toggle was originally written for this character.
 - **Sheyla** (Iliad) — Barbarian. Has Relentless Rage, whose save DC is formula-driven (`10 + uses.spent * 5`, resets to 10 on rest) rather than flat — worth testing whenever the save flow changes.
-- **Rho** — Warrior of Mercy Monk. Hand of Harm on unarmed strikes is the HoH toggle in roll-model, paid from `Monk's Focus` or `Flurry of Healing and Harm`.
+- **Rho** — Warrior of Mercy Monk. Hand of Harm on unarmed strikes is the Hand of Harm toggle in roll-model, paid from `Monk's Focus` or `Flurry of Healing and Harm`.
 - Other players use features like Portent, GWM, Potent Spellcasting, Celestial Revelation, Raven Queen Inspiration.
 
 ---

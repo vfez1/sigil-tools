@@ -1394,7 +1394,7 @@ async function _injectDamageRoll(message, html) {
         if (showHandOfHarm) {
             const active = flags.handOfHarmActive;
             row.append(
-                $(`<label class="rm-hand-of-harm${readonlyClass}" title="Hand of Harm"><input type="checkbox" ${active ? "checked" : ""}${disabled}>HoH</label>`),
+                $(`<label class="rm-hand-of-harm${readonlyClass}"><input type="checkbox" ${active ? "checked" : ""}${disabled}>Hand of Harm</label>`),
             );
         }
 
