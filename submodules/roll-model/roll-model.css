@@ -37,12 +37,13 @@
     text-overflow: ellipsis;
 }
 
-/* Fixed slot for dnd5e's Legendary Resistance button, added only when some row on the card has one
-   (see chat.js _injectSummaryRows) so the numeric columns line up across rows either way. */
-.card-summary.rm-summary .save-summary > .rm-summary-tail {
-    display: flex;
-    justify-content: end;
-    flex: 0 0 20px;
+/* dnd5e's Legendary Resistance button, moved next to the token name (see chat.js
+   _injectSummaryRows): it takes width only from that row's name, so the columns stay aligned. */
+.card-summary.rm-summary .save-summary > button.icon {
+    flex: 0 0 auto;
+    inline-size: 24px;
+    block-size: 24px;
+    padding: 0;
 }
 
 .card-summary.rm-summary .save-summary button.dice-roll {

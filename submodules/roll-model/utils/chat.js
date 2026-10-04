@@ -879,12 +879,6 @@ function _injectSummaryRows(message, html) {
     );
     const totalDamage = message.rolls.filter((r) => r instanceof CONFIG.Dice.DamageRoll).reduce((sum, r) => sum + (r.total ?? 0), 0);
 
-    // dnd5e appends a Legendary Resistance button to rows where the save failed and the target has
-    // uses left (save-summary.hbs, buttonGroups.resist). Since the name pill is the flexible column,
-    // a row carrying that button pushes every column left of it out of line with the rows that
-    // don't. If any row on this card has one, give every row a fixed-width trailing slot for it.
-    const hasResistButtons = html.find(".card-summary[data-message-id] .save-summary > button.icon").length > 0;
-
     html.find(".card-summary[data-message-id]").each((_, el) => {
         const saveMsg = game.messages.get(el.dataset.messageId);
         const roll = saveMsg?.rolls?.find((r) => r instanceof CONFIG.Dice.D20Roll);
@@ -921,16 +915,6 @@ function _injectSummaryRows(message, html) {
         if (afterRoll) afterRoll.after(dmg);
         else row.append(dmg);
 
-        if (hasResistButtons) {
-            let tail = row.querySelector(":scope > .rm-summary-tail");
-            if (!tail) {
-                tail = document.createElement("span");
-                tail.className = "rm-summary-tail";
-                row.append(tail);
-            }
-            tail.append(...row.querySelectorAll(":scope > button.icon"));
-        }
-
         // No base-d20 column here: the row is narrow, and both dice are already listed in the
         // breakdown popover the row opens.
 
@@ -953,6 +937,12 @@ function _injectSummaryRows(message, html) {
         const namePill = row.querySelector(":scope > ul");
         if (namePill) namePill.after(rowActions[0]);
         else row.querySelector(":scope > button.dice-roll")?.before(rowActions[0]);
+
+        // dnd5e appends a Legendary Resistance button to rows where the save failed and the target
+        // has uses left (save-summary.hbs, buttonGroups.resist). At the end of the row it would push
+        // that row's columns out of line with the others; right after the name it only takes width
+        // from that row's name, the one flexible column.
+        rowActions[0].before(...row.querySelectorAll(":scope > button.icon"));
 
         // Popover: attack-style breakdown. The adv/dis toggles used to live at the bottom of this
         // box; they sit on the row itself now (above).

@@ -165,7 +165,8 @@ Each target's row shows, in aligned columns:
 - the save result, its total in a green badge on a natural 20. Click anywhere on the row to see its breakdown;
 - **the damage that was actually applied to that token**, once someone applies damage, coloured
   by how it compares to the card's total (see [section 8](#8-applying-damage-and-tracking-who-took-it));
-- dnd5e's Legendary Resistance button, when the target has uses left and failed.
+- dnd5e's Legendary Resistance button, when the target has uses left and failed. It sits right
+  after the token's name, so it only shortens that row's name and the columns stay aligned.
 
 ### Half damage on a successful save
 
