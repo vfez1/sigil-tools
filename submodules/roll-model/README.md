@@ -376,7 +376,7 @@ dnd5e 6.0's own "roll the attack right after use" step is switched off with
 | ChatMessage | `flags.rm.*` | quickRoll / processed / advantage / disadvantage / versatile, which rows to render, isCritical / isMaximized, snapshots of the original rolls for CRIT/MAX/adv undo (`baseRollsJSON`, `critRollsJSON`, `baseAttackRollJSON`), GWM and CR state, ammunition, healing/spell scaling |
 | ChatMessage | `flags.sigil-tools.appliedTo` | `[{uuid, name, damage, isTemp}]`, the tokens this card's damage was applied to |
 | Actor | `flags.sigil-tools.portentRolls` | `[{value, used}]` |
-| User | `flags.sigil-tools.damageTypePrefs.<item uuid>` | the chosen damage type per damage part |
+| User (the item's owning player; the GM for an item no player owns) | `flags.sigil-tools.damageTypePrefs.<item uuid>` | the last chosen damage type per damage part, by the GM or that player |
 | User | `flags.sigil-tools.alwayshpPos`, `alwayshpShowDialog` | HP widget position and visibility |
 
 ### Socket messages (`module.sigil-tools`, handled by the GM)
