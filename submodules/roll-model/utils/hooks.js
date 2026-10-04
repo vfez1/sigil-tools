@@ -39,6 +39,7 @@ const HOOKS_DND5E = {
     RENDER_CHAT_MESSAGE: "dnd5e.renderChatMessage",
     RENDER_ITEM_SHEET: "renderItemSheet5e",
     RENDER_ACTOR_SHEET: "renderActorSheet5e",
+    ACTIVITY_CONTEXT: "dnd5e.getItemActivityContext",
 };
 
 /** Message ids whose property-tags row the user has expanded (survives dnd5e re-renders). */
@@ -236,6 +237,15 @@ export class HooksUtility {
      */
     static registerRollHooks() {
         LogUtility.log(`[RM DEBUG] registerRollHooks() called — registering all dnd5e roll hooks now.`);
+
+        // An activity's right-click menu in the sheet's Favorites list offers Delete right above
+        // Remove Favorite, and one slip deletes the activity itself from its item. Drop it there;
+        // the item sheet's Activities tab keeps it for deliberate deletes.
+        Hooks.on(HOOKS_DND5E.ACTIVITY_CONTEXT, (activity, target, menuItems) => {
+            if (!target?.closest?.("[data-favorite-id]")) return;
+            const i = menuItems.findIndex((m) => m.label === "DND5E.ContextMenuActionDelete");
+            if (i !== -1) menuItems.splice(i, 1);
+        });
 
         Hooks.on(HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK, (config, dialog, message) => {
             LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK}`);
