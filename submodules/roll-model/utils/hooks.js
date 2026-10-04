@@ -239,9 +239,10 @@ export class HooksUtility {
         LogUtility.log(`[RM DEBUG] registerRollHooks() called — registering all dnd5e roll hooks now.`);
 
         // An activity's right-click menu in the sheet's Favorites list offers Delete right above
-        // Remove Favorite, and one slip deletes the activity itself from its item; Duplicate adds a
-        // copy to the item. Drop both there; the item sheet's Activities tab keeps them.
-        const FAVORITE_HIDDEN = new Set(["DND5E.ContextMenuActionDelete", "DND5E.ContextMenuActionDuplicate"]);
+        // Remove Favorite, and one slip deletes the activity itself from its item; Duplicate and Edit
+        // change the item too. Drop all three there, leaving Remove Favorite; the item sheet's
+        // Activities tab keeps them.
+        const FAVORITE_HIDDEN = new Set(["DND5E.ContextMenuActionDelete", "DND5E.ContextMenuActionDuplicate", "DND5E.ContextMenuActionEdit"]);
         Hooks.on(HOOKS_DND5E.ACTIVITY_CONTEXT, (activity, target, menuItems) => {
             if (!target?.closest?.("[data-favorite-id]")) return;
             for (let i = menuItems.length - 1; i >= 0; i--) if (FAVORITE_HIDDEN.has(menuItems[i].label)) menuItems.splice(i, 1);
