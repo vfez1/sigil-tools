@@ -212,15 +212,34 @@ export class ChatUtility {
     }
 
     /**
-     * Apply this user's saved damage-type preferences for an item to a set of damage roll configs
-     * (from dnd5e.preRollDamageV2) before the rolls are built, so the chosen type is what gets
-     * persisted on the message.
+     * The User whose flags hold an item's damage-type choices: the player who owns its actor (their
+     * assigned character, else a non-GM owner), so a pick by the GM or by that player counts for
+     * both, the last one winning; this user for an item no player owns (an NPC's). Kept on a User
+     * rather than the item: an embedded-item write is a full actor update (prepareData, open sheets
+     * re-render, a few hundred ms), a User flag write re-renders nothing. A GM may update any User.
+     * @param {Item} item
+     * @returns {User}
+     */
+    static damageTypePrefsUser(item) {
+        const actor = item?.actor;
+        if (!actor) return game.user;
+        const players = game.users.filter((u) => !u.isGM);
+        return players.find((u) => u.character?.id === actor.id)
+            ?? players.find((u) => actor.testUserPermission(u, "OWNER"))
+            ?? game.user;
+    }
+
+    /**
+     * Apply an item's saved damage-type choices (see damageTypePrefsUser) to a set of damage roll
+     * configs (from dnd5e.preRollDamageV2) before the rolls are built, so the chosen type is what
+     * gets persisted on the message. Falls back to a choice the roller saved on themselves.
      * @param {Item} item
      * @param {object[]} rollConfigs config.rolls entries, each with an options.{type,types}
      */
     static applyDamageTypePrefs(item, rollConfigs) {
         if (!item?.uuid || !rollConfigs?.length) return;
-        const prefs = game.user.getFlag(MODULE_NAME, `damageTypePrefs.${ChatUtility.damageTypePrefKey(item)}`);
+        const key = `damageTypePrefs.${ChatUtility.damageTypePrefKey(item)}`;
+        const prefs = ChatUtility.damageTypePrefsUser(item).getFlag(MODULE_NAME, key) ?? game.user.getFlag(MODULE_NAME, key);
         if (!prefs) return;
         rollConfigs.forEach((rc, i) => {
             const pref = prefs[i];
@@ -355,14 +374,15 @@ function _setupCardListeners(message, html) {
         // The damage tray needs no direct update: the message update above re-renders the card and
         // the 6.0 <damage-application> rebuilds itself from the message's rolls on connect.
 
-        // Persist the preference for this user's future rolls of the item. This deliberately lives
-        // on the User document rather than as an item flag: an embedded-item write is a full actor
-        // update (Actor.reset + prepareData + open sheet re-render + canvas refresh — a ~400ms main
-        // thread stall on Chrome, far worse on Firefox), whereas a User flag write touches nothing.
+        // Persist the choice for the item's future rolls, by anyone, on the owning player's User
+        // (see damageTypePrefsUser): the last pick wins, the GM's or the player's. Only the GM can
+        // write another user's flags; anyone else falls back to their own.
         const item = message.getAssociatedItem?.();
         if (item?.uuid) {
-            await game.user.setFlag(MODULE_NAME, `damageTypePrefs.${ChatUtility.damageTypePrefKey(item)}.${partIndex}`, newType);
-            LogUtility.log(`[RM DEBUG] type pill: saved pref ${partIndex}=${newType} for ${item.name} on user ${game.user.name}`);
+            const owner = ChatUtility.damageTypePrefsUser(item);
+            const target = owner === game.user || game.user.isGM ? owner : game.user;
+            await target.setFlag(MODULE_NAME, `damageTypePrefs.${ChatUtility.damageTypePrefKey(item)}.${partIndex}`, newType);
+            LogUtility.log(`[RM DEBUG] type pill: saved pref ${partIndex}=${newType} for ${item.name} on user ${target.name} (by ${game.user.name})`);
         }
     });
 
