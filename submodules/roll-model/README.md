@@ -265,11 +265,10 @@ automation off.
 
 Wild shape effect toggling for Wabu lives in the **character-features** submodule, not here.
 
----
-
-**No Delete on favorited activities.** Right-clicking an activity in the character sheet's
-Favorites list offers no *Delete*, which sits right above *Remove Favorite* and deletes the
-activity from its item. Activities can still be deleted from the item sheet's Activities tab.
+**No Delete or Duplicate on favorited activities.** Right-clicking an activity in the character
+sheet's Favorites list offers only *Edit* and *Remove Favorite*: *Delete* sits right above
+*Remove Favorite* and deletes the activity from its item, and *Duplicate* adds a copy to it. Both
+are still on the item sheet's Activities tab.
 
 ---
 
