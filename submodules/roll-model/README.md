@@ -157,7 +157,7 @@ Each target's row shows, in aligned columns:
 - the token's name (full name on hover when it is cut short);
 - **⌄⌄ / ⌃⌃** buttons to re-roll that save with disadvantage or advantage (for the GM and that
   token's owner);
-- the save result. Click anywhere on the row to see its breakdown;
+- the save result, its d20 badge green on a natural 20. Click anywhere on the row to see its breakdown;
 - **the damage that was actually applied to that token**, once someone applies damage, coloured
   by how it compares to the card's total (see [section 8](#8-applying-damage-and-tracking-who-took-it));
 - dnd5e's Legendary Resistance button, when the target has uses left and failed.
@@ -176,6 +176,8 @@ Ability checks, skills, tools, saving throws rolled from the sheet, and initiati
 normal compact card**. Roll Model adds to it:
 
 - a dimmed badge for the discarded d20 when rolled with advantage or disadvantage;
+- a **green d20 badge on a natural 20**, as on the attack row. A natural 1 stays uncoloured: on a
+  check or save it isn't an automatic failure (death saves keep dnd5e's own green and red);
 - the itemised **breakdown** when you click the roll;
 - for owners, **⌄⌄ / ⌃⌃** buttons on the card, left of the roll box. The card's
   *"(Advantage)"* text updates to match. On an initiative card, the tracker moves too, along with

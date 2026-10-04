@@ -933,3 +933,10 @@ recorded-targets button.target-source-toggle {
     margin: 0 0 4px;
     padding-left: 18px;
 }
+
+/* A natural 20 on a save or check: the attack row's green d20 badge (dnd5e's critical colour),
+   without dnd5e's "critical" class, which would also restyle the pass/fail icons. */
+.chat-log .message button.dice-roll.rm-nat20 .d20die > i,
+.chat-popout .message button.dice-roll.rm-nat20 .d20die > i {
+    color: var(--color-level-success);
+}

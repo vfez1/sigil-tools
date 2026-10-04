@@ -915,6 +915,8 @@ function _injectSummaryRows(message, html) {
         }
         // Right after the roll (button + its popover), i.e. ahead of any resist button, not at the
         // very end of the row.
+        _markNatural20(row.querySelector(":scope > button.dice-roll"), roll);
+
         const afterRoll = row.querySelector(":scope > .roll-breakdown") ?? row.querySelector(":scope > button.dice-roll");
         if (afterRoll) afterRoll.after(dmg);
         else row.append(dmg);
@@ -1446,6 +1448,7 @@ function _enhanceStandaloneRoll(message, html, roll, type) {
         roll.d20.options.criticalFailure ??= roll.options.criticalFailure;
     }
     popover[0].replaceChildren(_buildAttackBreakdown(roll)[0]);
+    if (type !== ROLL_TYPE.DEATH_SAVE) _markNatural20(button[0], roll);
 
     // Adv/dis toggles on the card itself, left of the roll box like the attack row's (same buttons as the save rows).
     if (message.isOwner && !button.siblings(".rm-standalone-actions").length) {
@@ -1474,6 +1477,19 @@ function _enhanceStandaloneRoll(message, html, roll, type) {
             );
         });
     }
+}
+
+/**
+ * Saves and checks can't crit (only attacks and death saves do, and dnd5e colours those itself),
+ * but a natural 20 still gets the attack row's green d20 badge as a cue. A natural 1 stays
+ * uncoloured: it isn't an automatic failure on a save or check.
+ * @param {HTMLElement|null} button  The roll's compact dice-roll button.
+ * @param {D20Roll} roll
+ */
+function _markNatural20(button, roll) {
+    if (!button) return;
+    const kept = (roll.d20?.results ?? []).find((r) => r.active !== false && !r.discarded);
+    button.classList.toggle("rm-nat20", kept?.result === 20);
 }
 
 /**
