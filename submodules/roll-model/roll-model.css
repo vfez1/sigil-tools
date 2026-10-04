@@ -941,3 +941,14 @@ recorded-targets button.target-source-toggle {
 .chat-popout .message button.dice-roll.rm-nat20 .d20die:not(.rm-d20-discarded) > i {
     color: var(--color-level-success);
 }
+
+/* The Results rows hide the d20 badge (dnd5e), so a natural 20 marks the row's final total
+   instead: a green badge outline around the number. */
+.chat-log .message.compact .card-summary button.dice-roll.rm-nat20 .total,
+.chat-popout .message.compact .card-summary button.dice-roll.rm-nat20 .total {
+    border: 1px solid var(--color-level-success);
+    border-radius: 4px;
+    padding: 0 4px;
+    color: var(--color-level-success);
+    background: color-mix(in srgb, var(--color-level-success) 12%, transparent);
+}

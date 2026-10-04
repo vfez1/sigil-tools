@@ -162,7 +162,7 @@ Each target's row shows, in aligned columns:
 - the token's name (full name on hover when it is cut short);
 - **⌄⌄ / ⌃⌃** buttons to re-roll that save with disadvantage or advantage (for the GM and that
   token's owner);
-- the save result, its d20 badge green on a natural 20. Click anywhere on the row to see its breakdown;
+- the save result, its total in a green badge on a natural 20. Click anywhere on the row to see its breakdown;
 - **the damage that was actually applied to that token**, once someone applies damage, coloured
   by how it compares to the card's total (see [section 8](#8-applying-damage-and-tracking-who-took-it));
 - dnd5e's Legendary Resistance button, when the target has uses left and failed.

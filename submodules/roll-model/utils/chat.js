@@ -1490,6 +1490,7 @@ function _markNatural20(button, roll) {
     if (!button) return;
     const kept = (roll.d20?.results ?? []).find((r) => r.active !== false && !r.discarded);
     button.classList.toggle("rm-nat20", kept?.result === 20);
+    if (kept?.result === 20) button.querySelector(".total")?.setAttribute("data-tooltip", "Natural 20");
 }
 
 /**
