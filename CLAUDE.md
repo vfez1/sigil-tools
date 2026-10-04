@@ -33,6 +33,8 @@ The core submodule. Entry point: `roll-model.js` → `HooksUtility.registerModul
 - Hand of Harm toggle on monk unarmed strikes: pays with a Flurry of Healing and Harm use or a Focus Point, adds the feat's necrotic damage, refunds on untick
 - Blood Fury toggle (red) on melee weapon / unarmed attacks while the Blood Fury Tattoo is equipped and attuned: spends a tattoo charge, adds its 4d6 necrotic, refunds on untick
 
+**House rule:** a natural 20 on a saving throw always succeeds (`isSuccess`/`isFailure` wrapped on `BasicRoll`); natural 20s on saves and checks show a green d20 badge, natural 1s stay uncoloured.
+
 **Class/feat automation**
 - **Portent** (Divination Wizard): rolls 2–3 d20s on long rest, displays on sheet next to the feat, click to post to chat as a standalone card
 - **Elemental Fury / Potent Spellcasting**: injects Wisdom modifier into druid/cleric cantrip damage

@@ -61,6 +61,7 @@ export class HooksUtility {
             _applyTurnStartMarker();
             _applyRollModePatch();
             _applyInitiativeRerollPatch();
+            _applySaveNatural20Patch();
             applyHPDismissPatch();
 
             game.keybindings.register(MODULE_NAME, "hp-toggle", {
@@ -905,6 +906,39 @@ function _applyInitiativeRerollPatch() {
         },
         "WRAPPER"
     ));
+}
+
+/**
+ * House rule: a natural 20 on a saving throw always succeeds (dnd5e follows the 2024 rules, where
+ * only death saves treat it specially). dnd5e reads a save's result from the roll's isSuccess /
+ * isFailure everywhere — the card's tick or cross, the usage card's outcomes (half damage on a
+ * success), Break Concentration and Legendary Resistance — so both are wrapped, at setup once
+ * dnd5e's classes are in CONFIG, on BasicRoll, which defines them (D20Roll inherits them; other
+ * rolls fall through, as only a valid d20 roll qualifies). A save roll carries rollType "save" (dnd5e copies
+ * the message type onto its rolls; concentration and death saves included, and a death save's
+ * natural 20 already succeeds).
+ */
+function _applySaveNatural20Patch() {
+    const isSaveNatural20 = (roll) =>
+        roll._evaluated && roll.options?.rollType === "save" && Number.isNumeric(roll.options.target) && roll.validD20Roll && roll.d20?.total === 20;
+    Hooks.once("setup", () => {
+        libWrapper.register(
+            MODULE_NAME,
+            "CONFIG.Dice.BasicRoll.prototype.isSuccess",
+            function (wrapped) {
+                return isSaveNatural20(this) ? true : wrapped();
+            },
+            "MIXED"
+        );
+        libWrapper.register(
+            MODULE_NAME,
+            "CONFIG.Dice.BasicRoll.prototype.isFailure",
+            function (wrapped) {
+                return isSaveNatural20(this) ? false : wrapped();
+            },
+            "MIXED"
+        );
+    });
 }
 
 function _applyRollModePatch() {

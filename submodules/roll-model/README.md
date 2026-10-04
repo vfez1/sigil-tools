@@ -139,6 +139,11 @@ nothing to double.
 
 ## 5. Saving throws
 
+**House rule: a natural 20 on a saving throw always succeeds**, whatever the DC. Everything that
+reads a save's result follows it: the card's tick, the Results rows, half damage on a success,
+Break Concentration (not offered) and Legendary Resistance (not offered). A natural 1 is not an
+automatic failure.
+
 ### The Save button
 
 On a save-based item's card, targets **select their token(s) and press the Save button**. dnd5e
@@ -386,6 +391,9 @@ dnd5e 6.0's own "roll the attack right after use" step is switched off with
   out the shared values before calling core's method.
 - `TokenDocument#_shouldRecordMovementHistory`: movement history off.
 - `ChatMessage.prototype.applyRollMode` → `applyMode`: silences a v14 deprecation warning.
+- `CONFIG.Dice.BasicRoll.prototype.isSuccess` / `isFailure` (wrapped at `setup`): a save roll
+  (`options.rollType === "save"`) with a natural 20 succeeds, for the house rule above. dnd5e
+  reads every save outcome through these two getters.
 - `core.dismiss` keybinding: replaced so Esc skips the HP widget. This one is a direct patch,
   not libWrapper.
 
