@@ -24,6 +24,9 @@
         "disableFalling": true,
         "defaultSkills": ["acr", "ani", "arc", "ath", "dec", "his", "ins", "itm", "inv", "med", "nat", "prc", "prf", "per", "rel", "slt", "ste", "sur"]
     },
+    "ddb-importer": {
+        "add-ddb-tools": false
+    },
     "zoom-pan-options": {
         "middle-mouse-pan": true
     },
