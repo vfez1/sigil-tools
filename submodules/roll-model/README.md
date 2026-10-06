@@ -272,7 +272,9 @@ sheet's Activities tab.
 
 **Display in Chat from compendiums.** Right-clicking an entry in an Item compendium, or in the
 Items sidebar, offers *Display in Chat*, the same card (description included) that the entry
-of that name posts from an actor's sheet. dnd5e itself offers it only for items on an actor.
+of that name posts from an actor's sheet; so does the header menu (the three dots) of every
+item sheet. dnd5e itself offers it only on an actor's sheet. An item with no actor is posted
+as whoever you normally speak as: your selected token, else your character, else your user.
 
 ---
 

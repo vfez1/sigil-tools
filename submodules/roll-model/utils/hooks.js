@@ -250,9 +250,22 @@ export class HooksUtility {
 
         // dnd5e offers Display in Chat only on an actor's sheet (its entry is hidden for items
         // without an actor). Add it to the right-click menu of Item compendiums and the Items
-        // sidebar too. Item5e#displayCard() can't be used: it reads this.actor.token for the
-        // speaker and throws without an actor. This builds the same "item" message it does,
-        // with Foundry's default speaker (controlled token, else own character, else the user).
+        // sidebar, and to every item sheet's header menu (the three dots). Item5e#displayCard()
+        // reads this.actor.token for the speaker and throws without an actor, so an item with
+        // no actor gets the same "item" message built here, with Foundry's default speaker
+        // (controlled token, else own character, else the user).
+        const displayCard = async (item) => {
+            if (item.actor) return item.displayCard();
+            const data = {
+                flags: { core: { canPopout: true } },
+                speaker: ChatMessage.getSpeaker(),
+                system: await item.system.getCardData(),
+                title: item.name,
+                type: "item",
+            };
+            ChatMessage.applyMode(data, CONFIG.Dice.BasicRoll.getMessageMode());
+            return ChatMessage.create(data);
+        };
         Hooks.on("getItemContextOptions", (app, menuItems) => {
             menuItems.push({
                 label: "DND5E.DisplayCard",
@@ -260,17 +273,15 @@ export class HooksUtility {
                 onClick: async (event, li) => {
                     const id = li.closest("[data-entry-id]").dataset.entryId;
                     const item = app.collection.get(id) ?? await app.collection.getDocument?.(id);
-                    if (!item) return;
-                    const data = {
-                        flags: { core: { canPopout: true } },
-                        speaker: ChatMessage.getSpeaker(),
-                        system: await item.system.getCardData(),
-                        title: item.name,
-                        type: "item",
-                    };
-                    ChatMessage.applyMode(data, CONFIG.Dice.BasicRoll.getMessageMode());
-                    return ChatMessage.create(data);
+                    if (item) return displayCard(item);
                 },
+            });
+        });
+        Hooks.on("getHeaderControlsItemSheet5e", (app, controls) => {
+            controls.push({
+                label: "DND5E.DisplayCard",
+                icon: "fa-solid fa-message",
+                onClick: () => displayCard(app.document),
             });
         });
 
