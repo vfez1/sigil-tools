@@ -250,7 +250,9 @@ export class HooksUtility {
 
         // dnd5e offers Display in Chat only on an actor's sheet (its entry is hidden for items
         // without an actor). Add it to the right-click menu of Item compendiums and the Items
-        // sidebar too; displayCard() doesn't need an actor, the speaker falls back to the user.
+        // sidebar too. Item5e#displayCard() can't be used: it reads this.actor.token for the
+        // speaker and throws without an actor. This builds the same "item" message it does,
+        // with Foundry's default speaker (controlled token, else own character, else the user).
         Hooks.on("getItemContextOptions", (app, menuItems) => {
             menuItems.push({
                 label: "DND5E.DisplayCard",
@@ -258,7 +260,16 @@ export class HooksUtility {
                 onClick: async (event, li) => {
                     const id = li.closest("[data-entry-id]").dataset.entryId;
                     const item = app.collection.get(id) ?? await app.collection.getDocument?.(id);
-                    return item?.displayCard();
+                    if (!item) return;
+                    const data = {
+                        flags: { core: { canPopout: true } },
+                        speaker: ChatMessage.getSpeaker(),
+                        system: await item.system.getCardData(),
+                        title: item.name,
+                        type: "item",
+                    };
+                    ChatMessage.applyMode(data, CONFIG.Dice.BasicRoll.getMessageMode());
+                    return ChatMessage.create(data);
                 },
             });
         });
