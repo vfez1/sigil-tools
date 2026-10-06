@@ -248,6 +248,21 @@ export class HooksUtility {
             for (let i = menuItems.length - 1; i >= 0; i--) if (FAVORITE_HIDDEN.has(menuItems[i].label)) menuItems.splice(i, 1);
         });
 
+        // dnd5e offers Display in Chat only on an actor's sheet (its entry is hidden for items
+        // without an actor). Add it to the right-click menu of Item compendiums and the Items
+        // sidebar too; displayCard() doesn't need an actor, the speaker falls back to the user.
+        Hooks.on("getItemContextOptions", (app, menuItems) => {
+            menuItems.push({
+                label: "DND5E.DisplayCard",
+                icon: "fa-solid fa-message",
+                onClick: async (event, li) => {
+                    const id = li.closest("[data-entry-id]").dataset.entryId;
+                    const item = app.collection.get(id) ?? await app.collection.getDocument?.(id);
+                    return item?.displayCard();
+                },
+            });
+        });
+
         Hooks.on(HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK, (config, dialog, message) => {
             LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK}`);
             try {

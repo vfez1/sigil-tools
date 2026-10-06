@@ -270,6 +270,10 @@ sheet's Favorites list offers only *Remove Favorite*, not *Edit*, *Duplicate* or
 sits right above it and deletes the activity from its item). All three are still on the item
 sheet's Activities tab.
 
+**Display in Chat from compendiums.** Right-clicking an entry in an Item compendium, or in the
+Items sidebar, offers *Display in Chat*, the same card (description included) that the entry
+of that name posts from an actor's sheet. dnd5e itself offers it only for items on an actor.
+
 ---
 
 ## 10. Table and canvas extras
