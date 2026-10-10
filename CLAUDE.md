@@ -114,6 +114,10 @@ Adds an autocomplete/validate dropdown to the Active Effect Config "Changes" key
 
 ### combat-tracker-dock (`submodules/combat-tracker-dock/`)
 Vendored third-party module ("Carousel Combat Tracker" by theripper93) — a carousel-style combat tracker UI, spiritual successor to Combat Carousel. Loaded unconditionally as its own top-level esmodule in `module.json` (not gated by a sigil-tools enable toggle like the other submodules). Has its own `renderSettingsConfig` hook (`scripts/config.js`) for its settings.
+- Its socket handler (`scripts/lib/socket.js`) shares the `module.sigil-tools` channel with roll-model's acknowledgements and remote-roll, so it ignores any message without its own `__$socketOptions`.
+
+### remote-roll (`submodules/remote-roll/`)
+Lets ff-inventory (the inventory website, via its socket-only Foundry user Garuk, which runs no dnd5e code) have a player's own tab make a roll. Loaded as its own top-level esmodule in `module.json`. Listens on `module.sigil-tools` for `{ type: "remoteSkillRoll", requestId, userId, actorId, skill, dc }`; only the tab of the named `userId` acts, calling `actor.rollSkill({ skill, target: dc }, { configure: false })` (dnd5e's own roll, no dialog, the usual card), and answers `{ type: "remoteSkillRollResult", requestId, userId, total, d20 }` or `{ …, error }`. Foundry relays module messages to every other connected client, Garuk's socket included. Used by Avi's Spells (the Arcana check for copying a scroll); the website checks the user is logged in (Foundry's join data) before asking, and gives up after 30 s.
 
 ### effectmacro (`submodules/effectmacro/`)
 Runs macros from active effects on various triggers (onCreate, onDelete, onEnable, etc.).

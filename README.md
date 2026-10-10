@@ -48,6 +48,9 @@ Loads the `Iedcaru` scene when the `Dev` user logs in.
 Carousel-style combat tracker replacing Foundry's default combat tracker UI — a maintained fork of theripper93's `combat-tracker-dock`, with campaign-specific tweaks (reversed wheel-scroll direction, faster scroll speed).
 Full documentation: [submodules/combat-tracker-dock/README.md](submodules/combat-tracker-dock/README.md).
 
+### Remote Roll
+Lets the inventory website (`cityofdoors.net`, through its Foundry user Garuk) ask a player's open Foundry tab to roll a skill check from their character's sheet: dnd5e's own roll, so every bonus and effect on the character (Guidance, items, features) counts and the usual chat card appears. Used by *Avi's Spells* for the Intelligence (Arcana) check when copying a spell from a scroll, rolled by Aveneus's player. The website checks that player is logged in first; with nobody to roll, it refuses rather than rolling for them.
+
 ## Internal utilities
 
 ### Shared

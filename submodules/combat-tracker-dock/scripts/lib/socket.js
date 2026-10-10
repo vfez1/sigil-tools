@@ -66,7 +66,10 @@ export class Socket {
     static __$reserved = ["__$eventName", "__$response", "__$onMessage", "__$parseUsers", "register", "USERS"];
 
     static async __$onMessage(data) {
-        const options = data.__$socketOptions;
+        const options = data?.__$socketOptions;
+        // The channel is shared with the module's other submodules (roll-model's acknowledgements,
+        // remote-roll); their messages aren't ours.
+        if (!options) return;
 
         if (options.__$storeName) {
             if (options.__$request) {
