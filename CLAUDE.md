@@ -35,6 +35,8 @@ The core submodule. Entry point: `roll-model.js` → `HooksUtility.registerModul
 
 **House rule:** a natural 20 on a saving throw always succeeds (`isSuccess`/`isFailure` wrapped on `BasicRoll`); natural 20s on saves and checks show a green d20 badge, natural 1s stay uncoloured.
 
+**Rest expiry fix:** `ActiveEffect#isExpiryEvent` wrapped so a long or short rest only removes effects whose expiry is set to that rest. Without it, dnd5e 6 on Foundry v14 deletes every applied enchantment (Wraps of Unarmed Power, Improved Blessed Strikes) on every rest, since core treats an effect with no expiry as matching any event.
+
 **Class/feat automation**
 - **Portent** (Divination Wizard): rolls 2–3 d20s on long rest, displays on sheet next to the feat, click to post to chat as a standalone card
 - **Elemental Fury / Potent Spellcasting**: injects Wisdom modifier into druid/cleric cantrip damage

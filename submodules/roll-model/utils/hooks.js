@@ -63,6 +63,7 @@ export class HooksUtility {
             _applyRollModePatch();
             _applyInitiativeRerollPatch();
             _applySaveNatural20Patch();
+            _applyRestExpiryPatch();
             applyHPDismissPatch();
 
             game.keybindings.register(MODULE_NAME, "hp-toggle", {
@@ -983,6 +984,30 @@ function _applySaveNatural20Patch() {
             "CONFIG.Dice.BasicRoll.prototype.isFailure",
             function (wrapped) {
                 return isSaveNatural20(this) ? false : wrapped();
+            },
+            "MIXED"
+        );
+    });
+}
+
+/**
+ * Rests only expire effects that say so. dnd5e's rest deletes every actor effect and every applied
+ * enchantment whose isExpiryEvent("longRest" / "shortRest") is true, without looking at duration,
+ * and Foundry v14's isExpiryEvent answers true to any event for an effect with no expiry set
+ * ("expiry is determined by duration alone"). So every rest wiped enchantments that last until
+ * removed (Wraps of Unarmed Power on an unarmed strike, Improved Blessed Strikes on a weapon).
+ * For rest events an effect with no expiry now answers false; one set to expire on a long or
+ * short rest still does, and every other event goes to the original.
+ */
+function _applyRestExpiryPatch() {
+    const REST_EVENTS = new Set(["longRest", "shortRest"]);
+    Hooks.once("setup", () => {
+        libWrapper.register(
+            MODULE_NAME,
+            "CONFIG.ActiveEffect.documentClass.prototype.isExpiryEvent",
+            function (wrapped, event, ...args) {
+                if (REST_EVENTS.has(event) && !this.duration?.expiry) return false;
+                return wrapped(event, ...args);
             },
             "MIXED"
         );

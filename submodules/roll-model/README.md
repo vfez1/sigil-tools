@@ -406,6 +406,12 @@ dnd5e 6.0's own "roll the attack right after use" step is switched off with
 - `CONFIG.Dice.BasicRoll.prototype.isSuccess` / `isFailure` (wrapped at `setup`): a save roll
   (`options.rollType === "save"`) with a natural 20 succeeds, for the house rule above. dnd5e
   reads every save outcome through these two getters.
+- `CONFIG.ActiveEffect.documentClass.prototype.isExpiryEvent` (wrapped at `setup`): for
+  `longRest` and `shortRest`, an effect with no expiry set answers false. dnd5e's rest deletes
+  every actor effect and applied enchantment whose `isExpiryEvent` is true, and Foundry v14
+  answers true to any event for an effect with no expiry, so without this every rest removes
+  enchantments that last until removed (Wraps of Unarmed Power on an unarmed strike, Improved
+  Blessed Strikes on a weapon). Effects set to expire on a long or short rest still do.
 - `core.dismiss` keybinding: replaced so Esc skips the HP widget. This one is a direct patch,
   not libWrapper.
 
