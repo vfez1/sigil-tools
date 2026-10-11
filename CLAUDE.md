@@ -81,6 +81,9 @@ Home-grown replacement for the old third-party `grid-aware-auras` module (remove
 - Syncs with `ActiveAuras`-linked effects (`flags.ActiveAuras.visualAuraPreset`) so an aura preset auto-enables/disables when its controlling effect is created/deleted/toggled.
 - GM-authoritative: most hooks early-return for non-GMs or non-primary GMs (lowest user id among active GMs) to avoid duplicate region writes.
 
+### ascendant-focus (`submodules/ascendant-focus/`)
+Imported from `roll-model.js`. A worn item with a utility activity named "Ascendant" (Needle's Nail (Ascendant)) adds an *Ascendant: Cast at level 9* checkbox to a level 1–8 spell's cast dialog (`renderActivityUsageDialog`). `_prepareUsageScaling` is wrapped (libWrapper, every `CONFIG.DND5E.activityTypes` class) so a ticked box sets `usageConfig.scaling` to level 9 on the config, the message and the item clone; the slot picked is still the one spent. `dnd5e.postUseActivity` spends the item's Ascendant use. The form field is `rmAscendant`.
+
 ### chat-archive (`submodules/chat-archive/`)
 Auto-archives old chat messages to an external server to keep the local chat log from growing unbounded (mitigates the client lag from long-session chat-log DOM accumulation). Entry point: `chat-archive.js` (imported from `roll-model.js`), gated by `enableChatArchive`.
 

@@ -32,6 +32,9 @@ Adds an attribute-path autocomplete dropdown to the Active Effect Changes tab, b
 ### Character Features
 Per-character automation config, keyed by actor name: toggles specific active effects on/off automatically when a character wild-shapes/reverts, or when a tracked item's attunement changes.
 
+### Ascendant Focus
+For an Ascendant Dragon-Touched Focus (Fizban's): while a character wears an item with a utility activity named "Ascendant" that has a use left (equipped, and attuned if required), the cast dialog of a level 1–8 spell gets an *Ascendant: Cast at level 9* checkbox under the spell slot. Ticked, the spell is cast at level 9 while the slot picked is still the one spent, and the item's Ascendant use is spent. dnd5e's `_prepareUsageScaling` is wrapped on every activity type to set the level; loaded from `roll-model.js`.
+
 ### Chat Archive
 Once the chat log passes a configured message count, automatically POSTs the oldest messages to an external archive server and deletes them from the live log, keeping the in-game chat log short. The GM also gets an archive button (box icon, next to Clear Chat) that sends every message currently in chat to the archive after a confirmation; messages are only removed once the server confirms it stored them.
 
