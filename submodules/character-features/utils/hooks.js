@@ -1,14 +1,28 @@
 import { getConfig } from "./settings.js";
 
+// The Foundry user the inventory website (ff-inventory) signs in as. Its socket-only session runs
+// no module code, so its changes are handled by Foundry's designated GM instead.
+const WEBSITE_USER_NAME = "Garuk";
+
+// Document hooks fire in every connected tab, so exactly one tab acts on a change (and posts its
+// chat card): the one that made it, or the designated GM's for changes made by the website.
+function _isHandler(userId) {
+    if (userId === game.user.id) return true;
+    if (game.users.get(userId)?.name !== WEBSITE_USER_NAME) return false;
+    return game.users.activeGM?.id === game.user.id;
+}
+
 export function registerHooks() {
     // Beast form actor is created after transformActorV2 fires, so we hook createActor instead.
-    Hooks.on("createActor", (actor) => {
+    Hooks.on("createActor", (actor, options, userId) => {
+        if (!_isHandler(userId)) return;
         if (!actor.getFlag("dnd5e", "isPolymorphed")) return;
         const originalId = actor.getFlag("dnd5e", "originalActor");
         const original = originalId ? game.actors.get(originalId) : null;
         _dispatchWildshapeToggle(actor, true, original);
     });
 
+    // dnd5e calls this only in the tab that reverts, so it needs no _isHandler check.
     Hooks.on("dnd5e.revertOriginalForm", (actor) => {
         const originalId = actor.getFlag("dnd5e", "originalActor");
         const original = originalId ? game.actors.get(originalId) : null;
@@ -16,7 +30,8 @@ export function registerHooks() {
         _dispatchWildshapeToggle(original, false, original);
     });
 
-    Hooks.on("updateItem", (item, change) => {
+    Hooks.on("updateItem", (item, change, options, userId) => {
+        if (!_isHandler(userId)) return;
         if (!("attuned" in (change.system ?? {}))) return;
         const actor = item.parent;
         if (!actor) return;
@@ -76,9 +91,7 @@ async function _applyAttunementToggle(actor, nowAttuned, effectConfigs) {
         }
     }
 
-    // This hook fires on every connected client, not just the one with permission to write
-    // (e.g. GM or the actor's owner) — skip parents the current user can't actually update,
-    // instead of letting Foundry throw a permission error for every other connected client.
+    // Skip parents this user can't update rather than letting Foundry throw a permission error.
     for (const [parent, updates] of updatesByParent) {
         if (!parent.isOwner) continue;
         await parent.updateEmbeddedDocuments("ActiveEffect", updates);
@@ -144,7 +157,7 @@ async function _applyWildshapeEffectToggle(actor, isWildShaping, attunementActor
         }
     }
 
-    // Same reasoning as _applyAttunementToggle: only act on parents this client can write to.
+    // Skip parents this user can't update, as in _applyAttunementToggle.
     for (const [parent, updates] of updatesByParent) {
         if (!parent.isOwner) continue;
         await parent.updateEmbeddedDocuments("ActiveEffect", updates);

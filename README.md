@@ -30,7 +30,7 @@ Adds macro triggers to active effects and related dnd5e workflows.
 Adds an attribute-path autocomplete dropdown to the Active Effect Changes tab, built by walking the actual dnd5e actor/item/token schema so suggested paths are always valid for the current system version.
 
 ### Character Features
-Per-character automation config, keyed by actor name: toggles specific active effects on/off automatically when a character wild-shapes/reverts, or when a tracked item's attunement changes.
+Per-character automation config, keyed by actor name: toggles specific active effects on/off automatically when a character wild-shapes/reverts, or when a tracked item's attunement changes. Each change is handled once, by the tab of the person who made it (the Gamemaster's, for attunement changed on the inventory website), which posts one chat card listing what it toggled.
 
 ### Ascendant Focus
 For an Ascendant Dragon-Touched Focus (Fizban's): while a character wears an item with a utility activity named "Ascendant" that has a use left (equipped, and attuned if required), the cast dialog of a level 1–8 spell gets an *Ascendant: Cast at level 9* checkbox under the spell slot. Ticked, the spell is cast at level 9 while the slot picked is still the one spent, and the item's Ascendant use is spent. dnd5e's `_prepareUsageScaling` is wrapped on every activity type to set the level; loaded from `roll-model.js`.

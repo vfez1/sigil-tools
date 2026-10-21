@@ -66,6 +66,7 @@ Automatically applies active effects to tokens within aura range. Wildshape-awar
 PC-specific automation. Entry point: `character-features.js` (imported from `roll-model.js`).
 
 - **Wild shape effect toggling:** on `createActor` (polymorph) and `dnd5e.revertOriginalForm`, automatically enables/disables named effects on matched actors.
+- **One tab acts per change:** `createActor` and `updateItem` fire in every connected tab, so `_isHandler` lets only the tab of the user who made the change toggle effects and post the chat card — or, for a change made by Garuk (the inventory website's socket-only user, which runs no module code, e.g. attuning from the website), the designated GM's tab (`game.users.activeGM`). `dnd5e.revertOriginalForm` is only called in the reverting tab.
 - **Data-driven config** stored in hidden world setting `characterFeaturesConfig` (Object). Edited via "Character Setup" button in module settings (opens `CharacterSetupApp`).
 - Each character entry has: `enabled`, `actorName` (matched case-insensitively), and `wildshape[]` — an array of `{ name, disabledWhileShaped, attuned? }` effect rules.
 - `attuned` is an optional item-name prefix; if set, the effect only toggles if the original actor has that item attuned.
