@@ -15,7 +15,7 @@ The persistent, draggable HP widget referenced above: quick damage/heal buttons,
 Automatically applies active effects to tokens within a defined aura radius. Integrates with the Roll Model item sheet to configure aura flags per active effect.
 
 ### Visual Auras
-Adds an "Auras" tab to token config sheets for defining visual aura rings drawn directly on a token, independent of the Active Auras effect-application logic.
+Adds an "Auras" tab to token config sheets for defining visual aura rings drawn directly on a token, independent of the Active Auras effect-application logic. The rings are drawn by Foundry's designated GM (highest role first), so turning an aura on or off only shows while the Gamemaster is in Foundry; Garuk, the inventory website's Assistant GM, runs no module code and draws nothing.
 
 ### Grid Regions
 Forces Foundry's Region shapes — both from dnd5e template placement (e.g. an activity's area of effect) and the manual region-drawing tools — to measure using the scene's own grid metric instead of true euclidean geometry, so a burst radius matches the grid squares the table actually plays on.
