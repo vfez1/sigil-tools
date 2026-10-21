@@ -79,7 +79,7 @@ Home-grown replacement for the old third-party `grid-aware-auras` module (remove
 - Injects an "Auras" tab into token config sheets (placed + prototype) for per-token enable/disable overrides (`flags.sigil-tools.visualAuras.disabled`).
 - `createToken`/`deleteToken`/`canvasReady` hooks create, clean up, and reconcile the `Region` documents per scene; reconciliation also re-derives state from live Active Effects so auras don't go stale on scenes that weren't active when an effect toggled.
 - Syncs with `ActiveAuras`-linked effects (`flags.ActiveAuras.visualAuraPreset`) so an aura preset auto-enables/disables when its controlling effect is created/deleted/toggled.
-- GM-authoritative: most hooks early-return for non-GMs or non-primary GMs (lowest user id among active GMs) to avoid duplicate region writes.
+- GM-authoritative: most hooks early-return for non-GMs or non-primary GMs (`game.users.activeGM`: highest role, then lowest id — so the Gamemaster, never Garuk, the ff-inventory website's socket-only Assistant GM that runs no module code) to avoid duplicate region writes.
 
 ### ascendant-focus (`submodules/ascendant-focus/`)
 Imported from `roll-model.js`. A worn item with a utility activity named "Ascendant" (Needle's Nail (Ascendant)) adds an *Ascendant: Cast at level 9* checkbox to a level 1–8 spell's cast dialog (`renderActivityUsageDialog`). `_prepareUsageScaling` is wrapped (libWrapper, every `CONFIG.DND5E.activityTypes` class) so a ticked box sets `usageConfig.scaling` to level 9 on the config, the message and the item clone; the slot picked is still the one spent. `dnd5e.postUseActivity` spends the item's Ascendant use. The form field is `rmAscendant`.

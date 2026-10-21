@@ -67,12 +67,12 @@ async function onUpdateToken(tokenDoc, changes, options, userId) {
     const changeKeys = Object.keys(flatChanges).filter(k => k !== "_id");
     // Only trace changes we might care about (aura flags, actor swap from wild shape, size).
     if (changeKeys.some(k => k.startsWith("flags.sigil-tools") || ["actorId", "width", "height", "name"].includes(k))) {
-        const activeGMs = game.users.filter(u => u.isGM && u.active).sort((a, b) => a.id.localeCompare(b.id));
-        vaLog(`updateToken: token=${tokenDoc.name}#${tokenDoc.id} scene=${tokenDoc.parent?.name} actor=${describeActor(tokenDoc.actor)} changes=${JSON.stringify(flatChanges)} byUser=${userId} primaryGM=${activeGMs[0]?.name} skipRefresh=${!!options["visual-auras.skipRefresh"]}`);
+        vaLog(`updateToken: token=${tokenDoc.name}#${tokenDoc.id} scene=${tokenDoc.parent?.name} actor=${describeActor(tokenDoc.actor)} changes=${JSON.stringify(flatChanges)} byUser=${userId} primaryGM=${game.users.activeGM?.name} skipRefresh=${!!options["visual-auras.skipRefresh"]}`);
     }
+    // Foundry's designated GM: highest role first, then lowest id. Sorting by id alone picked
+    // Garuk (an Assistant GM whose socket-only session runs no module code) over the Gamemaster.
     if (!game.user.isGM) return;
-    const activeGMs = game.users.filter(u => u.isGM && u.active).sort((a, b) => a.id.localeCompare(b.id));
-    if (activeGMs[0]?.id !== game.user.id) return;
+    if (game.users.activeGM?.id !== game.user.id) return;
     if (options["visual-auras.skipRefresh"]) return;
 
     // Wild shape / revert swaps the token's actor (and dnd5e's revert replaces the token's
