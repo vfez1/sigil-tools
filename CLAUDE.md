@@ -110,6 +110,13 @@ Makes dragging an item from one actor's sheet onto another's a move rather than 
 - A MIXED wrapper on `BaseActorSheet.prototype._onDropCreateItems` (`_moveOnce`) makes every move happen once. dnd5e moves by creating the new items and then calling `delete()` on the originals **without awaiting**; on a busy world the delete lands a second or more later, the old sheet still shows the original, and dragging it again creates a second item whose delete then fails ("id ... does not exist in the EmbeddedCollection"), leaving a duplicate. `_moveOnce` runs the move as dnd5e's copy path followed by an awaited delete of exactly the dropped items (with contents), and refuses (with a notice) a drop of an item that is mid-move or already deleted. Fast back-and-forth mouse drags between two sheets with 200 spells each reproduced 10 copies of a single item and 40 of a 10-stack without it, none with it.
 - dnd5e's creation path (stacking, containers, advancement) is untouched, so containers carry their contents. Drops onto a container icon (`_onDropItemContainer`) keep dnd5e's own unawaited delete.
 
+### number-format-cache (`submodules/number-format-cache/`)
+Speeds up actor recalculation and sheet redraws by reusing `Intl.NumberFormat` objects. Entry point: `number-format-cache.js` (imported from `roll-model/utils/hooks.js`), gated by `enableNumberFormatCache`, applied at `setup`.
+
+- dnd5e's `formatNumber` builds a new `Intl.NumberFormat` on every call. It's module-local in dnd5e, so it can't be wrapped; `Intl.NumberFormat` itself is replaced with a `Proxy` whose `construct`/`apply` traps return one shared formatter per `JSON.stringify(args)` key (capped at 5,000), so every caller benefits.
+- Safe because a formatter is immutable: the same arguments always format the same. A subclass (`new.target` not the proxy) or arguments that can't be stringified get a fresh formatter; statics and `instanceof` pass through the proxy.
+- Measured on Aveneus (220 items, 166 spells): about 15% off each recalculation (`actor.reset()`), about 6% off a whole update.
+
 ### effect-autocomplete (`submodules/effect-autocomplete/`)
 Adds an autocomplete/validate dropdown to the Active Effect Config "Changes" key field. Entry point: `effect-autocomplete.js` (imported from `roll-model.js`), gated by `enableEffectAutocomplete`.
 

@@ -1,0 +1,8 @@
+{
+    "rm": {
+        "settings": {
+            "enableNumberFormatCache.name": "Enable: Number Format Cache",
+            "enableNumberFormatCache.hint": "Reuse number formatters instead of building a new one for every number shown. dnd5e builds one for each weight, price, range and spell label, which slows down updating characters with many items or spells (about 15% of a big spellbook's recalculation). Numbers look exactly the same either way. Requires a reload."
+        }
+    }
+}

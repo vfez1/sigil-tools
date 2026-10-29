@@ -23,6 +23,9 @@ Forces Foundry's Region shapes — both from dnd5e template placement (e.g. an a
 ### Item Drag Move
 Makes dragging an item from one actor's sheet onto another's move it instead of copying it, and makes every move happen exactly once. dnd5e used to leave some moves on both sheets: it decides copy or move while the item hovers and sometimes loses that decision by the drop, and it deletes the original without waiting, so moving the same item again quickly could copy it. Now the decision is made again at the drop, the original is gone before the drop finishes, and a drag of an item that's still being moved is refused with a notice. Dragging from a compendium or the Items sidebar still copies, and so does dragging from a sheet you don't own (a move would need to delete the original there). This world has no copy key: Override Settings unbinds dnd5e's Drag Copy and Drag Move keys (Ctrl and Shift roll with disadvantage and advantage here), so between sheets you own a drag is always a move. There's no setting for it; `ENABLED` in `item-drag-move.js` switches it (off leaves dnd5e's own behavior: copy between sheets, Shift to move).
 
+### Number Format Cache
+Makes updating a character faster by reusing number formatters. dnd5e builds a new one from scratch for every number it shows (each weight, price, range and spell label), which on a big spellbook such as Aveneus's (166 spells) is about 40 ms of every recalculation and as much again of every sheet redraw. The browser's `Intl.NumberFormat` is replaced, from `setup` on, with one that hands back the same formatter for the same settings, so numbers look exactly as before. *Enable: Number Format Cache* among the submodule toggles turns it off (after a reload).
+
 ### Effect Macro
 Adds macro triggers to active effects and related dnd5e workflows.
 

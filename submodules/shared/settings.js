@@ -16,6 +16,7 @@ export const SETTING_NAMES = {
     ENABLE_CHAT_ARCHIVE: "enableChatArchive",
     ENABLE_EFFECT_AUTOCOMPLETE: "enableEffectAutocomplete",
     ENABLE_GRID_REGIONS: "enableGridRegions",
+    ENABLE_NUMBER_FORMAT_CACHE: "enableNumberFormatCache",
 };
 
 export class SettingsUtility {
