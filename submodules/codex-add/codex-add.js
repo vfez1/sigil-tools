@@ -10,16 +10,24 @@
 // Import from Foundry with that actor, or opens the page that already has it, and says what it did.
 // Making a page needs the Codex's dmTools; it signs in with the browser's own login, so nothing
 // passes through Foundry.
+//
+// A third entry, *Find art in Art Finder*, on every actor (world or compendium), opens the Art Finder's
+// Find art tab (/codex/art-finder/#actor/<uuid>, in the tab named "sigil-art-finder") on the actor: a
+// search of Foundry's pictures starting on its name, where the picture picked becomes its portrait (and
+// token art), written by Garuk, so the open sheet updates.
 
 const CODEX_TAB = "sigil-codex";
+const ART_TAB = "sigil-art-finder";
 const KINDS = [
     { kind: "npc", label: "Add to Codex as NPC", icon: "fa-solid fa-user-plus", fits: (actor, inPack) => !!actor && !inPack && actor.type !== "group" },
     { kind: "monster", label: "Add to Codex as monster", icon: "fa-solid fa-dragon", fits: actor => actor?.type === "npc" },
+    { kind: "art", label: "Find art in Art Finder", icon: "fa-solid fa-image", fits: actor => !!actor },
 ];
 
 function openCodex(kind, uuid) {
     if (!uuid) return;
-    window.open(`${window.location.origin}/codex/#foundry-add/${kind}/${encodeURIComponent(uuid)}`, CODEX_TAB);
+    if (kind === "art") window.open(`${window.location.origin}/codex/art-finder/#actor/${encodeURIComponent(uuid)}`, ART_TAB);
+    else window.open(`${window.location.origin}/codex/#foundry-add/${kind}/${encodeURIComponent(uuid)}`, CODEX_TAB);
 }
 
 // The actor (or a compendium's index entry, which has its type) and UUID of a directory row.
