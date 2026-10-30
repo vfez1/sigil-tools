@@ -12,7 +12,7 @@
 // passes through Foundry.
 //
 // A third entry, *Find art in Art Finder*, on every actor (world or compendium), opens the Art Finder's
-// Find art tab (/codex/art-finder/#actor/<uuid>, in the tab named "sigil-art-finder") on the actor: a
+// Manage Art tab (/codex/art-finder/#actor/<uuid>, in the tab named "sigil-art-finder") on the actor: a
 // search of Foundry's pictures starting on its name, where the picture picked becomes its portrait (and
 // token art), written by Garuk, so the open sheet updates. The same entry on a scene (the Scenes sidebar's
 // Scene compendiums' and navigation bar's right-click menus, and the scene config's header menu) opens it at
