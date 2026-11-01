@@ -953,3 +953,8 @@ recorded-targets button.target-source-toggle {
     color: var(--color-level-success);
     background: color-mix(in srgb, var(--color-level-success) 12%, transparent);
 }
+
+/* Spell slot level in the usage card header ("Save • 6th Level"); bold when upcast. */
+.chat-card .card-header .subtitle .rm-cast-level-upcast {
+    font-weight: bold;
+}

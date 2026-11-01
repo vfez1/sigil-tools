@@ -78,6 +78,9 @@ another for the damage. Roll Model **folds all of that into the item's own card*
 
 Some other tidying on these cards:
 
+- **The spell slot level** appears in the card header after the activity name, e.g. *"Save •
+  6th Level"*, for any spell above cantrip level. It's **bold** when the spell was upcast. dnd5e
+  only records how many levels a spell was upcast, so the label is the spell's own level plus that.
 - **Item description is collapsed** by default. It stays open when the item (or activity) has its
   own *chat description* filled in, or when the item is on the exceptions list in **Collapse
   Settings** (see [Settings](#11-settings)).

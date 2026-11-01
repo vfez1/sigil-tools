@@ -601,6 +601,39 @@ export class HooksUtility {
                 }
             }
 
+            // Show the spell slot level a levelled spell was cast with in the card header's subtitle
+            // ("Save • 6th Level"). dnd5e 6.0 records only the upcast amount (message.system.scaling,
+            // which roll-model mirrors to flags.dnd5e.scaling and flags.rm.spellScaling), never the
+            // slot itself, and its card shows neither. Bold when cast above the spell's own level.
+            {
+                const root = html instanceof HTMLElement ? html : html[0];
+                const header = root?.querySelector(".chat-card > .card-header .name-stacked");
+                const item = message.getAssociatedItem?.();
+                const baseLevel = Number(item?.system?.level);
+                if (header && message.type === "usage" && !header.querySelector(".rm-cast-level") && item?.type === "spell" && baseLevel > 0) {
+                    const scaling = Number(
+                        message.system?.scaling ||
+                            message.flags?.dnd5e?.scaling ||
+                            message.flags?.[MODULE_SHORT]?.spellScaling ||
+                            0
+                    );
+                    const level = Math.max(baseLevel + (Number.isFinite(scaling) ? scaling : 0), Number(message.system?.level) || 0);
+                    const label = CONFIG.DND5E.spellLevels?.[level] ?? `Level ${level}`;
+                    let subtitle = header.querySelector(".subtitle");
+                    if (!subtitle) {
+                        subtitle = document.createElement("span");
+                        subtitle.className = "subtitle";
+                        header.append(subtitle);
+                    }
+                    const tag = document.createElement("span");
+                    tag.className = "rm-cast-level" + (level > baseLevel ? " rm-cast-level-upcast" : "");
+                    tag.textContent = label;
+                    tag.title = level > baseLevel ? `Cast with a ${label} slot (spell is ${CONFIG.DND5E.spellLevels?.[baseLevel] ?? baseLevel})` : `Cast with a ${label} slot`;
+                    if (subtitle.textContent.trim()) subtitle.append(" • ");
+                    subtitle.append(tag);
+                }
+            }
+
             // Collapse the item property tags row (dnd5e's "rows.properties": section.icon-row with
             // an fa-tag icon + ul.pills) by default. All pills stay in the DOM — nothing is filtered —
             // they're just hidden behind a click on the row. Expanded state is remembered per message
