@@ -121,9 +121,10 @@ Speeds up actor recalculation and sheet redraws by reusing `Intl.NumberFormat` o
 Makes the spellbook's hidden spell copies for Cast activities on items Garuk (the ff-inventory website's socket-only user, which runs no dnd5e code) creates or changes. Entry point: `cast-spell-cache.js` (imported from `roll-model/utils/hooks.js`). No setting; the `ENABLED` constant switches it.
 
 - dnd5e makes a cached copy per Cast activity (`flags.dnd5e.cachedFor` = the activity's relative UUID) in `onCreateActivities` / `onUpdateActivities`, only in the tab of the user who made the change; the spellbook lists only those copies. `CastActivity#use` also makes a missing one, so an uncached spell shows once it's been cast from the item.
-- `createItem` / `updateItem` (when `system.activities` changed) by Garuk: the active GM's tab (`game.users.activeGM`) calls each uncached activity's `getCachedSpellData()` and creates the copies.
-- At `ready`, the active GM's tab does the same for every actor except group actors (no spellbook), catching items added while no GM was online and actors imported whole, whose items never ran `onCreateActivities`.
-- Whenever a run adds copies, the GM's tab shows a `DialogV2.prompt` listing actor, spell and granting item.
+- `createItem` / `updateItem` (when `system.activities` changed) by Garuk: the Gamemaster's tab calls each uncached activity's `getCachedSpellData()` and creates the copies.
+- At `ready`, the Gamemaster's tab does the same for every actor except group actors (no spellbook), catching items added while no Gamemaster was online and actors imported whole, whose items never ran `onCreateActivities`.
+- Only a full Gamemaster's tab acts (role GAMEMASTER, lowest id if several are online), never an Assistant GM's: `game.users.activeGM` picks Garuk whenever no Gamemaster is online.
+- Whenever a run adds copies, the Gamemaster's tab shows a `DialogV2.prompt` listing actor, spell and granting item.
 
 ### effect-autocomplete (`submodules/effect-autocomplete/`)
 Adds an autocomplete/validate dropdown to the Active Effect Config "Changes" key field. Entry point: `effect-autocomplete.js` (imported from `roll-model.js`), gated by `enableEffectAutocomplete`.

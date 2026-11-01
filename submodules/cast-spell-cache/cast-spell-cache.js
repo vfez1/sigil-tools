@@ -18,7 +18,7 @@ export function registerCastSpellCacheHooks() {
     // Catches up on anything Garuk added while no GM was logged in, and on actors imported whole
     // (whose items never ran onCreateActivities). Group actors (the party stash) have no spellbook.
     Hooks.once("ready", () => {
-        if (game.users.activeGM?.id !== game.user.id) return;
+        if (!_isGamemasterTab()) return;
         const actors = game.actors.filter((actor) => actor.type !== "group");
         _cacheSpells(actors.flatMap((actor) => actor.items.contents));
     });
@@ -30,12 +30,25 @@ export function registerCastSpellCacheHooks() {
  * in `onCreateActivities` / `onUpdateActivities`, which run only in the tab of the user who
  * created or changed the item, so an item Garuk adds (the inventory website) gets none, and its
  * spells stay off the spell page until one is cast from the item (`CastActivity#use` makes the
- * copy on demand). The active GM's tab, which sees Garuk's changes like any other client, makes
+ * copy on demand). The Gamemaster's tab, which sees Garuk's changes like any other client, makes
  * them instead.
  */
 function _isHandler(userId) {
     if (game.users.get(userId)?.name !== WEBSITE_USER_NAME) return false;
-    return game.users.activeGM?.id === game.user.id;
+    return _isGamemasterTab();
+}
+
+/**
+ * Only a full Gamemaster's tab does the work, never an Assistant GM's. `game.users.activeGM` would
+ * pick Garuk (an Assistant GM with a low id) whenever no Gamemaster is online, and Garuk runs no
+ * code; with only Dev (another Assistant GM) online it would still pick Garuk. Of several
+ * Gamemasters online, the one with the lowest id acts, so every tab agrees on one.
+ */
+function _isGamemasterTab() {
+    const gamemasters = game.users
+        .filter((u) => u.active && u.role === CONST.USER_ROLES.GAMEMASTER)
+        .sort((a, b) => a.id.localeCompare(b.id));
+    return gamemasters[0]?.id === game.user.id;
 }
 
 async function _cacheSpells(items) {
