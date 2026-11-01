@@ -1068,16 +1068,64 @@ function _applyTurnStartMarker() {
     if (mode === "disabled") return;
 
     let _marker = null;
+    // Key of the turn the marker belongs to ("combatId.round.turn.combatantId"), and the start cell of
+    // every turn seen in the current combat, so going back a turn or reloading the scene redraws the
+    // original cell rather than wherever the token has since moved.
+    let _shownKey = null;
+    let _combatId = null;
+    const _starts = new Map();
 
-    function _draw(combatant) {
+    function _sync() {
+        const combat = game.combat;
+        const combatant = combat?.started ? combat.combatant : null;
+        if (!combatant) {
+            _clear();
+            _shownKey = null;
+            return;
+        }
+        if (combat.id !== _combatId) {
+            _starts.clear();
+            _combatId = combat.id;
+        }
+
+        // The combatant id is part of the key: deleting the current combatant (or its token, which
+        // deletes the combatant) moves the turn to the next one without changing `turn` or `round`.
+        const key = `${combat.round}.${combat.turn}.${combatant.id}`;
+        if (key === _shownKey && _marker) return;
+
+        let start = _starts.get(key);
+        if (!start) {
+            const token = combatant.token;
+            if (!token) {
+                _clear();
+                _shownKey = null;
+                return;
+            }
+            start = {
+                sceneId: token.parent?.id,
+                tokenId: token.id,
+                x: token.x,
+                y: token.y,
+                width: token.width,
+                height: token.height,
+                elevation: token.elevation ?? 0,
+            };
+            _starts.set(key, start);
+        }
+        _shownKey = key;
+        _draw(combatant, start);
+    }
+
+    function _draw(combatant, start) {
         _clear();
-        const token = combatant?.token;
-        if (!token || !canvas.primary) return;
+        if (!canvas.ready || !canvas.primary) return;
+        if (start.sceneId !== canvas.scene?.id) return;
+        if (!canvas.scene.tokens.has(start.tokenId)) return;
         if (mode === "pcs" && combatant.actor?.type !== "character") return;
 
         const size = canvas.grid.size;
-        const w = Math.max(1, token.width) * size;
-        const h = Math.max(1, token.height) * size;
+        const w = Math.max(1, start.width) * size;
+        const h = Math.max(1, start.height) * size;
 
         const g = new PIXI.Graphics();
         g.lineStyle(3, 0xdd44ff, 1.0);
@@ -1108,9 +1156,9 @@ function _applyTurnStartMarker() {
         label.x = w / 2;
         label.y = h / 2;
         g.addChild(label);
-        g.x = token.x;
-        g.y = token.y;
-        g.elevation = token.elevation ?? 0;
+        g.x = start.x;
+        g.y = start.y;
+        g.elevation = start.elevation;
         g.sortLayer = 300;
 
         canvas.primary.addChild(g);
@@ -1119,19 +1167,37 @@ function _applyTurnStartMarker() {
 
     function _clear() {
         if (_marker) {
-            canvas.primary?.removeChild(_marker);
-            _marker.destroy();
+            if (!_marker.destroyed) {
+                _marker.parent?.removeChild(_marker);
+                _marker.destroy({ children: true });
+            }
             _marker = null;
         }
     }
 
-    Hooks.on("updateCombat", (combat, changes) => {
-        if (!("turn" in changes) && !("round" in changes)) return;
-        _draw(combat.combatant);
+    // combatTurnChange covers turn changes that come from adding or removing combatants, which
+    // don't send an updateCombat with `turn` in it. The rest catch starting, ending, switching
+    // and re-sorting combats, and deleted tokens.
+    const resync = () => _sync();
+    Hooks.on("updateCombat", resync);
+    Hooks.on("combatTurnChange", resync);
+    Hooks.on("combatStart", resync);
+    Hooks.on("deleteCombat", resync);
+    Hooks.on("createCombatant", resync);
+    Hooks.on("deleteCombatant", resync);
+    Hooks.on("updateCombatant", resync);
+    Hooks.on("deleteToken", (token) => {
+        if (_starts.size && [..._starts.values()].some((s) => s.tokenId === token.id)) {
+            _clear();
+            _shownKey = null;
+        }
+        resync();
     });
-
-    Hooks.on("deleteCombat", () => _clear());
-    Hooks.on("canvasTearDown", () => _clear());
+    Hooks.on("canvasTearDown", () => {
+        _clear();
+        _shownKey = null;
+    });
+    Hooks.on("canvasReady", resync);
 }
 
 function _getPreventMovementHistorySetting() {

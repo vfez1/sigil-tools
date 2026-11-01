@@ -308,6 +308,17 @@ When a combatant's turn starts, the square they started on gets a purple outline
 with an **"S"** in the middle, so you can see where they came from as they move. Set in
 [Settings](#11-settings) to all tokens, player characters only, or off.
 
+The marker follows whoever's turn it actually is, not just the *Next/Previous Turn* buttons:
+
+- **Deleting the current combatant or its token** moves the marker to the combatant whose turn it
+  now is (the turn passes on without the combat's turn number changing).
+- **Deleting a token** removes its marker; a combatant with no token gets none.
+- **Going back a turn** puts the marker back on the cell that turn started on, not where the token is
+  now. The same goes for leaving and returning to the scene. Start cells are remembered per browser
+  for the current combat, so a reload marks where the token stands at that moment.
+- **Starting, ending or switching combats** draws or clears it to match; nothing shows before round 1.
+- It only shows on the scene the token is on.
+
 ### No movement history
 
 Tokens don't record movement history (the dotted "path so far" trail). Can be turned off in
