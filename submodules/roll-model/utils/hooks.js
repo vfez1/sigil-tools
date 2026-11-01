@@ -12,6 +12,7 @@ import { registerEffectAutocompleteHooks } from "../../effect-autocomplete/effec
 import { registerGridRegionsHooks } from "../../grid-regions/grid-regions.js";
 import { registerItemDragMoveHooks } from "../../item-drag-move/item-drag-move.js";
 import { registerNumberFormatCacheHooks } from "../../number-format-cache/number-format-cache.js";
+import { registerCastSpellCacheHooks } from "../../cast-spell-cache/cast-spell-cache.js";
 import { registerCodexAddHooks } from "../../codex-add/codex-add.js";
 import { LogUtility } from "./log.js";
 import { CoreUtility } from "./core.js";
@@ -103,6 +104,7 @@ export class HooksUtility {
         registerGridRegionsHooks();
         registerItemDragMoveHooks();
         registerNumberFormatCacheHooks();
+        registerCastSpellCacheHooks();
         registerCodexAddHooks();
 
         Hooks.on(HOOKS_CORE.READY, () => {
