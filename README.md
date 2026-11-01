@@ -12,7 +12,7 @@ Full documentation: [submodules/roll-model/README.md](submodules/roll-model/READ
 The persistent, draggable HP widget referenced above: quick damage/heal buttons, temp-HP and death-save tracking for the selected token(s), and a full-heal/knock-to-zero shortcut.
 
 ### Active Auras
-Automatically applies active effects to tokens within a defined aura radius. Integrates with the Roll Model item sheet to configure aura flags per active effect.
+Automatically applies active effects to tokens within a defined aura radius. Each effect's aura settings, including the **Visual Aura Preset** that ties a Visual Aura ring to the effect, are on the effect sheet's **Active Auras** tab, after dnd5e's own tabs.
 
 ### Visual Auras
 Adds an "Auras" tab to token config sheets for defining visual aura rings drawn directly on a token, independent of the Active Auras effect-application logic. The rings are drawn by Foundry's designated GM (highest role first), so turning an aura on or off only shows while the Gamemaster is in Foundry; Garuk, the inventory website's Assistant GM, runs no module code and draws nothing.
