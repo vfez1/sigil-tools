@@ -61,7 +61,7 @@ The core submodule. Entry point: `roll-model.js` → `HooksUtility.registerModul
 
 ### active-auras (`submodules/active-auras/`)
 Automatically applies active effects to tokens within aura range. Wildshape-aware — handles token identity changes during form transformations.
-- The effect sheet's **Active Auras** tab (`app/ActiveAuraSheet.mjs`, template `templates/active-auras-config.hbs`) holds the aura flags (`flags.ActiveAuras.*`, including `visualAuraPreset`). It's added to core's `ActiveEffectConfig` PARTS/TABS at init and, at `setup`, appended to dnd5e 6's own `ActiveEffectSheet5e` PARTS (which inherits core's TABS but defines its own PARTS); dnd5e's parts are kept.
+- The effect sheet's **Active Auras** tab (`app/ActiveAuraSheet.mjs`, template `templates/active-auras-config.hbs`) holds the aura flags (`flags.ActiveAuras.*`, including `visualAuraPreset`). It's added to core's `ActiveEffectConfig` PARTS/TABS at init and, at `ready` (Foundry fills `CONFIG.ActiveEffect.sheetClasses` only after `setup`), appended to dnd5e 6's own `ActiveEffectSheet5e` PARTS (which inherits core's TABS but defines its own PARTS); dnd5e's parts are kept.
 
 ### character-features (`submodules/character-features/`)
 PC-specific automation. Entry point: `character-features.js` (imported from `roll-model.js`).

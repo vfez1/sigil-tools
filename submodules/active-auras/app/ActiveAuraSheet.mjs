@@ -283,8 +283,9 @@ export function extendAESheet() {
   // dnd5e 6 registers its own effect sheet (ActiveEffectSheet5e) as the default. It inherits core's
   // TABS (so the Active Auras tab button shows) but defines its own PARTS, so the tab had no content.
   // Append the part after dnd5e's own; its parts are left as they are. Context and the isAura toggle
-  // come from the wrappers above, which dnd5e's overrides reach through super.
-  Hooks.once("setup", () => {
+  // come from the wrappers above, which dnd5e's overrides reach through super. At `ready`: Foundry
+  // fills CONFIG.ActiveEffect.sheetClasses only after the `setup` hook.
+  Hooks.once("ready", () => {
     const dnd5eCls = CONFIG.ActiveEffect.sheetClasses.base?.["dnd5e.ActiveEffectSheet5e"]?.cls;
     if (!dnd5eCls || Object.hasOwn(dnd5eCls.PARTS, "activeauras")) return;
     dnd5eCls.PARTS = {
