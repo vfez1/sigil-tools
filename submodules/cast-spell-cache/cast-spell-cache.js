@@ -50,14 +50,35 @@ async function _cacheSpells(items) {
                 const data = await activity.getCachedSpellData();
                 if (!data) continue;
                 if (!byActor.has(actor)) byActor.set(actor, []);
-                byActor.get(actor).push(data);
+                byActor.get(actor).push({ data, itemName: item.name });
             } catch (err) {
                 console.warn(`sigil-tools | cast-spell-cache: ${item.name} (${activity.relativeUUID}):`, err);
             }
         }
     }
+    const added = [];
     for (const [actor, spells] of byActor) {
-        await actor.createEmbeddedDocuments("Item", spells);
-        console.log(`sigil-tools | cast-spell-cache: added ${spells.map((s) => s.name).join(", ")} to ${actor.name}'s spellbook`);
+        try {
+            await actor.createEmbeddedDocuments("Item", spells.map((s) => s.data));
+            for (const s of spells) added.push({ actor: actor.name, item: s.itemName, spell: s.data.name });
+            console.log(`sigil-tools | cast-spell-cache: added ${spells.map((s) => s.data.name).join(", ")} to ${actor.name}'s spellbook`);
+        } catch (err) {
+            console.warn(`sigil-tools | cast-spell-cache: ${actor.name}:`, err);
+        }
     }
+    if (added.length) _report(added);
+}
+
+/** Tell the GM what was added, as a popup listing each actor's new spellbook entries. */
+function _report(added) {
+    const esc = foundry.utils.escapeHTML;
+    const rows = added
+        .map((a) => `<li><strong>${esc(a.actor)}</strong>: ${esc(a.spell)} <em>(from ${esc(a.item)})</em></li>`)
+        .join("");
+    foundry.applications.api.DialogV2.prompt({
+        window: { title: "Spells added to spellbooks", icon: "fa-solid fa-book-open" },
+        content: `<p>These spells, granted by items, were missing from their actors' spell pages and have been added:</p><ul>${rows}</ul>`,
+        ok: { label: "OK" },
+        rejectClose: false,
+    });
 }
