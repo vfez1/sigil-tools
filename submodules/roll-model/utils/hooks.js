@@ -14,6 +14,7 @@ import { registerItemDragMoveHooks } from "../../item-drag-move/item-drag-move.j
 import { registerNumberFormatCacheHooks } from "../../number-format-cache/number-format-cache.js";
 import { registerCastSpellCacheHooks } from "../../cast-spell-cache/cast-spell-cache.js";
 import { registerCodexAddHooks } from "../../codex-add/codex-add.js";
+import { registerSharedImageHooks } from "../../shared-image/shared-image.js";
 import { LogUtility } from "./log.js";
 import { CoreUtility } from "./core.js";
 
@@ -106,6 +107,7 @@ export class HooksUtility {
         registerNumberFormatCacheHooks();
         registerCastSpellCacheHooks();
         registerCodexAddHooks();
+        registerSharedImageHooks();
 
         Hooks.on(HOOKS_CORE.READY, () => {
             if (!isEnabled(SETTING_NAMES.ENABLE_ROLL_MODEL)) return;

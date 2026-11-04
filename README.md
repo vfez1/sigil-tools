@@ -63,6 +63,9 @@ Lets the inventory website (`cityofdoors.net`, through its Foundry user Garuk) a
 ### Codex Add
 *Add to Codex as NPC* (Sigil world actors only) and *Add to Codex as monster* (any NPC-type actor, in the world or a compendium) in an actor sheet's ⋮ menu and in the right-click menus of the Actors sidebar and every Actor compendium, for GMs. Each opens the Sigil Codex (`cityofdoors.net/codex`) in a browser tab named `sigil-codex`, which makes the page from that actor and fills it in the way its *Import from Foundry* does, or opens the page that already has it. The Codex does the work with the browser's own login, so the actor's UUID is all that leaves Foundry. A third entry, *Find art in Art Finder*, on every actor (world or compendium), opens the Art Finder's *Manage Art* tab (`cityofdoors.net/codex/art-finder/`, in a tab named `sigil-art-finder`) on that actor: a search of Foundry's pictures by name, starting on the actor's, where the picture picked becomes the actor's portrait, its token's, or both. Garuk writes it, so the open sheet updates at once. The same entry is on scenes, in the right-click menus of the Scenes sidebar, Scene compendiums and the navigation bar and in the scene config's header menu, for GMs: the picture picked becomes the scene's background.
 
+### Shared Images
+The chat cards the Art Finder's *Show to players* (`cityofdoors.net/codex/art-finder/`, Manage Art's Rename / Replace panel) posts, through Garuk, beside the popup it shows everyone: each holds the picture's small copy and its title, and a click on it opens the picture itself again in an image popout, so a player who closed the popup gets it back from the chat. Its few styles are added by the script itself (`submodules/shared-image/shared-image.js`).
+
 ## Internal utilities
 
 ### Shared
