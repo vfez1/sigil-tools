@@ -1,5 +1,5 @@
 // Shared images: the chat cards the Art Finder's *Show to players* posts (cityofdoors.net/codex/art-finder/,
-// written by Garuk from ff-inventory's artFinder.showToPlayers) beside the popup it shows everyone. A card
+// written by Garuk from cityofdoors's artFinder.showToPlayers) beside the popup it shows everyone. A card
 // holds the picture's small copy; a click on it opens the picture itself again in an image popout, so a
 // player who closed the popup gets it back from the chat.
 

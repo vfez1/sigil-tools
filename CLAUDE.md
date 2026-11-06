@@ -81,7 +81,7 @@ Home-grown replacement for the old third-party `grid-aware-auras` module (remove
 - Injects an "Auras" tab into token config sheets (placed + prototype) for per-token enable/disable overrides (`flags.sigil-tools.visualAuras.disabled`).
 - `createToken`/`deleteToken`/`canvasReady` hooks create, clean up, and reconcile the `Region` documents per scene; reconciliation also re-derives state from live Active Effects so auras don't go stale on scenes that weren't active when an effect toggled.
 - Syncs with `ActiveAuras`-linked effects (`flags.ActiveAuras.visualAuraPreset`) so an aura preset auto-enables/disables when its controlling effect is created/deleted/toggled.
-- GM-authoritative: most hooks early-return for non-GMs or non-primary GMs (`game.users.activeGM`: highest role, then lowest id — so the Gamemaster, never Garuk, the ff-inventory website's socket-only Assistant GM that runs no module code) to avoid duplicate region writes.
+- GM-authoritative: most hooks early-return for non-GMs or non-primary GMs (`game.users.activeGM`: highest role, then lowest id — so the Gamemaster, never Garuk, the cityofdoors website's socket-only Assistant GM that runs no module code) to avoid duplicate region writes.
 
 ### ascendant-focus (`submodules/ascendant-focus/`)
 Imported from `roll-model.js`. A worn item with a utility activity named "Ascendant" (Needle's Nail (Ascendant)) adds an *Ascendant: Cast at level 9* checkbox to a level 1–8 spell's cast dialog (`renderActivityUsageDialog`). `_prepareUsageScaling` is wrapped (libWrapper, every `CONFIG.DND5E.activityTypes` class) so a ticked box sets `usageConfig.scaling` to level 9 on the config, the message and the item clone; the slot picked is still the one spent. `dnd5e.postUseActivity` spends the item's Ascendant use. The form field is `rmAscendant`.
@@ -119,7 +119,7 @@ Speeds up actor recalculation and sheet redraws by reusing `Intl.NumberFormat` o
 - Measured on Aveneus (220 items, 166 spells): about 15% off each recalculation (`actor.reset()`), about 6% off a whole update.
 
 ### cast-spell-cache (`submodules/cast-spell-cache/`)
-Makes the spellbook's hidden spell copies for Cast activities on items Garuk (the ff-inventory website's socket-only user, which runs no dnd5e code) creates or changes. Entry point: `cast-spell-cache.js` (imported from `roll-model/utils/hooks.js`). No setting; the `ENABLED` constant switches it.
+Makes the spellbook's hidden spell copies for Cast activities on items Garuk (the cityofdoors website's socket-only user, which runs no dnd5e code) creates or changes. Entry point: `cast-spell-cache.js` (imported from `roll-model/utils/hooks.js`). No setting; the `ENABLED` constant switches it.
 
 - dnd5e makes a cached copy per Cast activity (`flags.dnd5e.cachedFor` = the activity's relative UUID) in `onCreateActivities` / `onUpdateActivities`, only in the tab of the user who made the change; the spellbook lists only those copies. `CastActivity#use` also makes a missing one, so an uncached spell shows once it's been cast from the item.
 - `createItem` / `updateItem` (when `system.activities` changed) by Garuk: the Gamemaster's tab calls each uncached activity's `getCachedSpellData()` and creates the copies.
@@ -140,7 +140,7 @@ Vendored third-party module ("Carousel Combat Tracker" by theripper93) — a car
 - Its socket handler (`scripts/lib/socket.js`) shares the `module.sigil-tools` channel with roll-model's acknowledgements and remote-roll, so it ignores any message without its own `__$socketOptions`.
 
 ### remote-roll (`submodules/remote-roll/`)
-Lets ff-inventory (the inventory website, via its socket-only Foundry user Garuk, which runs no dnd5e code) have a player's own tab make a roll. Loaded as its own top-level esmodule in `module.json`. Listens on `module.sigil-tools` for `{ type: "remoteSkillRoll", requestId, userId, actorId, skill, dc }`; only the tab of the named `userId` acts, calling `actor.rollSkill({ skill, target: dc }, { configure: false })` (dnd5e's own roll, no dialog, the usual card), and answers `{ type: "remoteSkillRollResult", requestId, userId, total, d20 }` or `{ …, error }`. Foundry relays module messages to every other connected client, Garuk's socket included. Used by Avi's Spells (the Arcana check for copying a scroll); the website checks the user is logged in (Foundry's join data) before asking, and gives up after 30 s.
+Lets cityofdoors (the inventory website, via its socket-only Foundry user Garuk, which runs no dnd5e code) have a player's own tab make a roll. Loaded as its own top-level esmodule in `module.json`. Listens on `module.sigil-tools` for `{ type: "remoteSkillRoll", requestId, userId, actorId, skill, dc }`; only the tab of the named `userId` acts, calling `actor.rollSkill({ skill, target: dc }, { configure: false })` (dnd5e's own roll, no dialog, the usual card), and answers `{ type: "remoteSkillRollResult", requestId, userId, total, d20 }` or `{ …, error }`. Foundry relays module messages to every other connected client, Garuk's socket included. Used by Avi's Spells (the Arcana check for copying a scroll); the website checks the user is logged in (Foundry's join data) before asking, and gives up after 30 s.
 
 ### effectmacro (`submodules/effectmacro/`)
 Runs macros from active effects on various triggers (onCreate, onDelete, onEnable, etc.).

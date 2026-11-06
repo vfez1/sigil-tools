@@ -1,4 +1,4 @@
-// Garuk is the ff-inventory website's socket-only Foundry user: it creates and updates items but
+// Garuk is the cityofdoors website's socket-only Foundry user: it creates and updates items but
 // runs no dnd5e code.
 const WEBSITE_USER_NAME = "Garuk";
 

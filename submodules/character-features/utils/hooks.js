@@ -1,6 +1,6 @@
 import { getConfig } from "./settings.js";
 
-// The Foundry user the inventory website (ff-inventory) signs in as. Its socket-only session runs
+// The Foundry user the inventory website (cityofdoors) signs in as. Its socket-only session runs
 // no module code, so its changes are handled by Foundry's designated GM instead.
 const WEBSITE_USER_NAME = "Garuk";
 
