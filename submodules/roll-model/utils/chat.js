@@ -710,10 +710,12 @@ function _buildAttackBreakdown(roll, { hideConstants = false } = {}) {
     const d20 = roll.d20;
 
     if (d20) {
+        // The effects that gave it, when known (RollUtility.captureAttackModeSources): "Disadvantage (Sapped)".
+        const why = (names) => (names?.length ? ` (${names.join(", ")})` : "");
         const mode = roll.hasAdvantage
-            ? ` · ${CoreUtility.localize("DND5E.Advantage")}`
+            ? ` · ${CoreUtility.localize("DND5E.Advantage")}${why(roll.options?.modeSources?.advantage)}`
             : roll.hasDisadvantage
-              ? ` · ${CoreUtility.localize("DND5E.Disadvantage")}`
+              ? ` · ${CoreUtility.localize("DND5E.Disadvantage")}${why(roll.options?.modeSources?.disadvantage)}`
               : "";
         box.append(
             _breakdownRow(`d20${mode}`, d20.total, {

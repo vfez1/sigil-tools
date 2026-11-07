@@ -321,6 +321,30 @@ export class RollUtility {
         rollConfig.options.bonusTermLabels = _buildAttackTermLabels(outerConfig, rollConfig);
     }
 
+    /**
+     * Names the active effects that give this attack advantage or disadvantage through dnd5e's
+     * `system.rolls.attack…mode` field (the Sapped effect's -1, say), kept on the roll as
+     * `options.modeSources` ({ advantage: [names], disadvantage: [names] }) so the breakdown can say
+     * why. Read now, while the effects are still there: Sapped is deleted once the attack is rolled.
+     */
+    static captureAttackModeSources(outerConfig, rollConfig) {
+        const actor = _getRollSubject(outerConfig, rollConfig)?.actor;
+        if (!actor || !rollConfig) return;
+        const sources = { advantage: [], disadvantage: [] };
+        for (const effect of _getActorEffects(actor)) {
+            if (effect.active === false) continue;
+            for (const change of effect.changes ?? []) {
+                if (!/^system\.rolls\.attack(\.\w+)?\.mode$/.test(change.key ?? "")) continue;
+                const value = Number(change.value);
+                const list = value > 0 ? sources.advantage : value < 0 ? sources.disadvantage : null;
+                if (list && !list.includes(effect.name)) list.push(effect.name);
+            }
+        }
+        if (!sources.advantage.length && !sources.disadvantage.length) return;
+        rollConfig.options ??= {};
+        rollConfig.options.modeSources = sources;
+    }
+
     static captureSaveFormulaParts(outerConfig, rollConfig, index = 0) {
         RollUtility.captureFormulaParts(rollConfig);
         if (!rollConfig?.parts?.length) return;

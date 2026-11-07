@@ -104,7 +104,8 @@ targets.
 Click any roll box (attack, damage, save result, check) to open its **breakdown**. It lists:
 
 - the dice, with both d20s shown when there was advantage or disadvantage (crits green, fumbles
-  red, the discarded die dimmed);
+  red, the discarded die dimmed). On an attack whose advantage or disadvantage came from an active
+  effect, the effect is named beside it: *d20 · Disadvantage (Sapped)*;
 - **one line per bonus, named after where it came from**: *Ability modifier*, *Proficiency*,
   *Rage*, *Great Weapon Master*, a named active effect such as *Bless*, a magic weapon's
   enchantment, and so on;

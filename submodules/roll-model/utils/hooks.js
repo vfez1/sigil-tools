@@ -435,6 +435,7 @@ export class HooksUtility {
         Hooks.on(HOOKS_DND5E.POST_BUILD_ATTACK_ROLL_CONFIG, (outerConfig, rollConfig, index) => {
             LogUtility.log(`[RM DEBUG] HOOK FIRED: ${HOOKS_DND5E.POST_BUILD_ATTACK_ROLL_CONFIG} index=${index} parts=${JSON.stringify(rollConfig?.parts)}`);
             RollUtility.captureAttackFormulaParts(outerConfig, rollConfig, index);
+            RollUtility.captureAttackModeSources(outerConfig, rollConfig);
         });
 
         // Ability, skill and tool checks all carry the "abilityCheck" hook name, so one hook covers them.
