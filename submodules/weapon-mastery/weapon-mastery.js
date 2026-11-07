@@ -21,7 +21,14 @@ import { MODULE_SHORT } from "../shared/const.js";
  * treats it as 6 seconds of game time. Core only marks an expired effect `expired` (switched off);
  * the tab that marked it then deletes it.
  *
- * The attack card is checked in the Gamemaster's tab, since the attacker's player can't put an
+ * Two things give it, whichever comes first, one effect per card and creature:
+ *
+ * - Damage from a Sap attack card applied to a creature (the card's damage tray, which passes the
+ *   card as `options.origin` to `dnd5e.applyDamage`). The tray only applies damage to tokens the
+ *   clicker owns, so the clicker's tab adds the effect itself. No targeting needed.
+ * - A hit on a creature targeted when the attack was rolled.
+ *
+ * Targeted hits are checked in the Gamemaster's tab, since the attacker's player can't put an
  * effect on a creature they don't own. roll-model writes the attack roll into the activity card
  * after it's created, and its advantage/disadvantage buttons can change it afterwards, so every
  * update of the card is checked again: targets it now hits get the effect, targets it no longer
@@ -42,6 +49,11 @@ export function registerWeaponMasteryHooks() {
     });
     Hooks.on("updateChatMessage", (message, changes) => {
         if (_isGamemasterTab() && ("rolls" in changes || "system" in changes)) _queueSync(message);
+    });
+    Hooks.on("dnd5e.applyDamage", (actor, amount, options) => {
+        if (amount < 0) return;
+        const message = options?.origin ?? game.messages.get(options?.originatingMessage?.id ?? options?.originatingMessage);
+        if (message instanceof ChatMessage) _sapOnDamage(actor, message);
     });
     // The sapped creature's next attack roll uses the disadvantage up. Only the roller's tab gets
     // this hook, and the roller owns the actor.
@@ -97,11 +109,27 @@ function _queueSync(message) {
     next.then(() => { if (_pending.get(message.id) === next) _pending.delete(message.id); });
 }
 
+function _sapRoll(message) {
+    const roll = message.rolls?.find((r) => r instanceof CONFIG.Dice.D20Roll);
+    return roll?.options.mastery === "sap" ? roll : null;
+}
+
+function _hasSapFrom(actor, message) {
+    return _sapEffects(actor).some((e) => e.flags[MODULE_SHORT][FLAG].message === message.id);
+}
+
+async function _sapOnDamage(actor, message) {
+    if (!_sapRoll(message) || _hasSapFrom(actor, message)) return;
+    const template = await _sapTemplate();
+    if (template && !_hasSapFrom(actor, message)) {
+        await actor.createEmbeddedDocuments("ActiveEffect", [_sapEffectData(template, message)]);
+    }
+}
+
 async function _syncSap(message) {
     const targets = message.system?.targets ?? [];
     if (!targets.length) return;
-    const roll = message.rolls?.find((r) => r instanceof CONFIG.Dice.D20Roll);
-    const sapRoll = roll?.options.mastery === "sap" ? roll : null;
+    const sapRoll = _sapRoll(message);
     const template = sapRoll ? await _sapTemplate() : null;
 
     for (const descriptor of targets) {
