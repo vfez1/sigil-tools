@@ -13,6 +13,7 @@ import { registerGridRegionsHooks } from "../../grid-regions/grid-regions.js";
 import { registerItemDragMoveHooks } from "../../item-drag-move/item-drag-move.js";
 import { registerNumberFormatCacheHooks } from "../../number-format-cache/number-format-cache.js";
 import { registerCastSpellCacheHooks } from "../../cast-spell-cache/cast-spell-cache.js";
+import { registerWeaponMasteryHooks } from "../../weapon-mastery/weapon-mastery.js";
 import { registerCodexAddHooks } from "../../codex-add/codex-add.js";
 import { registerSharedImageHooks } from "../../shared-image/shared-image.js";
 import { LogUtility } from "./log.js";
@@ -106,6 +107,7 @@ export class HooksUtility {
         registerItemDragMoveHooks();
         registerNumberFormatCacheHooks();
         registerCastSpellCacheHooks();
+        registerWeaponMasteryHooks();
         registerCodexAddHooks();
         registerSharedImageHooks();
 
