@@ -444,8 +444,20 @@ export class RollUtility {
         return { formula: Roll.replaceFormulaData(formula, item.getRollData()), type };
     }
 
+    /**
+     * Whether it's this actor's turn: true out of combat (no started combat, or no combatant up),
+     * otherwise whether the combatant whose turn it is is this actor.
+     */
+    static isActorsTurn(actor) {
+        const combatant = game.combat?.started ? game.combat.combatant : null;
+        if (!combatant) return true;
+        return !!actor && (combatant.actor === actor || combatant.actor?.uuid === actor.uuid);
+    }
+
     static applyGWMDamageBonus(outerConfig, rollConfig, index) {
         if (index !== 0) return false;
+        // Off when the card's GWM toggle is unticked (set from the card by getDamageFromMessage).
+        if (outerConfig?.rmGwmActive === false) return false;
 
         const subject = outerConfig?.subject ?? rollConfig?.subject;
         if (!_isGWMEligible(subject)) return false;

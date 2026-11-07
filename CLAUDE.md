@@ -28,7 +28,7 @@ The core submodule. Entry point: `roll-model.js` → `HooksUtility.registerModul
 - Damage type selector pills for multi-type damage (e.g. Lunar Radiance adds radiant alongside slashing); preference persisted per item via flag
 - Concentration break button on concentration saves
 - dnd5e's damage-application tray appended to the combined card (6.0 only renders it on its own damage-type cards); GM always, players per dnd5e's "Allow Player Damage Application"
-- GWM toggle: adds proficiency bonus to damage, with checkbox to enable/disable post-roll
+- GWM toggle: adds proficiency bonus to damage, with checkbox to enable/disable post-roll. It starts ticked only on the attacker's own turn (or out of combat; `RollUtility.isActorsTurn`), since GWM's bonus is for an attack on your turn; off-turn (an opportunity attack) it starts unticked and the damage is rolled without it (`getDamageFromMessage` passes the card's `gwmActive` as `rmGwmActive`, which `applyGWMDamageBonus` honours)
 - Celestial Revelation toggle for Aasimar characters (adds radiant damage = prof bonus)
 - Hand of Harm toggle on monk unarmed strikes: pays with a Flurry of Healing and Harm use or a Focus Point, adds the feat's necrotic damage, refunds on untick
 - Blood Fury toggle (red) on melee weapon / unarmed attacks while the Blood Fury Tattoo is equipped and attuned: spends a tattoo charge, adds its 4d6 necrotic, refunds on untick

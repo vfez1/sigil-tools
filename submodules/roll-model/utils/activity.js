@@ -38,7 +38,9 @@ export class ActivityUtility {
 
             if (hasGWMFeat && isHeavy) {
                 rmFlags.gwmEligible = true;
-                rmFlags.gwmActive = true;
+                // GWM's bonus is only for an attack on your own turn: off-turn (an opportunity
+                // attack) the toggle starts unticked.
+                rmFlags.gwmActive = RollUtility.isActorsTurn(actor);
             } else {
                 rmFlags.gwmEligible = false;
                 rmFlags.gwmActive = false;
@@ -175,6 +177,8 @@ export class ActivityUtility {
             isCritical: flags.isCritical ?? false,
             attackMode: flags.versatile ? "twoHanded" : undefined,
             ammunition: actor.items.get(flags.ammunition),
+            // The card's GWM toggle, read by RollUtility.applyGWMDamageBonus.
+            rmGwmActive: flags.gwmActive,
             scaling: isCantrip ? undefined : activityItem.flags.dnd5e.scaling,
         };
 

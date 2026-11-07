@@ -379,7 +379,7 @@ export class HooksUtility {
                 const isHeavy = activity.item?.system?.properties?.has("hvy") ?? false;
                 if (hasGWM && isHeavy) {
                     messageConfig.data.flags[MODULE_SHORT].gwmEligible = true;
-                    messageConfig.data.flags[MODULE_SHORT].gwmActive = true;
+                    messageConfig.data.flags[MODULE_SHORT].gwmActive = RollUtility.isActorsTurn(activity.actor);
                 }
 
                 const hasAttackActivity = activity.hasOwnProperty(ROLL_TYPE.ATTACK);

@@ -253,7 +253,7 @@ automation off.
 
 | Feature | Name it looks for | What happens |
 |---|---|---|
-| **Great Weapon Master** | feat `Great Weapon Master` | On weapons with the **Heavy** property, adds your proficiency bonus to damage, labelled *"Great Weapon Master"*. A **GWM** checkbox on the card removes or re-adds it after the roll. |
+| **Great Weapon Master** | feat `Great Weapon Master` | On weapons with the **Heavy** property, adds your proficiency bonus to damage, labelled *"Great Weapon Master"*. A **GWM** checkbox on the card removes or re-adds it after the roll. In combat it starts ticked only on your own turn, since the bonus is for an attack on your turn; an attack on someone else's turn (an opportunity attack) starts with it unticked and no bonus. |
 | **Elemental Fury: Potent Spellcasting** (Druid) | feat `Elemental Fury: Potent Spellcasting` | Adds your **Wisdom modifier** to damage from **druid cantrips**. Excludes Magic Stone and Shillelagh. |
 | **Potent Spellcasting** (Cleric) | feat `Potent Spellcasting` | Same, for **cleric cantrips**. |
 | **Lunar Radiance** (Wabu) | feat `Improved Circle Forms` on the *original* druid | While wild shaped, the beast form's damage gets **radiant** as a choosable type (use the damage-type pills). |
